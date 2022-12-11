@@ -1,0 +1,115 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_limb"
+      },
+      "when": {
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_joint"
+      },
+      "when": {
+        "north_attached": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_limb",
+        "y": 90
+      },
+      "when": {
+        "east": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_joint",
+        "y": 90
+      },
+      "when": {
+        "east_attached": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_limb",
+        "y": 180
+      },
+      "when": {
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_joint",
+        "y": 180
+      },
+      "when": {
+        "south_attached": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_limb",
+        "y": 270
+      },
+      "when": {
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_joint",
+        "y": 270
+      },
+      "when": {
+        "west_attached": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_limb",
+        "x": 90
+      },
+      "when": {
+        "down": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_joint",
+        "x": 90
+      },
+      "when": {
+        "down_attached": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_limb",
+        "x": 270
+      },
+      "when": {
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_joint",
+        "x": 270
+      },
+      "when": {
+        "up_attached": "true"
+      }
+    }
+  ]
+}
