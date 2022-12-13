@@ -22,35 +22,25 @@ public class TPBlockStateProvider extends net.minecraftforge.client.model.genera
 
     @Override
     protected void registerStatesAndModels() {
-        TransferPipe.BLOCKS.getEntries().forEach(this::pipeBlockAndItem);
+        TransferPipe.PIPES.getEntries().forEach(this::pipeBlockAndItem);
     }
 
     private void pipeBlockAndItem(RegistryObject<Block> ro) {
         var block = ro.get();
         var id = ro.getId().getPath();
-        var center = new ModelFile.UncheckedModelFile(modLoc("block/" + id));
-        var centerI = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_ignore"));
+        var center = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_center"));
         var limb = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_limb"));
-        var limbI = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_limb_ignore"));
-        var limbOW = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_limb_oneway"));
         var joint = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_joint"));
+        var overlayIgnoreCenter = new ModelFile.UncheckedModelFile(modLoc("block/overlay_ignore_center"));
+        var overlayIgnoreLimb = new ModelFile.UncheckedModelFile(modLoc("block/overlay_ignore_limb"));
+        var overlayOneway = new ModelFile.UncheckedModelFile(modLoc("block/overlay_oneway"));
         var mb = getMultipartBuilder(block);
-        mb.part().modelFile(center).addModel()//通常中心
-                .condition(FLOW, FlowStates.statesWithout(FlowStates.IGNORE)).end();//無視したくないとき
-
-        mb.part().modelFile(centerI).addModel()//無視用中心
-                .condition(FLOW, FlowStates.IGNORE).end();//無視したいとき
+        mb.part().modelFile(center).addModel().end();//中心
+        mb.part().modelFile(overlayIgnoreCenter).addModel()//無視時中心オーバーレイ
+                .condition(FLOW, FlowStates.IGNORE).end();
 
         Direction.stream().forEach(d -> {
-            var theWay = FlowStates.fromDirection(d);
-            var oneWayStates = new java.util.ArrayList<>(FlowStates.directions().filter(f -> f != theWay).toList());
-            oneWayStates.add(FlowStates.NONE);
-            rotate(mb.part().modelFile(limbOW), d).addModel()//一方通行用
-                    .condition(FLOW, oneWayStates.toArray(new FlowStates[]{}))//向いてる方向以外または塞ぎ込んでるとき
-                    .condition(CONNECTIONS.get(d), PIPE).end();//パイプに向けて
-
-            rotate(mb.part().modelFile(limb), d).addModel()//通常
-                    .condition(FLOW, theWay, FlowStates.ALL)//向いてる方向または開放的なとき
+            rotate(mb.part().modelFile(limb), d).addModel()//管
                     .condition(CONNECTIONS.get(d), PIPE).end();//パイプに向けて
             rotate(mb.part().modelFile(limb), d).addModel()//また
                     .condition(FLOW, FlowStates.statesWithout(FlowStates.IGNORE))//無視したくないとき
@@ -60,8 +50,16 @@ public class TPBlockStateProvider extends net.minecraftforge.client.model.genera
                     .condition(FLOW, FlowStates.statesWithout(FlowStates.IGNORE))//無視したくないとき
                     .condition(CONNECTIONS.get(d), MACHINE).end();//機械に向けて
 
-            rotate(mb.part().modelFile(limbI), d).addModel()//無視用
+            rotate(mb.part().modelFile(overlayIgnoreLimb), d).addModel()//無視時管オーバーレイ
                     .condition(FLOW, FlowStates.IGNORE)//無視したいとき
+                    .condition(CONNECTIONS.get(d), PIPE).end();//パイプに向けて
+
+
+            var theWay = FlowStates.fromDirection(d);
+            var oneWayStates = new java.util.ArrayList<>(FlowStates.directions().filter(f -> f != theWay).toList());
+            oneWayStates.add(FlowStates.NONE);
+            rotate(mb.part().modelFile(overlayOneway), d).addModel()//一方通行オーバーレイ
+                    .condition(FLOW, oneWayStates.toArray(new FlowStates[]{}))//向いてる方向以外または塞ぎ込んでるとき
                     .condition(CONNECTIONS.get(d), PIPE).end();//パイプに向けて
         });
 

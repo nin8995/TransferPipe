@@ -2,15 +2,12 @@
   "multipart": [
     {
       "apply": {
-        "model": "transferpipe:block/transfer_pipe"
-      },
-      "when": {
-        "flow": "all|up|down|north|east|south|west|none"
+        "model": "transferpipe:block/transfer_pipe_center"
       }
     },
     {
       "apply": {
-        "model": "transferpipe:block/transfer_pipe_ignore"
+        "model": "transferpipe:block/overlay_ignore_center"
       },
       "when": {
         "flow": "ignore"
@@ -18,7 +15,46 @@
     },
     {
       "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_oneway",
+        "model": "transferpipe:block/transfer_pipe_limb",
+        "x": 90
+      },
+      "when": {
+        "down": "pipe"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_limb",
+        "x": 90
+      },
+      "when": {
+        "down": "machine",
+        "flow": "all|up|down|north|east|south|west|none"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_joint",
+        "x": 90
+      },
+      "when": {
+        "down": "machine",
+        "flow": "all|up|down|north|east|south|west|none"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/overlay_ignore_limb",
+        "x": 90
+      },
+      "when": {
+        "down": "pipe",
+        "flow": "ignore"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/overlay_oneway",
         "x": 90
       },
       "when": {
@@ -29,60 +65,9 @@
     {
       "apply": {
         "model": "transferpipe:block/transfer_pipe_limb",
-        "x": 90
-      },
-      "when": {
-        "down": "pipe",
-        "flow": "down|all"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb",
-        "x": 90
-      },
-      "when": {
-        "down": "machine",
-        "flow": "all|up|down|north|east|south|west|none"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_joint",
-        "x": 90
-      },
-      "when": {
-        "down": "machine",
-        "flow": "all|up|down|north|east|south|west|none"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_ignore",
-        "x": 90
-      },
-      "when": {
-        "down": "pipe",
-        "flow": "ignore"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_oneway",
         "x": 270
       },
       "when": {
-        "flow": "down|north|south|west|east|none",
-        "up": "pipe"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb",
-        "x": 270
-      },
-      "when": {
-        "flow": "up|all",
         "up": "pipe"
       }
     },
@@ -108,7 +93,7 @@
     },
     {
       "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_ignore",
+        "model": "transferpipe:block/overlay_ignore_limb",
         "x": 270
       },
       "when": {
@@ -118,11 +103,12 @@
     },
     {
       "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_oneway"
+        "model": "transferpipe:block/overlay_oneway",
+        "x": 270
       },
       "when": {
-        "flow": "down|up|south|west|east|none",
-        "north": "pipe"
+        "flow": "down|north|south|west|east|none",
+        "up": "pipe"
       }
     },
     {
@@ -130,7 +116,6 @@
         "model": "transferpipe:block/transfer_pipe_limb"
       },
       "when": {
-        "flow": "north|all",
         "north": "pipe"
       }
     },
@@ -154,7 +139,7 @@
     },
     {
       "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_ignore"
+        "model": "transferpipe:block/overlay_ignore_limb"
       },
       "when": {
         "flow": "ignore",
@@ -163,7 +148,55 @@
     },
     {
       "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_oneway",
+        "model": "transferpipe:block/overlay_oneway"
+      },
+      "when": {
+        "flow": "down|up|south|west|east|none",
+        "north": "pipe"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_limb",
+        "y": 180
+      },
+      "when": {
+        "south": "pipe"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_limb",
+        "y": 180
+      },
+      "when": {
+        "flow": "all|up|down|north|east|south|west|none",
+        "south": "machine"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/transfer_pipe_joint",
+        "y": 180
+      },
+      "when": {
+        "flow": "all|up|down|north|east|south|west|none",
+        "south": "machine"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/overlay_ignore_limb",
+        "y": 180
+      },
+      "when": {
+        "flow": "ignore",
+        "south": "pipe"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/overlay_oneway",
         "y": 180
       },
       "when": {
@@ -174,46 +207,45 @@
     {
       "apply": {
         "model": "transferpipe:block/transfer_pipe_limb",
-        "y": 180
+        "y": 270
       },
       "when": {
-        "flow": "south|all",
-        "south": "pipe"
+        "west": "pipe"
       }
     },
     {
       "apply": {
         "model": "transferpipe:block/transfer_pipe_limb",
-        "y": 180
+        "y": 270
       },
       "when": {
         "flow": "all|up|down|north|east|south|west|none",
-        "south": "machine"
+        "west": "machine"
       }
     },
     {
       "apply": {
         "model": "transferpipe:block/transfer_pipe_joint",
-        "y": 180
+        "y": 270
       },
       "when": {
         "flow": "all|up|down|north|east|south|west|none",
-        "south": "machine"
+        "west": "machine"
       }
     },
     {
       "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_ignore",
-        "y": 180
+        "model": "transferpipe:block/overlay_ignore_limb",
+        "y": 270
       },
       "when": {
         "flow": "ignore",
-        "south": "pipe"
+        "west": "pipe"
       }
     },
     {
       "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_oneway",
+        "model": "transferpipe:block/overlay_oneway",
         "y": 270
       },
       "when": {
@@ -224,61 +256,10 @@
     {
       "apply": {
         "model": "transferpipe:block/transfer_pipe_limb",
-        "y": 270
-      },
-      "when": {
-        "flow": "west|all",
-        "west": "pipe"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb",
-        "y": 270
-      },
-      "when": {
-        "flow": "all|up|down|north|east|south|west|none",
-        "west": "machine"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_joint",
-        "y": 270
-      },
-      "when": {
-        "flow": "all|up|down|north|east|south|west|none",
-        "west": "machine"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_ignore",
-        "y": 270
-      },
-      "when": {
-        "flow": "ignore",
-        "west": "pipe"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_oneway",
         "y": 90
       },
       "when": {
-        "east": "pipe",
-        "flow": "down|up|north|south|west|none"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb",
-        "y": 90
-      },
-      "when": {
-        "east": "pipe",
-        "flow": "east|all"
+        "east": "pipe"
       }
     },
     {
@@ -303,12 +284,22 @@
     },
     {
       "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb_ignore",
+        "model": "transferpipe:block/overlay_ignore_limb",
         "y": 90
       },
       "when": {
         "east": "pipe",
         "flow": "ignore"
+      }
+    },
+    {
+      "apply": {
+        "model": "transferpipe:block/overlay_oneway",
+        "y": 90
+      },
+      "when": {
+        "east": "pipe",
+        "flow": "down|up|north|south|west|none"
       }
     }
   ]

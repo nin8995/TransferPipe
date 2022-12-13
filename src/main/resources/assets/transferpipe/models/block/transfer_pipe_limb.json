@@ -17,13 +17,5 @@
 				"down": {"uv": [0, 4, 4, 10], "texture": "#0"}
 			}
 		}
-	],
-	"groups": [
-		{
-			"name": "group",
-			"origin": [0, 0, 0],
-			"color": 0,
-			"children": [0]
-		}
 	]
 }

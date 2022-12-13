@@ -17,14 +17,5 @@
 				"down": {"uv": [4, 4, 7, 10], "rotation": 270, "texture": "#0"}
 			}
 		}
-	],
-	"groups": [
-		{
-			"name": "group",
-			"origin": [0, 0, 0],
-			"color": 0,
-			"children": []
-		},
-		0
 	]
 }

@@ -8,28 +8,20 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.StonecutterBlock;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.Material;
+import net.minecraftforge.client.model.renderable.ITextureRenderTypeLookup;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.event.CreativeModeTabEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.TransferPipeBlock;
-import nin.transferpipe.data.TPBlockStateProvider;
 import org.slf4j.Logger;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -38,7 +30,7 @@ public class TransferPipe {
 
     public static final String MOD_ID = "transferpipe";
     private static final Logger LOGGER = LogUtils.getLogger();
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MOD_ID);
+    public static final DeferredRegister<Block> PIPES = DeferredRegister.create(ForgeRegistries.BLOCKS, MOD_ID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MOD_ID);
 
     public static final RegistryObject<Block> TRANSFER_PIPE = register("transfer_pipe", TransferPipeBlock::new);
@@ -54,7 +46,7 @@ public class TransferPipe {
                 })
         ));
         // Register the Deferred Register to the mod event bus so blocks get registered
-        BLOCKS.register(eb);
+        PIPES.register(eb);
         // Register the Deferred Register to the mod event bus so items get registered
         ITEMS.register(eb);
 
@@ -63,7 +55,7 @@ public class TransferPipe {
     }
 
     public static RegistryObject<Block> register(String id, Supplier<Block> block){
-        var ro = BLOCKS.register("transfer_pipe", block);
+        var ro = PIPES.register("transfer_pipe", block);
         ITEMS.register("transfer_pipe", () -> new BlockItem(ro.get(), new Item.Properties()));
         return ro;
     }
@@ -77,6 +69,7 @@ public class TransferPipe {
             // Some client setup code
             LOGGER.info("HELLO FROM CLIENT SETUP");
             LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+
         }
     }
 }
