@@ -11,8 +11,7 @@ import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.TransferPipe;
 
 import static nin.transferpipe.block.TransferPipeBlock.*;
-import static nin.transferpipe.block.TransferPipeBlock.ConnectionStates.MACHINE;
-import static nin.transferpipe.block.TransferPipeBlock.ConnectionStates.PIPE;
+import static nin.transferpipe.block.TransferPipeBlock.ConnectionStates.*;
 
 public class TPBlockStateProvider extends net.minecraftforge.client.model.generators.BlockStateProvider {
 
@@ -41,13 +40,9 @@ public class TPBlockStateProvider extends net.minecraftforge.client.model.genera
 
         Direction.stream().forEach(d -> {
             rotate(mb.part().modelFile(limb), d).addModel()//管
-                    .condition(CONNECTIONS.get(d), PIPE).end();//パイプに向けて
-            rotate(mb.part().modelFile(limb), d).addModel()//また
-                    .condition(FLOW, FlowStates.statesWithout(FlowStates.IGNORE))//無視したくないとき
-                    .condition(CONNECTIONS.get(d), MACHINE).end();//機械に向けて
+                    .condition(CONNECTIONS.get(d), PIPE, MACHINE).end();//パイプと機械に向けて
 
             rotate(mb.part().modelFile(joint), d).addModel()//接合部
-                    .condition(FLOW, FlowStates.statesWithout(FlowStates.IGNORE))//無視したくないとき
                     .condition(CONNECTIONS.get(d), MACHINE).end();//機械に向けて
 
             rotate(mb.part().modelFile(overlayIgnoreLimb), d).addModel()//無視時管オーバーレイ

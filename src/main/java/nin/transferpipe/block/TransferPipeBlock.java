@@ -1,5 +1,7 @@
 package nin.transferpipe.block;
 
+import com.google.common.collect.ImmutableList;
+import com.google.errorprone.annotations.Immutable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
@@ -13,39 +15,43 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.PipeBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import nin.transferpipe.TransferPipe;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TransferPipeBlock extends PipeBlock {
+public class TransferPipeBlock extends Block {
 
     public TransferPipeBlock() {
-        super(1 / 8F, BlockBehaviour.Properties.of(Material.STONE));
+        super(BlockBehaviour.Properties.of(Material.STONE));
         var s = stateDefinition.any();
         for (Direction d : Direction.stream().toList())
             s = s.setValue(CONNECTIONS.get(d), ConnectionStates.NONE);
         s = s.setValue(FLOW, FlowStates.ALL);
         registerDefaultState(s);
-        //registerShapeCache();
     }
 
     @Override
     public InteractionResult use(BlockState bs, Level l, BlockPos pos, Player p, InteractionHand h, BlockHitResult p_60508_) {
         if (p.getItemInHand(h).getItem() == Items.STICK)
-            l.setBlockAndUpdate(pos, bs.setValue(FLOW, FlowStates.getNext(l, pos, bs)));
+            l.setBlockAndUpdate(pos, getState(l, pos, bs.setValue(FLOW, FlowStates.getNext(l, pos, bs))));
 
-        return super.use(bs, l, pos, p, h, p_60508_);
+        return InteractionResult.SUCCESS;
     }
 
     @Override
@@ -73,11 +79,14 @@ public class TransferPipeBlock extends PipeBlock {
     }
 
     public BlockState getState(Level l, BlockPos p) {
-        var s = defaultBlockState();
+        var s = l.getBlockState(p);
+        return getState(l, p, s.hasProperty(FLOW) ? s : defaultBlockState());
+    }
+
+    public BlockState getState(Level l, BlockPos p, BlockState s) {
         for (Direction d : Direction.stream().toList())
-            s = s.setValue(CONNECTIONS.get(d), isPipe(l, p, d) && canGo(l, p, d) ? ConnectionStates.PIPE : canConnect(l, p, d) ? ConnectionStates.MACHINE : ConnectionStates.NONE);
-        if (l.getBlockState(p).hasProperty(FLOW))
-            s = s.setValue(FLOW, l.getBlockState(p).getValue(FLOW));//ここには初見さんも来る、BlockStateはあるがPropertyが定まってないヤツ
+            s = s.setValue(CONNECTIONS.get(d), isPipe(l, p, d) && canGo(l, p, d) ? ConnectionStates.PIPE : canConnect(l, p, d) && s.getValue(FLOW) != FlowStates.IGNORE ? ConnectionStates.MACHINE : ConnectionStates.NONE);
+
         return s;
     }
 
@@ -92,6 +101,9 @@ public class TransferPipeBlock extends PipeBlock {
     }
 
     public static boolean isOneWay(BlockState bs, Direction d) {
+        if (!bs.hasProperty(FLOW))//ここには何故か初見さんきちゃう
+            return false;
+
         var s = bs.getValue(FLOW);
         return !(s == FlowStates.fromDirection(d) || s == FlowStates.ALL || s == FlowStates.IGNORE);
     }
@@ -110,93 +122,130 @@ public class TransferPipeBlock extends PipeBlock {
         builder.add(FLOW);
     }
 
-    @Override
-    protected int getAABBIndex(BlockState bs) {
-        int i = 0;
-        var ds = Direction.values();
-        for (int j = 0; j < ds.length; ++j)
-            if (bs.getValue(CONNECTIONS.get(ds[j])) != ConnectionStates.NONE
-                    && !(bs.getValue(CONNECTIONS.get(ds[j])) == ConnectionStates.MACHINE && bs.getValue(FLOW) == FlowStates.IGNORE))
+    private static final VoxelShape CENTER = Block.box(6, 6, 6, 10, 10, 10);
+    private static final Map<Direction, VoxelShape> LIMBS = getRotatedShapes(new Vec3(6, 6, 0), new Vec3(10, 10, 6));
+    private static final Map<Direction, VoxelShape> JOINTS = getRotatedShapes(new Vec3(5, 5, -0.001), new Vec3(11, 11, 2.999));
+    // private final Map<BlockState, VoxelShape> shapes = this.getShapeForEachState(TransferPipeBlock::calculateShape);
+    private final Map<ConnectionCacheKey, VoxelShape> shapeCache = getPossibleConnectionStates().stream().collect(Collectors.toMap(UnaryOperator.identity(), TransferPipeBlock::calculateShape));
 
-                i |= 1 << j;
+    /*public void putAllStates(ArrayList<ConnectionCacheKey> bss, ArrayList<ConnectionStates> css, ArrayList<EnumProperty<ConnectionStates>> eps) {
+        for (ConnectionStates cs : ConnectionStates.values()) {
+            if(css == null)
+                css = new ArrayList<>();
+            css.add(cs);
+            if (eps.size() == 1) {
+                bss.add(new ConnectionCacheKey(css.get(0), css.get(1), css.get(2), css.get(3), css.get(4), css.get(5)));
+            } else {
+                var neps =(ArrayList<EnumProperty<ConnectionStates>>) eps.clone();
+                neps.remove(neps.size()-1);
+                putAllStates(bss, css, neps);
+            }
+        }
+    }*/
 
-        return i;
+    public List<ConnectionCacheKey> getPossibleConnectionStates() {
+        /*var bss = new ArrayList<ConnectionCacheKey>();
+        putAllStates(bss, null,new ArrayList<>(CONNECTIONS.values())) ;
+        return bss;*/
+
+        var states = new ArrayList<ConnectionCacheKey>();
+        for (ConnectionStates down : ConnectionStates.values())
+            for (ConnectionStates up : ConnectionStates.values())
+                for (ConnectionStates north : ConnectionStates.values())
+                    for (ConnectionStates east : ConnectionStates.values())
+                        for (ConnectionStates south : ConnectionStates.values())
+                            for (ConnectionStates west : ConnectionStates.values())
+                                states.add(new ConnectionCacheKey(down, up, north, south, east, west));
+        return states;
     }
-
-    /*
-
-    public Map<BlockState, VoxelShape> shapes = new HashMap<>();
 
     @Override
     public VoxelShape getShape(BlockState bs, BlockGetter p_60556_, BlockPos p_60557_, CollisionContext p_60558_) {
-        return shapes.get(bs);
+        var down = bs.getValue(CONNECTIONS.get(Direction.DOWN));
+        var up = bs.getValue(CONNECTIONS.get(Direction.UP));
+        var north = bs.getValue(CONNECTIONS.get(Direction.NORTH));
+        var south = bs.getValue(CONNECTIONS.get(Direction.SOUTH));
+        var east = bs.getValue(CONNECTIONS.get(Direction.EAST));
+        var west = bs.getValue(CONNECTIONS.get(Direction.WEST));
+
+        return shapeCache.get(new ConnectionCacheKey(down, up, north, south, east, west));
     }
 
-    public void registerShapeCache() {
-        var all = new ArrayList<BlockState>();
-        for (ConnectionStates v0 : ConnectionStates.values()) {
-            for (ConnectionStates v1 : ConnectionStates.values()) {
-                for (ConnectionStates v2 : ConnectionStates.values()) {
-                    for (ConnectionStates v3 : ConnectionStates.values()) {
-                        for (ConnectionStates v4 : ConnectionStates.values()) {
-                            for (ConnectionStates v5 : ConnectionStates.values()) {
-                                for (FlowStates v6 : FlowStates.values()) {
-                                    var bs = defaultBlockState();
-                                    var css = new ConnectionStates[]{v0, v1, v2, v3, v4, v5};
-                                    int i = 0;
-                                    for (EnumProperty<ConnectionStates> ep : CONNECTIONS.values()) {
-                                        bs = bs.setValue(ep, css[i]);
-                                        i++;
-                                    }
-                                    bs = bs.setValue(FLOW, v6);
-                                    all.add(bs);
-                                }
-                            }
-                        }
-                    }
-                }
+    private static VoxelShape calculateShape(ConnectionCacheKey cacheKey) {
+        var shape = CENTER;
+        for (Direction d : CONNECTIONS.keySet()) {
+            var limb = LIMBS.get(d);
+            var joint = JOINTS.get(d);
+            switch (cacheKey.getState(d)) {
+                case PIPE -> shape = Shapes.or(shape, limb);
+                case MACHINE -> shape = Shapes.or(shape, limb, joint);
             }
         }
-
-        var center = Block.box(6, 6, 6, 10, 10, 10);
-        var limbs = getRotatedShapes(new Vec3(6, 6, 0), new Vec3(10, 10, 6));
-        var joints = getRotatedShapes(new Vec3(5, 5, -0.001), new Vec3(11, 11, 2.999));
-        for (BlockState bs : all) {
-            var vs = Shapes.empty();
-            vs = Shapes.or(vs, center);
-            for (Direction d : CONNECTIONS.keySet()) {
-                var limb = limbs.get(d);
-                var joint = joints.get(d);
-                switch (bs.getValue(CONNECTIONS.get(d))) {
-                    case PIPE -> vs = Shapes.or(vs, limb);
-                    case MACHINE -> {
-                        vs = Shapes.or(vs, limb);
-                        vs = Shapes.or(vs, joint);
-                    }
-                }
-            }
-            shapes.put(bs, vs);
-        }
+        return shape;
     }
+  /*  private static VoxelShape calculateShape(BlockState state) {
+        var shape = CENTER;
+        for (Direction d : CONNECTIONS.keySet()) {
+            var limb = LIMBS.get(d);
+            var joint = JOINTS.get(d);
+            switch (state.getValue(CONNECTIONS.get(d))) {
+                case PIPE -> shape = Shapes.or(shape, limb);
+                case MACHINE -> shape = Shapes.or(shape, limb, joint);
+            }
+        }
+        return shape;
+    }*/
 
     public static Vec3 rotate(Vec3 v, Direction d) {
         var rightAngle = (float) (Math.PI / 2);
-        return switch (d) {
-            case DOWN -> v.xRot(rightAngle);
-            case UP -> v.xRot(rightAngle * 3);
-            case NORTH -> v;
-            case SOUTH -> v.yRot(rightAngle * 2);
-            case WEST -> v.yRot(rightAngle * 3);
-            case EAST -> v.yRot(rightAngle);
+        var toRotate = v.add(-8, -8, -8);
+        var rotated = switch (d) {
+            case DOWN -> toRotate.xRot(rightAngle);
+            case UP -> toRotate.xRot(-rightAngle);
+            case NORTH -> toRotate;
+            case SOUTH -> toRotate.yRot(rightAngle * 2);
+            case WEST -> toRotate.yRot(rightAngle);
+            case EAST -> toRotate.yRot(-rightAngle);
         };
+        return rotated.add(8, 8, 8);
     }
 
     public static Map<Direction, VoxelShape> getRotatedShapes(Vec3 start, Vec3 end) {
-        return Direction.stream().collect(Collectors.toMap(UnaryOperator.identity(), d ->
-                Block.box(rotate(start, d).x, rotate(start, d).y, rotate(start, d).z, rotate(end, d).x, rotate(end, d).y, rotate(end, d).z)
-        ));
+        return Direction.stream().collect(Collectors.toMap(UnaryOperator.identity(), d -> {
+            var sr = rotate(start, d);
+            var er = rotate(end, d);
+            return Block.box(Math.min(sr.x, er.x), Math.min(sr.y, er.y), Math.min(sr.z, er.z), Math.max(sr.x, er.x), Math.max(sr.y, er.y), Math.max(sr.z, er.z));
+        }));
     }
-*/
+
+
+    private record ConnectionCacheKey(ConnectionStates down, ConnectionStates up, ConnectionStates north,
+                                      ConnectionStates south, ConnectionStates east,
+                                      ConnectionStates west) {
+        private ConnectionStates getState(Direction direction) {
+            switch (direction) {
+                case UP -> {
+                    return up;
+                }
+                case DOWN -> {
+                    return down;
+                }
+                case NORTH -> {
+                    return north;
+                }
+                case SOUTH -> {
+                    return south;
+                }
+                case EAST -> {
+                    return east;
+                }
+                case WEST -> {
+                    return west;
+                }
+            }
+            return north;
+        }
+    }
 
     public enum ConnectionStates implements StringRepresentable {
         NONE,

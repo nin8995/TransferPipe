@@ -19,17 +19,7 @@
         "x": 90
       },
       "when": {
-        "down": "pipe"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb",
-        "x": 90
-      },
-      "when": {
-        "down": "machine",
-        "flow": "all|up|down|north|east|south|west|none"
+        "down": "pipe|machine"
       }
     },
     {
@@ -38,8 +28,7 @@
         "x": 90
       },
       "when": {
-        "down": "machine",
-        "flow": "all|up|down|north|east|south|west|none"
+        "down": "machine"
       }
     },
     {
@@ -68,17 +57,7 @@
         "x": 270
       },
       "when": {
-        "up": "pipe"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb",
-        "x": 270
-      },
-      "when": {
-        "flow": "all|up|down|north|east|south|west|none",
-        "up": "machine"
+        "up": "pipe|machine"
       }
     },
     {
@@ -87,7 +66,6 @@
         "x": 270
       },
       "when": {
-        "flow": "all|up|down|north|east|south|west|none",
         "up": "machine"
       }
     },
@@ -116,16 +94,7 @@
         "model": "transferpipe:block/transfer_pipe_limb"
       },
       "when": {
-        "north": "pipe"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb"
-      },
-      "when": {
-        "flow": "all|up|down|north|east|south|west|none",
-        "north": "machine"
+        "north": "pipe|machine"
       }
     },
     {
@@ -133,7 +102,6 @@
         "model": "transferpipe:block/transfer_pipe_joint"
       },
       "when": {
-        "flow": "all|up|down|north|east|south|west|none",
         "north": "machine"
       }
     },
@@ -161,17 +129,7 @@
         "y": 180
       },
       "when": {
-        "south": "pipe"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb",
-        "y": 180
-      },
-      "when": {
-        "flow": "all|up|down|north|east|south|west|none",
-        "south": "machine"
+        "south": "pipe|machine"
       }
     },
     {
@@ -180,7 +138,6 @@
         "y": 180
       },
       "when": {
-        "flow": "all|up|down|north|east|south|west|none",
         "south": "machine"
       }
     },
@@ -210,17 +167,7 @@
         "y": 270
       },
       "when": {
-        "west": "pipe"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb",
-        "y": 270
-      },
-      "when": {
-        "flow": "all|up|down|north|east|south|west|none",
-        "west": "machine"
+        "west": "pipe|machine"
       }
     },
     {
@@ -229,7 +176,6 @@
         "y": 270
       },
       "when": {
-        "flow": "all|up|down|north|east|south|west|none",
         "west": "machine"
       }
     },
@@ -259,17 +205,7 @@
         "y": 90
       },
       "when": {
-        "east": "pipe"
-      }
-    },
-    {
-      "apply": {
-        "model": "transferpipe:block/transfer_pipe_limb",
-        "y": 90
-      },
-      "when": {
-        "east": "machine",
-        "flow": "all|up|down|north|east|south|west|none"
+        "east": "pipe|machine"
       }
     },
     {
@@ -278,8 +214,7 @@
         "y": 90
       },
       "when": {
-        "east": "machine",
-        "flow": "all|up|down|north|east|south|west|none"
+        "east": "machine"
       }
     },
     {
