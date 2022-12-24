@@ -8,10 +8,13 @@ import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.RegistryObject;
-import nin.transferpipe.TransferPipe;
+import nin.transferpipe.block.TransferNodeBlock;
 
+import static nin.transferpipe.TransferPipe.NODES;
+import static nin.transferpipe.TransferPipe.PIPES;
 import static nin.transferpipe.block.TransferPipeBlock.*;
-import static nin.transferpipe.block.TransferPipeBlock.ConnectionStates.*;
+import static nin.transferpipe.block.TransferPipeBlock.ConnectionStates.MACHINE;
+import static nin.transferpipe.block.TransferPipeBlock.ConnectionStates.PIPE;
 
 public class TPBlockStateProvider extends net.minecraftforge.client.model.generators.BlockStateProvider {
 
@@ -21,10 +24,11 @@ public class TPBlockStateProvider extends net.minecraftforge.client.model.genera
 
     @Override
     protected void registerStatesAndModels() {
-        TransferPipe.PIPES.getEntries().forEach(this::pipeBlockAndItem);
+        PIPES.getEntries().forEach(this::pipe);
+        NODES.getEntries().forEach(this::node);
     }
 
-    private void pipeBlockAndItem(RegistryObject<Block> ro) {
+    private void pipe(RegistryObject<Block> ro) {
         var block = ro.get();
         var id = ro.getId().getPath();
         var center = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_center"));
@@ -57,6 +61,21 @@ public class TPBlockStateProvider extends net.minecraftforge.client.model.genera
                     .condition(FLOW, oneWayStates.toArray(new FlowStates[]{}))//向いてる方向以外または塞ぎ込んでるとき
                     .condition(CONNECTIONS.get(d), PIPE).end();//パイプに向けて
         });
+
+        var inv = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_inv"));
+        simpleBlockItem(block, inv);
+    }
+
+    private void node(RegistryObject<Block> ro) {
+        var block = ro.get();
+        var id = ro.getId().getPath();
+        var model = new ModelFile.UncheckedModelFile(modLoc("block/" + id));
+
+
+        var mb = getMultipartBuilder(block);
+        Direction.stream().forEach(d ->
+                rotate(mb.part().modelFile(model), d).addModel()
+                        .condition(TransferNodeBlock.FACING, d).end());
 
         var inv = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_inv"));
         simpleBlockItem(block, inv);
