@@ -53,13 +53,13 @@ public class TransferPipeBlock extends LightingBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext bpc) {
-        return TPUtil.getPipeState(bpc.getLevel(), bpc.getClickedPos());
+        return TPUtil.calcInitialPipeState(bpc.getLevel(), bpc.getClickedPos());
     }
 
     @Override
     public void neighborChanged(BlockState bs, Level l, BlockPos bp, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
         var os = l.getBlockState(bp);
-        var ns = TPUtil.getPipeState(l, bp);
+        var ns = TPUtil.recalcPipeState(l, bp);
         if (ns != os)
             l.setBlockAndUpdate(bp, ns);
         super.neighborChanged(bs, l, bp, p_60512_, p_60513_, p_60514_);
@@ -68,7 +68,7 @@ public class TransferPipeBlock extends LightingBlock {
     @Override
     public InteractionResult use(BlockState bs, Level l, BlockPos bp, Player p, InteractionHand h, BlockHitResult p_60508_) {
         if (p.getItemInHand(h).getItem() == Items.STICK) {
-            l.setBlockAndUpdate(bp, TPUtil.cycleFlow(l, bp, bs));
+            l.setBlockAndUpdate(bp, TPUtil.cycleFlow(l, bp));
             return InteractionResult.SUCCESS;
         }
 

@@ -27,7 +27,7 @@ public class TransferNodeBlockEntity extends BlockEntity {
     public static <T> void tick(Level l, BlockPos p, BlockState bs, T t) {
         if (t instanceof TransferNodeBlockEntity be)
             if (!be.init && be.getPipeState() == TPUtil.defaultPipeState()) {
-                be.setPipeState(TPUtil.getPipeState(l, p));
+                be.setPipeState(TPUtil.recalcPipeState(l, p));
                 be.init = true;
             }
     }

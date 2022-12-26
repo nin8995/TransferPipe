@@ -56,14 +56,14 @@ public class TransferNodeBlock extends LightingBlock implements EntityBlock {
     @Override
     public void neighborChanged(BlockState bs, Level l, BlockPos bp, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
         if (l.getBlockEntity(bp) instanceof TransferNodeBlockEntity be)
-            be.setPipeState(TPUtil.getPipeState(l, bp));
+            be.setPipeState(TPUtil.recalcPipeState(l, bp));
         super.neighborChanged(bs, l, bp, p_60512_, p_60513_, p_60514_);
     }
 
     @Override
     public InteractionResult use(BlockState bs, Level l, BlockPos bp, Player p, InteractionHand h, BlockHitResult p_60508_) {
         if (p.getItemInHand(h).getItem() == Items.STICK && l.getBlockEntity(bp) instanceof TransferNodeBlockEntity be && be.getPipeState() != TPUtil.defaultPipeState()) {
-            be.setPipeState(TPUtil.cycleFlow(l, bp, be.getPipeState()));
+            be.setPipeState(TPUtil.cycleFlow(l, bp));
             return InteractionResult.SUCCESS;
         }
 
@@ -85,7 +85,7 @@ public class TransferNodeBlock extends LightingBlock implements EntityBlock {
     public VoxelShape getShape(BlockState bs, BlockGetter bg, BlockPos bp, CollisionContext context) {
         var be = bg.getBlockEntity(bp, TransferPipe.TRANSFER_NODE_ITEM_BE.get());
         var pipeState = be.isPresent() ? be.get().getPipeState() : TPUtil.defaultPipeState();
-        var pipeShape = pipeState != TPUtil.defaultPipeState() ? TransferPipeBlock.getShape(pipeState) : Shapes.empty();
+        var pipeShape = !TPUtil.hasNoConnection(pipeState) ? TransferPipeBlock.getShape(pipeState) : Shapes.empty();
 
         return Shapes.or(shapeCache.get(bs), pipeShape);
     }

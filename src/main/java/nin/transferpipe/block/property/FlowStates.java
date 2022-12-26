@@ -41,7 +41,7 @@ public enum FlowStates implements StringRepresentable {
         return Arrays.stream(FlowStates.values()).filter(fs -> fs.ordinal() == this.ordinal() + 1).findFirst().orElse(ALL);
     }
 
-    public static FlowStates getNext(Level l, BlockPos bp, BlockState bs) {
+    public static FlowStates getNext(Level l, BlockPos bp, FlowStates currentFlow) {
         var omitted = l.getBlockState(bp).getBlock() == TransferPipe.TRANSFER_NODE_ITEM.get() ? l.getBlockState(bp).getValue(TransferNodeBlock.FACING) : null;
         var validStates = FlowStates.stream().collect(Collectors.toSet());
         var nonValidStates = Direction.stream()
@@ -53,7 +53,7 @@ public enum FlowStates implements StringRepresentable {
             nonValidStates = Direction.stream().map(FlowStates::fromDirection).collect(Collectors.toSet());
         }
         validStates.removeAll(nonValidStates);
-        var searching = bs.getValue(TPProperties.FLOW).next();
+        var searching = currentFlow.next();
         while (true) {
             if (validStates.contains(searching))
                 return searching;
