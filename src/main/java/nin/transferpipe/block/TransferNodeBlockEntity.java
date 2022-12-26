@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import nin.transferpipe.TransferPipe;
 import nin.transferpipe.util.NBTUtil;
+import nin.transferpipe.util.TPUtil;
 import org.jetbrains.annotations.Nullable;
 
 public class TransferNodeBlockEntity extends BlockEntity {
@@ -20,13 +21,13 @@ public class TransferNodeBlockEntity extends BlockEntity {
 
     public TransferNodeBlockEntity(BlockPos p_155229_, BlockState p_155230_) {
         super(TransferPipe.TRANSFER_NODE_ITEM_BE.get(), p_155229_, p_155230_);
-        this.pipeState = TransferPipe.TRANSFER_PIPE.get().defaultBlockState();
+        this.pipeState = TPUtil.defaultPipeState();
     }
 
     public static <T> void tick(Level l, BlockPos p, BlockState bs, T t) {
         if (t instanceof TransferNodeBlockEntity be)
-            if (!be.init && be.getPipeState() == TransferPipe.TRANSFER_PIPE.get().defaultBlockState()) {
-                be.setPipeState(TransferPipeBlock.getState(l, p));
+            if (!be.init && be.getPipeState() == TPUtil.defaultPipeState()) {
+                be.setPipeState(TPUtil.getPipeState(l, p));
                 be.init = true;
             }
     }

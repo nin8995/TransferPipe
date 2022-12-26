@@ -9,12 +9,16 @@ import net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.TransferNodeBlock;
+import nin.transferpipe.block.property.FlowStates;
+
+import java.util.stream.Collectors;
 
 import static nin.transferpipe.TransferPipe.NODES;
 import static nin.transferpipe.TransferPipe.PIPES;
-import static nin.transferpipe.block.TransferPipeBlock.*;
-import static nin.transferpipe.block.TransferPipeBlock.ConnectionStates.MACHINE;
-import static nin.transferpipe.block.TransferPipeBlock.ConnectionStates.PIPE;
+import static nin.transferpipe.block.property.ConnectionStates.MACHINE;
+import static nin.transferpipe.block.property.ConnectionStates.PIPE;
+import static nin.transferpipe.block.property.TPProperties.CONNECTIONS;
+import static nin.transferpipe.block.property.TPProperties.FLOW;
 
 public class TPBlockStateProvider extends net.minecraftforge.client.model.generators.BlockStateProvider {
 
@@ -53,9 +57,7 @@ public class TPBlockStateProvider extends net.minecraftforge.client.model.genera
                     .condition(FLOW, FlowStates.IGNORE)//無視したいとき
                     .condition(CONNECTIONS.get(d), PIPE).end();//パイプに向けて
 
-
-            var theWay = FlowStates.fromDirection(d);
-            var oneWayStates = new java.util.ArrayList<>(FlowStates.directions().filter(f -> f != theWay).toList());
+            var oneWayStates = Direction.stream().filter(f -> f != d).map(FlowStates::fromDirection).collect(Collectors.toSet());
             oneWayStates.add(FlowStates.NONE);
             rotate(mb.part().modelFile(overlayOneway), d).addModel()//一方通行オーバーレイ
                     .condition(FLOW, oneWayStates.toArray(new FlowStates[]{}))//向いてる方向以外または塞ぎ込んでるとき
