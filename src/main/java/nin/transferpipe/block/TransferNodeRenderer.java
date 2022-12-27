@@ -7,8 +7,7 @@ import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.util.RandomSource;
-import nin.transferpipe.TransferPipe;
-import nin.transferpipe.util.TPUtil;
+import nin.transferpipe.util.PipeStateUtil;
 
 public class TransferNodeRenderer implements BlockEntityRenderer<TransferNodeBlockEntity> {
     private final BlockRenderDispatcher blockRenderer;
@@ -21,7 +20,7 @@ public class TransferNodeRenderer implements BlockEntityRenderer<TransferNodeBlo
     public void render(TransferNodeBlockEntity be, float p_112308_, PoseStack pose, MultiBufferSource mbs, int p_112311_, int p_112312_) {
         var vc = mbs.getBuffer(RenderType.cutout());
         var bs = be.getPipeState();
-        if (TPUtil.hasNoConnection(bs))
+        if (PipeStateUtil.hasNoConnection(bs))
             return;
         var bp = be.getBlockPos();
         blockRenderer.getModelRenderer().tesselateBlock(be.getLevel(), blockRenderer.getBlockModel(bs), bs, bp, pose, vc, true, RandomSource.create(), bs.getSeed(bp), 0);

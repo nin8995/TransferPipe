@@ -14,7 +14,7 @@ import nin.transferpipe.block.property.ConnectionStates;
 import nin.transferpipe.block.property.FlowStates;
 import nin.transferpipe.block.property.TPProperties;
 
-public class TPUtil {
+public class PipeStateUtil {
 
     public static BlockState defaultPipeState() {
         return TransferPipe.TRANSFER_PIPE.get().defaultBlockState();
@@ -23,7 +23,7 @@ public class TPUtil {
     public static BlockState currentPipeState(Level l, BlockPos bp) {
         var bs = l.getBlockState(bp);
         return bs.getBlock() instanceof TransferPipeBlock ?
-                    bs.hasProperty(TPProperties.FLOW) ? bs : defaultPipeState()
+                bs.hasProperty(TPProperties.FLOW) ? bs : defaultPipeState()
                 : l.getBlockEntity(bp) instanceof TransferNodeBlockEntity be ? be.getPipeState()
                 : null;//TransferPipeのBlockStateを得得ないときにnull
     }
@@ -34,7 +34,7 @@ public class TPUtil {
     }
 
     public static BlockState calcInitialPipeState(Level l, BlockPos bp) {
-        return calcConnections(l, bp, FlowStates.ALL);
+        return calcConnections(l, bp, defaultPipeState().getValue(TPProperties.FLOW));
     }
 
     public static BlockState recalcPipeState(Level l, BlockPos bp) {
@@ -61,7 +61,7 @@ public class TPUtil {
     public static boolean shouldConnectToPipe(FlowStates myFlow, Level l, BlockPos bp, Direction d) {
         if (isPipe(l, bp, d) && isPipe(l, bp.relative(d), d.getOpposite())) {//双方から見てもパイプであるか
             var yourFlow = currentFlowState(l, bp.relative(d));//パイプである確証があるので絶対に非null
-            return canConnectToPipe(myFlow, d) || canConnectToPipe(yourFlow, d.getOpposite());//自分と相手との間をどちらか一方でも実際に進めるか
+            return canGo(myFlow, d) || canGo(yourFlow, d.getOpposite());//自分と相手との間をどちらか一方でも実際に進めるか
         }
         return false;
     }
@@ -72,7 +72,7 @@ public class TPUtil {
                 || (bs.getBlock() instanceof TransferNodeBlock && bs.getValue(TransferNodeBlock.FACING) != d.getOpposite());//相手はノードであって接地面ではないか
     }
 
-    public static boolean canConnectToPipe(FlowStates f, Direction d) {
+    public static boolean canGo(FlowStates f, Direction d) {
         return f == FlowStates.fromDirection(d) || f == FlowStates.ALL || f == FlowStates.IGNORE;//このflowでd方向に進めるか
     }
 
@@ -81,9 +81,9 @@ public class TPUtil {
                 (l.getBlockEntity(p.relative(d)) instanceof Container || l.getBlockState(p.relative(d)).getBlock() instanceof WorldlyContainerHolder);//トランスファーパイプの働く先か
     }
 
-    public static boolean hasNoConnection(BlockState bs){
+    public static boolean hasNoConnection(BlockState bs) {
         for (Direction d : Direction.values())
-            if(bs.getValue(TPProperties.CONNECTIONS.get(d)) != ConnectionStates.NONE)
+            if (bs.getValue(TPProperties.CONNECTIONS.get(d)) != ConnectionStates.NONE)
                 return false;
         return true;
     }

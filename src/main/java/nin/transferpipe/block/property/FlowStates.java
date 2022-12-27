@@ -4,10 +4,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import nin.transferpipe.TransferPipe;
 import nin.transferpipe.block.TransferNodeBlock;
-import nin.transferpipe.util.TPUtil;
+import nin.transferpipe.util.PipeStateUtil;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -45,7 +44,7 @@ public enum FlowStates implements StringRepresentable {
         var omitted = l.getBlockState(bp).getBlock() == TransferPipe.TRANSFER_NODE_ITEM.get() ? l.getBlockState(bp).getValue(TransferNodeBlock.FACING) : null;
         var validStates = FlowStates.stream().collect(Collectors.toSet());
         var nonValidStates = Direction.stream()
-                .filter(d -> !TPUtil.isPipe(l, bp, d) || d == omitted)
+                .filter(d -> !PipeStateUtil.isPipe(l, bp, d) || d == omitted)
                 .map(FlowStates::fromDirection).collect(Collectors.toSet());
         if (nonValidStates.size() == 6) {
             nonValidStates.add(NONE);

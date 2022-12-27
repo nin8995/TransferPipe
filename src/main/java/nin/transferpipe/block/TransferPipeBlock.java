@@ -22,8 +22,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import nin.transferpipe.block.property.ConnectionStates;
 import nin.transferpipe.block.property.FlowStates;
 import nin.transferpipe.block.property.TPProperties;
+import nin.transferpipe.util.PipeStateUtil;
 import nin.transferpipe.util.ShapeUtil;
-import nin.transferpipe.util.TPUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,13 +53,13 @@ public class TransferPipeBlock extends LightingBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext bpc) {
-        return TPUtil.calcInitialPipeState(bpc.getLevel(), bpc.getClickedPos());
+        return PipeStateUtil.calcInitialPipeState(bpc.getLevel(), bpc.getClickedPos());
     }
 
     @Override
     public void neighborChanged(BlockState bs, Level l, BlockPos bp, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
         var os = l.getBlockState(bp);
-        var ns = TPUtil.recalcPipeState(l, bp);
+        var ns = PipeStateUtil.recalcPipeState(l, bp);
         if (ns != os)
             l.setBlockAndUpdate(bp, ns);
         super.neighborChanged(bs, l, bp, p_60512_, p_60513_, p_60514_);
@@ -68,7 +68,7 @@ public class TransferPipeBlock extends LightingBlock {
     @Override
     public InteractionResult use(BlockState bs, Level l, BlockPos bp, Player p, InteractionHand h, BlockHitResult p_60508_) {
         if (p.getItemInHand(h).getItem() == Items.STICK) {
-            l.setBlockAndUpdate(bp, TPUtil.cycleFlow(l, bp));
+            l.setBlockAndUpdate(bp, PipeStateUtil.cycleFlow(l, bp));
             return InteractionResult.SUCCESS;
         }
 

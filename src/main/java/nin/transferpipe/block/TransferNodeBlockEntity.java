@@ -9,8 +9,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import nin.transferpipe.TransferPipe;
+import nin.transferpipe.search.SearchState;
 import nin.transferpipe.util.NBTUtil;
-import nin.transferpipe.util.TPUtil;
+import nin.transferpipe.util.PipeStateUtil;
 import org.jetbrains.annotations.Nullable;
 
 public class TransferNodeBlockEntity extends BlockEntity {
@@ -18,18 +19,24 @@ public class TransferNodeBlockEntity extends BlockEntity {
     private BlockState pipeState;
     private static final String BLOCK_STATE_KEY = "BlockState";
     private boolean init;
+    private SearchState searchState;
 
     public TransferNodeBlockEntity(BlockPos p_155229_, BlockState p_155230_) {
         super(TransferPipe.TRANSFER_NODE_ITEM_BE.get(), p_155229_, p_155230_);
-        this.pipeState = TPUtil.defaultPipeState();
+        this.pipeState = PipeStateUtil.defaultPipeState();
     }
 
     public static <T> void tick(Level l, BlockPos p, BlockState bs, T t) {
-        if (t instanceof TransferNodeBlockEntity be)
-            if (!be.init && be.getPipeState() == TPUtil.defaultPipeState()) {
-                be.setPipeState(TPUtil.recalcPipeState(l, p));
+        if (t instanceof TransferNodeBlockEntity be) {
+            if (!be.init && be.getPipeState() == PipeStateUtil.defaultPipeState()) {
+                be.setPipeState(PipeStateUtil.recalcPipeState(l, p));
                 be.init = true;
             }
+
+            if (be.searchState == null)
+                be.setSearchState(new SearchState(be, p));
+            be.searchState.tick();
+        }
     }
 
 
@@ -68,5 +75,18 @@ public class TransferNodeBlockEntity extends BlockEntity {
             setChanged();
             level.markAndNotifyBlock(getBlockPos(), level.getChunkAt(getBlockPos()), getBlockState(), getBlockState(), 3, 512);
         }
+    }
+
+    public SearchState getSearchState() {
+        return searchState;
+    }
+
+    public void setSearchState(SearchState ss) {
+        searchState = ss;
+        setChanged();
+    }
+
+    public void resetSearchState() {
+        setSearchState(null);
     }
 }
