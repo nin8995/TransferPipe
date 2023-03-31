@@ -5,7 +5,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -24,17 +23,23 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import nin.transferpipe.TransferPipe;
-import nin.transferpipe.util.PipeStateUtil;
-import nin.transferpipe.util.ShapeUtil;
+import nin.transferpipe.util.PipeUtils;
+import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TransferNodeBlock extends LightingBlock implements EntityBlock {
+//搬送する種類に依らない、「ノード」のブロックとしての機能
+public abstract class TransferNodeBlock extends LightingBlock implements EntityBlock {
+
+    /**
+     * 基本情報
+     */
 
     public static DirectionProperty FACING = BlockStateProperties.FACING;
 
@@ -49,81 +54,93 @@ public class TransferNodeBlock extends LightingBlock implements EntityBlock {
     }
 
     @Override
-    public BlockState getStateForPlacement(BlockPlaceContext bpc) {
-        return defaultBlockState().setValue(FACING, bpc.getClickedFace().getOpposite());
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return defaultBlockState().setValue(FACING, context.getClickedFace().getOpposite());
     }
 
     @Override
-    public void neighborChanged(BlockState bs, Level l, BlockPos bp, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
-        if (l.getBlockEntity(bp) instanceof TransferNodeBlockEntity be)
-            be.setPipeState(PipeStateUtil.recalcPipeState(l, bp));
-        super.neighborChanged(bs, l, bp, p_60512_, p_60513_, p_60514_);
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return type == getType() ? (Level l, BlockPos p, BlockState bs, T t) -> {
+            if (t instanceof TransferNodeBlockEntity be)
+                be.tick(l, p);
+        } : null;
+    }
+
+    /**
+     * 当たり判定
+     */
+
+    public static final Map<Direction, VoxelShape> ROTATED_NODES = TPUtils.getRotatedShapes(Stream.of(
+            Block.box(1, 1, 0, 15, 15, 1),
+            Block.box(3, 3, 1, 13, 13, 4),
+            Block.box(5, 5, 4, 11, 11, 6)
+    ).reduce(Shapes::or).get());
+    public final Map<BlockState, VoxelShape> shapeCache = this.stateDefinition.getPossibleStates().stream().collect(Collectors.toMap(
+            UnaryOperator.identity(),
+            bs -> ROTATED_NODES.get(bs.getValue(FACING))));
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter blockGetter, BlockPos pos, CollisionContext context) {
+        var shape = new AtomicReference<>(shapeCache.get(state));
+        blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
+            if (be.shouldRenderPipe())
+                shape.set(Shapes.or(shape.get(), TransferPipeBlock.getShape(be.getPipeState())));
+        });
+
+        return shape.get();
+    }
+
+    /**
+     * 一般の機能
+     */
+
+    @Override
+    public void neighborChanged(BlockState p_60509_, Level level, BlockPos pos, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
+        if (level.getBlockEntity(pos) instanceof TransferNodeBlockEntity be) {
+            var prevState = be.getPipeState();
+            var currentState = PipeUtils.recalcConnections(level, pos);
+            if (prevState != currentState)
+                be.setPipeStateAndUpdate(currentState);
+        }
+
+        super.neighborChanged(p_60509_, level, pos, p_60512_, p_60513_, p_60514_);
     }
 
     @Override
-    public InteractionResult use(BlockState bs, Level l, BlockPos bp, Player p, InteractionHand h, BlockHitResult p_60508_) {
-        if (p.getItemInHand(h).getItem() == Items.STICK && l.getBlockEntity(bp) instanceof TransferNodeBlockEntity be && be.getPipeState() != PipeStateUtil.defaultPipeState()) {
-            be.setPipeState(PipeStateUtil.cycleFlow(l, bp));
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
+        if (PipeUtils.usingWrench(player, hand) && level.getBlockEntity(pos) instanceof TransferNodeBlockEntity be) {
+            be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos));
             return InteractionResult.SUCCESS;
         }
 
         return InteractionResult.PASS;
     }
 
-    public static final Map<Direction, VoxelShape> TRANSFER_NODES = ShapeUtil.getRotatedShapes(Stream.of(
-            Block.box(1, 1, 0, 15, 15, 1),
-            Block.box(3, 3, 1, 13, 13, 4),
-            Block.box(5, 5, 4, 11, 11, 6)
-    ).reduce(Shapes::or).get());
-    public final Map<BlockState, VoxelShape> shapeCache = this.stateDefinition.getPossibleStates().stream().collect(Collectors.toMap(UnaryOperator.identity(), TransferNodeBlock::calculateShape));
-
-    private static VoxelShape calculateShape(BlockState bs) {
-        return TRANSFER_NODES.get(bs.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState bs, BlockGetter bg, BlockPos bp, CollisionContext context) {
-        var be = bg.getBlockEntity(bp, TransferPipe.TRANSFER_NODE_ITEM_BE.get());
-        var pipeState = be.isPresent() ? be.get().getPipeState() : PipeStateUtil.defaultPipeState();
-        var pipeShape = !PipeStateUtil.hasNoConnection(pipeState) ? TransferPipeBlock.getShape(pipeState) : Shapes.empty();
-
-        return Shapes.or(shapeCache.get(bs), pipeShape);
-    }
+    /**
+     * 搬送種毎の情報
+     */
 
     @Nullable
     @Override
-    public BlockEntity newBlockEntity(BlockPos bp, BlockState bs) {
-        return new TransferNodeBlockEntity(bp, bs);
+    public BlockEntity newBlockEntity(BlockPos p_153215_, BlockState p_153216_) {
+        return entityCreator().apply(p_153215_, p_153216_);
     }
 
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return type == TransferPipe.TRANSFER_NODE_ITEM_BE.get() ? TransferNodeBlockEntity::tick : null;
-    }
+    public abstract BlockEntityType<? extends TransferNodeBlockEntity> getType();
 
-    /*public static final Map<Direction, EnumProperty<NodeStates>> NODES = Direction.stream().collect(Collectors
-            .toMap(UnaryOperator.identity(), d -> EnumProperty.create(d.getName(), NodeStates.class)));
+    //いちいち引数書くのめんどいから::だけで実装したい
+    public abstract BiFunction<BlockPos, BlockState, BlockEntity> entityCreator();
 
-    public TransferNodeBlock(){
-        super(BlockBehaviour.Properties.of(Material.STONE));
-        var s = stateDefinition.any();
-        for (Direction d : Direction.values()) {
-            s = s.setValue(NODES.get(d), NodeStates.NONE);
-        }
-        registerDefaultState(s);
-    }
-
-    public enum NodeStates implements StringRepresentable {
-        NONE,
-        TRANSFER_NODE_ITEM,
-        TRANSFER_NODE_FLUID,
-        RETRIEVAL_NODE_ITEM,
-        RETRIEVAL_NODE_FLUID;
-
+    public static class Item extends TransferNodeBlock {
 
         @Override
-        public String getSerializedName() {
-            return this.name().toLowerCase();
+        public BlockEntityType<? extends TransferNodeBlockEntity> getType() {
+            return TPBlocks.TRANSFER_NODE_ITEM.type();
         }
-    }*/
+
+        @Override
+        public BiFunction<BlockPos, BlockState, BlockEntity> entityCreator() {
+            return TransferNodeBlockEntity.Item::new;
+        }
+    }
 }
