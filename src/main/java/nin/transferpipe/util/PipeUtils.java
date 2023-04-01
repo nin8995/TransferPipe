@@ -84,11 +84,15 @@ public class PipeUtils {
      */
 
     public static boolean shouldConnectToPipe(Flow myFlow, Level l, BlockPos bp, Direction d) {
-        if (isPipe(l, bp, d) && isPipe(l, bp.relative(d), d.getOpposite())) {//パイプ同士になっているか
+        if (eachOtherIsPipe(l, bp, d)) {//パイプ同士になっているか
             var yourFlow = currentFlow(l, bp.relative(d));//パイプである確証があるので絶対に非null
-            return canGoThroughPipe(myFlow, d) || canGoThroughPipe(yourFlow, d.getOpposite());//自分と相手との間をどちらか一方でも実際に進めるか
+            return canFlow(myFlow, yourFlow, d);
         }
         return false;
+    }
+
+    public static boolean eachOtherIsPipe(Level l, BlockPos bp, Direction d) {
+        return isPipe(l, bp, d) && isPipe(l, bp.relative(d), d.getOpposite());
     }
 
     //bpからdを見たらパイプか
@@ -98,17 +102,31 @@ public class PipeUtils {
                 || (bs.getBlock() instanceof TransferNodeBlock && bs.getValue(TransferNodeBlock.FACING) != d.getOpposite());//ノードでも接地面じゃなければOK
     }
 
-    //（先にパイプがあるとして）このflowはd方向に開いているか
-    public static boolean canGoThroughPipe(Flow f, Direction d) {
+    //自分と相手との間をどちらか一方でも実際に進めるか
+    public static boolean canFlow(Flow myFlow, Flow yourFlow, Direction d) {
+        return isFlowOpenToPipe(myFlow, d) || isFlowOpenToPipe(yourFlow, d.getOpposite());
+    }
+
+    //このflowはd方向に開いているか
+    public static boolean isFlowOpenToPipe(Flow f, Direction d) {
         return f == Flow.fromDirection(d) || f == Flow.ALL || f == Flow.IGNORE;
     }
 
+    public static boolean isFlowOpen(Level level, BlockPos pos, Direction dir) {
+        var flow = currentFlow(level, pos);
+        var connection = currentConnection(level, pos, dir);
+        return isFlowOpenToPipe(flow, dir) || connection == Connection.MACHINE;
+    }
+
     public static boolean shouldConnectToMachine(Flow f, Level l, BlockPos p, Direction d) {
-        return f != Flow.IGNORE && isWorkPlace(l, p.relative(d));
+        return f != Flow.IGNORE && isWorkPlace(l, p.relative(d))
+                && !(l.getBlockState(p).getBlock() instanceof TransferNodeBlock && l.getBlockState(p).getValue(TransferNodeBlock.FACING) == d);
     }
 
     public static boolean isWorkPlace(Level l, BlockPos pos) {
-        return l.getBlockEntity(pos) instanceof Container || l.getBlockState(pos).getBlock() instanceof WorldlyContainerHolder;
+        var be = l.getBlockEntity(pos);
+        return !(be instanceof TransferNodeBlockEntity)
+                && (be instanceof Container || l.getBlockState(pos).getBlock() instanceof WorldlyContainerHolder);
     }
 
     public static boolean centerOnly(BlockState bs) {

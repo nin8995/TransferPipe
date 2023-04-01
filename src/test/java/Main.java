@@ -1,6 +1,8 @@
+import net.minecraft.core.Direction;
+
 public class Main {
     public static void main(String[] args){
-        System.out.println(bitCount(0b11000110101111100000100001));
+        System.out.println(Direction.byName("down"));
     }
 
     public static int bitCount(int i){

@@ -6,12 +6,14 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import nin.transferpipe.block.TransferNodeBlockEntity;
-import nin.transferpipe.block.TransferPipeBlock;
 import nin.transferpipe.block.state.Connection;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
+
+import java.util.stream.Stream;
 
 public class Search {
 
@@ -19,65 +21,94 @@ public class Search {
      * 基本情報
      */
 
-    private final TransferNodeBlockEntity be;
-    private BlockPos currentPos;
+    private BlockPos pos;
     private Direction previousPosDir;
 
-    public static String CURRENT_POS = "CurrentPos";
+    public static String POS = "Pos";
     public static String PREVIOUS_POS_DIR = "PreviousPosDir";
+    public TransferNodeBlockEntity be;
+    public Level level;//beから取れるけど簡略化
+    private boolean initialized;//levelをフィールドに使うということは最初の動作時に初期化しないといけないことを意味する
 
-    public Search(TransferNodeBlockEntity be, BlockPos currentPos) {
+    public Search(TransferNodeBlockEntity be, BlockPos pos, Direction facing) {
         this.be = be;
-        this.currentPos = currentPos;
+
+        this.pos = pos;
+        this.previousPosDir = facing;
+    }
+
+    //dirに進む
+    public void proceed(Direction dir) {
+        pos = pos.relative(dir);
+        previousPosDir = dir.getOpposite();
+        be.setChanged();//タイルのSearchStateが更新された
     }
 
     public CompoundTag write() {
         var tag = new CompoundTag();
-        tag.put(CURRENT_POS, NbtUtils.writeBlockPos(currentPos));
-        if (previousPosDir != null)
-            tag.putString(PREVIOUS_POS_DIR, previousPosDir.name());
+        tag.put(POS, NbtUtils.writeBlockPos(pos));
+        tag.putString(PREVIOUS_POS_DIR, previousPosDir.toString());//nameだと大文字になる
 
         return tag;
     }
 
     public Search read(CompoundTag tag) {
-        if (tag.contains(CURRENT_POS))
-            currentPos = NbtUtils.readBlockPos(tag.getCompound(CURRENT_POS));
-        if (tag.contains(PREVIOUS_POS_DIR))
-            previousPosDir = Direction.byName(tag.getString(PREVIOUS_POS_DIR));
-
+        if (tag.contains(POS))
+            pos = NbtUtils.readBlockPos(tag.getCompound(POS));
+        if (tag.contains(PREVIOUS_POS_DIR)) {
+            var str = tag.getString(PREVIOUS_POS_DIR);
+            previousPosDir = Direction.byName(str);
+        }
         return this;
     }
-
 
     /**
      * 機能
      */
 
-
     public void next() {
-        var myState = PipeUtils.currentState(be.getLevel(), currentPos);
-        if (myState == null) {//パイプから外れてるのに検索されたのなら
-            be.terminal(currentPos);
-            be.resetSearchState();
-            return;//目的地に着いたということで終了
+        if (!initialized) {
+            this.level = be.getLevel();
+            initialized = true;
         }
 
-        var validDirections = Direction.stream()
+        //分かりやすさのための検索状況パーティクル
+        if (level instanceof ServerLevel sl)
+            TPUtils.addParticle(sl, ParticleTypes.ANGRY_VILLAGER, pos.getCenter(), Vec3.ZERO, 0);
+
+        //仕事先があれば即出勤
+        var workingDir = getWorkingDir();
+        if (workingDir != null) {
+            proceed(workingDir);
+            be.terminal(pos, previousPosDir);
+            be.resetSearchStatus();
+            return;
+        }
+
+        //次を検索
+        var nextDir = getNextDir();
+        if (nextDir == null) {//見つからなかったらオワオワリ
+            be.resetSearchStatus();
+            return;
+        }
+
+        proceed(nextDir);
+    }
+
+    public Direction getNextDir() {
+        return TPUtils.getRandomlyFrom(getValidDirs().toList(), level.random);
+    }
+
+    public Direction getWorkingDir() {
+        var workingDirs = getValidDirs()
+                .filter(d -> PipeUtils.currentConnection(level, pos, d) == Connection.MACHINE);
+        return TPUtils.getRandomlyFrom(workingDirs.toList(), level.random);
+    }
+
+    public Stream<Direction> getValidDirs() {
+        return Direction.stream()
                 .filter(d -> d != previousPosDir)
-                .filter(d -> PipeUtils.canGoThroughPipe(myState.getValue(TransferPipeBlock.FLOW), d))
-                .filter(d -> myState.getValue(TransferPipeBlock.CONNECTIONS.get(d)) != Connection.NONE).toList();
-        if (validDirections.size() == 0) {
-            be.resetSearchState();
-            return;//詰まったので終了
-        }
-        var directionToSearch = TPUtils.getRandomlyFrom(validDirections, be.getLevel().random);
-
-        currentPos = currentPos.relative(directionToSearch);
-        previousPosDir = directionToSearch.getOpposite();
-        be.setChanged();//タイルのSearchStateが更新された
-
-        if (be.getLevel() instanceof ServerLevel sl)
-            TPUtils.addParticle(sl, ParticleTypes.ANGRY_VILLAGER, currentPos.getCenter(), Vec3.ZERO, 0);
+                .filter(d -> PipeUtils.currentConnection(level, pos, d) != Connection.NONE)
+                .filter(d -> PipeUtils.isFlowOpen(level, pos, d));
     }
 }

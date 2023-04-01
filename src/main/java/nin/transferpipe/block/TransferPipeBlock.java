@@ -23,8 +23,6 @@ import nin.transferpipe.block.state.Flow;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -75,7 +73,7 @@ public class TransferPipeBlock extends LightingBlock {
     }
 
     public static VoxelShape getShape(BlockState bs) {
-        if(shapeCache == null)//RegistryObject.getを使うため、staticのとこには置けない。でもここならいいね
+        if (shapeCache == null)//RegistryObject.getを使うため、staticのとこには置けない。でもここならいいね
             shapeCache = TPBlocks.TRANSFER_PIPE.get().getStateDefinition().getPossibleStates().stream().collect(Collectors.toMap(
                     UnaryOperator.identity(),
                     TransferPipeBlock::calculateShape));

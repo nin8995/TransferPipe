@@ -62,7 +62,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return type == getType() ? (Level l, BlockPos p, BlockState bs, T t) -> {
             if (t instanceof TransferNodeBlockEntity be)
-                be.tick(l, p);
+                be.tick();
         } : null;
     }
 
