@@ -2,9 +2,7 @@ package nin.transferpipe.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.WorldlyContainerHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -79,10 +77,6 @@ public class PipeUtils {
                 : Connection.NONE;
     }
 
-    /**
-     * もろもろの判定
-     */
-
     public static boolean shouldConnectToPipe(Flow myFlow, Level l, BlockPos bp, Direction d) {
         if (eachOtherIsPipe(l, bp, d)) {//パイプ同士になっているか
             var yourFlow = currentFlow(l, bp.relative(d));//パイプである確証があるので絶対に非null
@@ -112,21 +106,24 @@ public class PipeUtils {
         return f == Flow.fromDirection(d) || f == Flow.ALL || f == Flow.IGNORE;
     }
 
-    public static boolean isFlowOpen(Level level, BlockPos pos, Direction dir) {
+    public static boolean shouldConnectToMachine(Flow f, Level l, BlockPos p, Direction d) {
+        return f != Flow.IGNORE && !(l.getBlockState(p).getBlock() instanceof TransferNodeBlock && l.getBlockState(p).getValue(TransferNodeBlock.FACING) == d)
+                && isWorkPlace(l, p.relative(d), d.getOpposite());
+    }
+
+    public static boolean isWorkPlace(Level level, BlockPos pos, @Nullable Direction dir) {
+        return CapabilityUtils.hasItemHandler(level, pos, dir)
+                || ContainerUtils.hasContainer(level, pos);
+    }
+
+    /**
+     * 計算済みのものから判定＆その他パイプ関連
+     */
+
+    public static boolean canProceedPipe(Level level, BlockPos pos, Direction dir) {
         var flow = currentFlow(level, pos);
         var connection = currentConnection(level, pos, dir);
-        return isFlowOpenToPipe(flow, dir) || connection == Connection.MACHINE;
-    }
-
-    public static boolean shouldConnectToMachine(Flow f, Level l, BlockPos p, Direction d) {
-        return f != Flow.IGNORE && isWorkPlace(l, p.relative(d))
-                && !(l.getBlockState(p).getBlock() instanceof TransferNodeBlock && l.getBlockState(p).getValue(TransferNodeBlock.FACING) == d);
-    }
-
-    public static boolean isWorkPlace(Level l, BlockPos pos) {
-        var be = l.getBlockEntity(pos);
-        return !(be instanceof TransferNodeBlockEntity)
-                && (be instanceof Container || l.getBlockState(pos).getBlock() instanceof WorldlyContainerHolder);
+        return connection == Connection.PIPE && isFlowOpenToPipe(flow, dir);
     }
 
     public static boolean centerOnly(BlockState bs) {

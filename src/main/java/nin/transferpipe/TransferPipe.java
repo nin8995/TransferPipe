@@ -1,11 +1,13 @@
 package nin.transferpipe;
 
 import com.mojang.logging.LogUtils;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TransferNodeBlockEntity;
@@ -32,7 +34,13 @@ public class TransferPipe {
     }
 
     @SubscribeEvent
-    public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers e) {
+    public static void clientInit(FMLClientSetupEvent e) {
+        e.enqueueWork(() ->
+                TPBlocks.NODES.forEach(node -> MenuScreens.register(node.menu(), node.screen())));
+    }
+
+    @SubscribeEvent
+    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers e) {
         TPBlocks.NODE_BES.getEntries().forEach(type ->
                 e.registerBlockEntityRenderer((BlockEntityType<? extends TransferNodeBlockEntity>) type.get(), TransferNodeBlockEntity.Renderer::new));
     }

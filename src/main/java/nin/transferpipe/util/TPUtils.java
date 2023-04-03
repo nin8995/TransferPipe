@@ -1,11 +1,12 @@
 package nin.transferpipe.util;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -14,6 +15,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.client.model.data.ModelData;
+import nin.transferpipe.TransferPipe;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,12 +70,12 @@ public class TPUtils {
      * レンダー
      */
 
-    public static void renderBlockState(BlockState blockState, Level level, BlockPos pos, BlockRenderDispatcher renderer, PoseStack pose, VertexConsumer consumer) {
-        renderer.getModelRenderer().tesselateBlock(level, renderer.getBlockModel(blockState), blockState, pos, pose, consumer,
-                true,
-                RandomSource.create(),
-                blockState.getSeed(pos),
-                0);
+    public static void renderBlockStateWithoutSeed(BlockState blockState, Level level, BlockPos pos, BlockRenderDispatcher renderer, PoseStack pose, MultiBufferSource mbs, int overlay) {
+        var model = renderer.getBlockModel(blockState);
+        model.getRenderTypes(blockState, RandomSource.create(), ModelData.EMPTY).forEach(renderType ->
+                renderer.getModelRenderer().tesselateBlock(level, model, blockState, pos, pose, mbs.getBuffer(renderType),
+                        false, RandomSource.create(), 0, overlay, ModelData.EMPTY, renderType));
+
     }
 
     /**
@@ -93,5 +96,9 @@ public class TPUtils {
 
         var list = new ArrayList<>(c);
         return list.get((int) (rand.nextFloat() * list.size()));//0<nextFloat<1のため配列の範囲外エラーは起きない
+    }
+
+    public static ResourceLocation modLoc(String id) {
+        return new ResourceLocation(TransferPipe.MODID, id);
     }
 }

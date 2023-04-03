@@ -1,9 +1,15 @@
 package nin.transferpipe.block;
 
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -21,7 +27,10 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.state.Flow;
+import nin.transferpipe.item.Upgrade;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -36,34 +45,43 @@ import static nin.transferpipe.block.state.Flow.IGNORE;
 public interface TPBlocks {
 
     DeferredRegister<Block> PIPES = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
-    DeferredRegister<Block> NODES = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
+    DeferredRegister<Block> NODE_BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     DeferredRegister<BlockEntityType<?>> NODE_BES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
+    DeferredRegister<MenuType<?>> NODE_MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, MODID);
     DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
 
+    Set<RegistryGUIEntityBlock> NODES = new HashSet<>();
+
     RegistryObject<Block> TRANSFER_PIPE = registerPipe("transfer_pipe", TransferPipeBlock::new);
-    RegistryEntityBlock<TransferNodeBlockEntity> TRANSFER_NODE_ITEM = registerNode("transfer_node_item", TransferNodeBlock.Item::new, TransferNodeBlockEntity.Item::new);
+    RegistryGUIEntityBlock<TransferNodeBlockEntity, TransferNodeMenu.Item, TransferNodeScreen.Item> TRANSFER_NODE_ITEM = registerNode("transfer_node_item",
+            TransferNodeBlock.Item::new, TransferNodeBlockEntity.Item::new, TransferNodeMenu.Item::new, TransferNodeScreen.Item::new);
 
     static RegistryObject<Block> registerPipe(String id, Supplier<Block> block) {
         var ro = PIPES.register(id, block);
-        registerBlockItem(id, ro);
+        ITEMS.register(id, () -> new Upgrade.BlockItem(ro.get(), new Item.Properties()));
         return ro;
     }
 
-    static RegistryEntityBlock<TransferNodeBlockEntity> registerNode(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<TransferNodeBlockEntity> type) {
-        var roBlock = NODES.register(id, block);
-        registerBlockItem(id, roBlock);
-        var roType = NODE_BES.register(id, () -> BlockEntityType.Builder.of(type, roBlock.get()).build(null));
-        return new RegistryEntityBlock<>(roBlock, roType);
-    }
-
-    static RegistryObject<Item> registerBlockItem(String id, RegistryObject<Block> block) {
-        return ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
+    static <M extends TransferNodeMenu, U extends Screen & MenuAccess<M>>
+    RegistryGUIEntityBlock<TransferNodeBlockEntity, M, U> registerNode(String id,
+                                                                       Supplier<Block> block,
+                                                                       BlockEntityType.BlockEntitySupplier<TransferNodeBlockEntity> type,
+                                                                       MenuType.MenuSupplier<M> menu,
+                                                                       MenuScreens.ScreenConstructor<M, U> screen) {
+        var roBlock = NODE_BLOCKS.register(id, block);
+        var roEntity = NODE_BES.register(id, () -> BlockEntityType.Builder.of(type, roBlock.get()).build(null));
+        var roMenu = NODE_MENUS.register(id, () -> new MenuType<>(menu, FeatureFlags.DEFAULT_FLAGS));
+        var ro = new RegistryGUIEntityBlock<>(roBlock, roEntity, roMenu, screen);
+        ITEMS.register(id, () -> new BlockItem(ro.block(), new Item.Properties()));
+        NODES.add(ro);
+        return ro;
     }
 
     static void init(IEventBus eb) {
         PIPES.register(eb);
-        NODES.register(eb);
+        NODE_BLOCKS.register(eb);
         NODE_BES.register(eb);
+        NODE_MENUS.register(eb);
         ITEMS.register(eb);
 
         //クリエタブ登録
@@ -75,14 +93,22 @@ public interface TPBlocks {
     }
 
     //EntityBlockにまつわるRegistryObjectをコード上で取得しやすい用
-    record RegistryEntityBlock<T extends BlockEntity>(RegistryObject<Block> roBlock, RegistryObject<BlockEntityType<T>> roType) {
+    record RegistryGUIEntityBlock<T extends BlockEntity, M extends AbstractContainerMenu, U extends Screen & MenuAccess<M>>
+            (RegistryObject<Block> roBlock,
+             RegistryObject<BlockEntityType<T>> roEntity,
+             RegistryObject<MenuType<M>> roMenu,
+             MenuScreens.ScreenConstructor<M, U> screen) {
 
-        Block block() {
+        public Block block() {
             return roBlock.get();
         }
 
-        BlockEntityType<T> type() {
-            return roType.get();
+        public BlockEntityType<T> entity() {
+            return roEntity.get();
+        }
+
+        public MenuType<M> menu() {
+            return roMenu.get();
         }
     }
 
@@ -96,7 +122,7 @@ public interface TPBlocks {
         @Override
         protected void registerStatesAndModels() {
             PIPES.getEntries().forEach(this::pipe);
-            NODES.getEntries().forEach(this::node);
+            NODE_BLOCKS.getEntries().forEach(this::node);
         }
 
         private void pipe(RegistryObject<Block> ro) {

@@ -2,9 +2,14 @@ package nin.transferpipe.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -23,6 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.network.NetworkHooks;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +48,8 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
      */
 
     public static DirectionProperty FACING = BlockStateProperties.FACING;
+
+    private static final Component CONTAINER_TITLE = Component.translatable("block.node.menu");
 
     public TransferNodeBlock() {
         super(BlockBehaviour.Properties.of(Material.STONE));
@@ -108,9 +116,17 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
-        if (PipeUtils.usingWrench(player, hand) && level.getBlockEntity(pos) instanceof TransferNodeBlockEntity be) {
-            be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos));
-            return InteractionResult.SUCCESS;
+        if (level.getBlockEntity(pos) instanceof TransferNodeBlockEntity be) {
+            if (PipeUtils.usingWrench(player, hand)) {
+                be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos));
+                return InteractionResult.SUCCESS;
+            }
+
+            if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+                NetworkHooks.openScreen(serverPlayer,
+                        this.getMenuProvider(state, level, pos));
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
         return InteractionResult.PASS;
@@ -135,12 +151,21 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
 
         @Override
         public BlockEntityType<? extends TransferNodeBlockEntity> getType() {
-            return TPBlocks.TRANSFER_NODE_ITEM.type();
+            return TPBlocks.TRANSFER_NODE_ITEM.entity();
         }
 
         @Override
         public BiFunction<BlockPos, BlockState, BlockEntity> entityCreator() {
             return TransferNodeBlockEntity.Item::new;
+        }
+
+        @Nullable
+        @Override
+        public MenuProvider getMenuProvider(BlockState p_60563_, Level level, BlockPos pos) {
+            return level.getBlockEntity(pos) instanceof TransferNodeBlockEntity.Item be ? new SimpleMenuProvider(
+                    (i, inv, pl) -> new TransferNodeMenu.Item(be.getItemSlotHandler(), be.getUpgrades(), be.data, i, inv, ContainerLevelAccess.create(level, pos)),
+                    Component.translatable("menu.title.transferpipe.node_item"))
+                    : null;
         }
     }
 }
