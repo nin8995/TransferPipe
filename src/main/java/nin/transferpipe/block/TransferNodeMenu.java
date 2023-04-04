@@ -1,5 +1,6 @@
 package nin.transferpipe.block;
 
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
@@ -10,18 +11,16 @@ import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import nin.transferpipe.item.Upgrade;
 
-public abstract class TransferNodeMenu extends AbstractContainerMenu {
+import java.util.stream.IntStream;
+
+public abstract class TransferNodeMenu extends QuickMoveMenu {
 
     private final ContainerLevelAccess access;
 
     private static final int upgradesY = 92;
     private final ContainerData data;
-    private final int containerStart = 0;
-    private int containerEnd = containerStart + 5;
-    private final int inventoryStart;
-    private final int inventoryEnd;
-    private final int hotbarStart;
-    private final int hotbarEnd;
+    private int upgradesStart;
+    private int upgradesEnd;
 
     protected TransferNodeMenu(Object slot, IItemHandler upgrades, ContainerData data, MenuType type, int containerId, Inventory inv, ContainerLevelAccess access) {
         super(type, containerId);
@@ -30,68 +29,38 @@ public abstract class TransferNodeMenu extends AbstractContainerMenu {
 
         this.addDataSlots(data);
 
+        containerStart = 0;
+        containerEnd = 5;
+        upgradesStart = containerStart;
+        upgradesEnd = containerEnd;
         if (slot instanceof IItemHandler itemSlot) {
             this.addSlot(new SlotItemHandler(itemSlot, 0, 80, -38 + upgradesY));
             containerEnd++;
+            upgradesStart++;
+            upgradesEnd++;
         }
-
         for (int ix = 0; ix < upgrades.getSlots(); ++ix) {
             this.addSlot(new Upgrade.Slot(upgrades, ix, 35 + ix * 18, upgradesY));
         }
 
+        inventoryStart = containerEnd + 1;
+        inventoryEnd = inventoryStart + 26;
         for (int l = 0; l < 3; ++l) {
             for (int k = 0; k < 9; ++k) {
                 this.addSlot(new Slot(inv, k + l * 9 + 9, 8 + k * 18, l * 18 + 22 + upgradesY));
             }
         }
 
+        hotbarStart = inventoryEnd + 1;
+        hotbarEnd = hotbarStart + 8;
         for (int i1 = 0; i1 < 9; ++i1) {
             this.addSlot(new Slot(inv, i1, 8 + i1 * 18, 80 + upgradesY));
         }
-
-        inventoryStart = containerEnd + 1;
-        inventoryEnd = inventoryStart + 26;
-        hotbarStart = inventoryEnd + 1;
-        hotbarEnd = hotbarStart + 8;
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int quickMovedSlotIndex) {
-        var quickMovedStack = ItemStack.EMPTY;
-        var quickMovedSlot = this.slots.get(quickMovedSlotIndex);
-        if (quickMovedSlot.hasItem()) {
-            ItemStack rawStack = quickMovedSlot.getItem();
-            quickMovedStack = rawStack.copy();
-
-            if (quickMovedSlotIndex <= containerEnd) {
-                if (!moveItemTo(rawStack, inventoryStart, hotbarEnd, true))
-                    return ItemStack.EMPTY;
-            } else if (quickMovedSlotIndex <= hotbarEnd) {
-                if (!moveItemTo(rawStack, containerStart, containerEnd, false)) {
-                    if (quickMovedSlotIndex <= inventoryEnd) {
-                        if (!moveItemTo(rawStack, hotbarStart, hotbarEnd, false))
-                            return ItemStack.EMPTY;
-                    } else if (!moveItemTo(rawStack, inventoryStart, inventoryEnd, false))
-                        return ItemStack.EMPTY;
-                }
-            }
-
-            if (rawStack.isEmpty())
-                quickMovedSlot.set(ItemStack.EMPTY);
-            else
-                quickMovedSlot.setChanged();
-
-            if (rawStack.getCount() == quickMovedStack.getCount())
-                return ItemStack.EMPTY;
-
-            quickMovedSlot.onTake(player, rawStack);
-        }
-
-        return quickMovedStack;
-    }
-
-    public boolean moveItemTo(ItemStack item, int minSlot, int maxSlot, boolean fillMaxToMin) {
-        return moveItemStackTo(item, minSlot, maxSlot + 1, fillMaxToMin);
+    public Pair<Integer, Integer> getHighPriorityContainerSlots(ItemStack item) {
+        return item.getItem() instanceof Upgrade ? Pair.of(containerEnd == 6 ? containerStart + 1 : containerStart, containerEnd) : null;
     }
 
     @Override

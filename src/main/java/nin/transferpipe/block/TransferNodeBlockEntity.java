@@ -23,6 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.status.Search;
+import nin.transferpipe.item.TPItems;
 import nin.transferpipe.util.CapabilityUtils;
 import nin.transferpipe.util.ContainerUtils;
 import nin.transferpipe.util.PipeUtils;
@@ -34,7 +35,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 
 //搬送する種類に依らない、「ノード」のタイルエンティティとしての機能
-public abstract class TransferNodeBlockEntity extends BlockEntity {
+public abstract class TransferNodeBlockEntity extends BlockEntity implements TPItems {
 
     /**
      * 基本情報
@@ -44,21 +45,21 @@ public abstract class TransferNodeBlockEntity extends BlockEntity {
     private BlockState pipeState = PipeUtils.defaultState();
     private Search search;
     private int cooltime;
-    private boolean initialized;//でもこれと
-    private boolean searchInvalidated;//これは内部的な値なのでsetterなしで済ませてる
+    private boolean initialized;//でもこれは内部的な値なのでsetterなしで済ませてる
     private final ItemStackHandler upgrades;
 
     public static final String PIPE_STATE = "PipeState";
     public static final String SEARCH = "Search";
     public static String COOLTIME = "Cooltime";
     public static final String INITIALIZED = "Initialized";
-    public static final String SEARCH_INVALIDATED = "SearchInvalidated";
     public static final String UPGRADES = "Upgrades";
     public final BlockPos POS;
     public final Direction FACING;
     public final BlockPos FACING_POS;
     public final Direction FACED;
-    private boolean isSearching;
+    public boolean isSearching;
+    public int coolRate;
+    public boolean stackMode;
     public ContainerData data = new ContainerData() {
         public int get(int p_58431_) {
             return switch (p_58431_) {
@@ -208,24 +209,35 @@ public abstract class TransferNodeBlockEntity extends BlockEntity {
     public void tick() {
         //インスタンス生成時はlevelがnullでpipeState分らんからここで
         if (!initialized) {
-            this.setPipeStateAndUpdate(PipeUtils.recalcConnections(level, worldPosition));
+            setPipeStateAndUpdate(PipeUtils.recalcConnections(level, worldPosition));
+            calcUpgrades();
             initialized = true;//setChangedは上で呼ばれてる
         }
 
 
-        decreaseCooltime();
+        cooltime -= coolRate;
+
         while (cooltime <= 0) {
             //if(canWork(POS, FACED))あってもいいけどなくてもいい
             facing();
             isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
             if (isSearching)
                 setSearch(search.proceed());
-            cooltime += 10;
+            cooltime += 20;
         }
     }
 
-    public void decreaseCooltime() {
-        cooltime--;
+    public void calcUpgrades() {
+        coolRate = 2;
+        stackMode = false;
+
+        IntStream.range(0, upgrades.getSlots()).forEach(slot -> {
+            var upgrade = upgrades.getStackInSlot(slot);
+            if(upgrade.is(SPEED_UPGRADE.get()))
+                coolRate++;
+            if(upgrade.is(STACK_UPGRADE.get()))
+                stackMode = true;
+        });
     }
 
     /**
@@ -302,7 +314,7 @@ public abstract class TransferNodeBlockEntity extends BlockEntity {
 
         public void tryPull(IItemHandler handler) {
             forFirstPullableSlot(handler, slot ->
-                    receive(handler.extractItem(slot, getPullAmount(), false)));
+                    receive(handler.extractItem(slot, getPullAmount(handler.getStackInSlot(slot)), false)));
         }
 
         public void forFirstPullableSlot(IItemHandler handler, IntConsumer func) {
@@ -313,7 +325,7 @@ public abstract class TransferNodeBlockEntity extends BlockEntity {
 
         public void tryPull(Container container, Direction dir) {
             forFirstPullableSlot(container, dir, slot ->
-                    receive(container.removeItem(slot, getPullAmount())));
+                    receive(container.removeItem(slot, getPullAmount(container.getItem(slot)))));
         }
 
         public void forFirstPullableSlot(Container container, Direction dir, IntConsumer func) {
@@ -341,8 +353,10 @@ public abstract class TransferNodeBlockEntity extends BlockEntity {
             return ItemStack.isSameItemSameTags(toBeAdded, toAdd) && toAdd.getCount() + toBeAdded.getCount() <= toBeAdded.getMaxStackSize();
         }
 
-        public int getPullAmount() {
-            return Math.min(1, getItemSlot().getMaxStackSize() - getItemSlot().getCount());
+        public int getPullAmount(ItemStack in) {
+            var pullableAmount = stackMode ? in.getMaxStackSize() : 1;
+            var receivableAmount = getItemSlot().isEmpty() ? getItemSlot().getMaxStackSize() : getItemSlot().getMaxStackSize() - getItemSlot().getCount();
+            return Math.min(pullableAmount, receivableAmount);
         }
 
         public void receive(ItemStack item) {

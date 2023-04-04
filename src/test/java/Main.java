@@ -1,8 +1,17 @@
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 public class Main {
     public static void main(String[] args){
-        System.out.println(Direction.byName("down"));
+        Player player;
+        int slotIndex;
+        Slot  slot;
+
+        ItemStack item = this.quickMoveStack(player, slotIndex);
+        while(!item.isEmpty() && ItemStack.isSame(slot.getItem(), item))
+            item = this.quickMoveStack(player, slotIndex);
     }
 
     public static int bitCount(int i){

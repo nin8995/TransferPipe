@@ -77,19 +77,12 @@ public interface TPBlocks {
         return ro;
     }
 
-    static void init(IEventBus eb) {
-        PIPES.register(eb);
-        NODE_BLOCKS.register(eb);
-        NODE_BES.register(eb);
-        NODE_MENUS.register(eb);
-        ITEMS.register(eb);
-
-        //クリエタブ登録
-        eb.addListener((CreativeModeTabEvent.Register e) -> e.registerCreativeModeTab(new ResourceLocation(MODID, MODID), b -> b
-                .icon(() -> new ItemStack(TRANSFER_PIPE.get()))
-                .title(Component.translatable(MODID))
-                .displayItems((params, output) -> ITEMS.getEntries().stream().map(RegistryObject::get).forEach(output::accept))
-        ));
+    static void init(IEventBus bus) {
+        PIPES.register(bus);
+        NODE_BLOCKS.register(bus);
+        NODE_BES.register(bus);
+        NODE_MENUS.register(bus);
+        ITEMS.register(bus);
     }
 
     //EntityBlockにまつわるRegistryObjectをコード上で取得しやすい用

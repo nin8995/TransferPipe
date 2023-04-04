@@ -123,8 +123,8 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
             }
 
             if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
-                NetworkHooks.openScreen(serverPlayer,
-                        this.getMenuProvider(state, level, pos));
+                NetworkHooks.openScreen(serverPlayer, this.getMenuProvider(state, level, pos));
+                be.setChanged();//ほんとはslotが変わったときにMenu側からsetChanged呼びたい
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
