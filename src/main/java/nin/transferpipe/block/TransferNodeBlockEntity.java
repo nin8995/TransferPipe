@@ -91,7 +91,7 @@ public abstract class TransferNodeBlockEntity extends BlockEntity {
         FACING = getBlockState().getValue(TransferNodeBlock.FACING);
         FACING_POS = worldPosition.relative(FACING);
         FACED = FACING.getOpposite();
-        setSearch(new Search(this).reset());
+        setSearch(new Search(this));
         upgrades = new ItemStackHandler(6);
     }
 
@@ -193,11 +193,11 @@ public abstract class TransferNodeBlockEntity extends BlockEntity {
 
         @Override
         public void render(TransferNodeBlockEntity be, float p_112308_, PoseStack pose, MultiBufferSource mbs, int p_112311_, int overlay) {
-            var pipeState = be.getPipeState();
+            var level = be.getLevel();
 
-            if (be.shouldRenderPipe())
-                TPUtils.renderBlockStateWithoutSeed(pipeState, be.getLevel(), be.getBlockPos(),
-                        blockRenderer, pose, mbs, overlay);
+            if (be.shouldRenderPipe() && level != null)//いつlevelがnullになるの
+                TPUtils.renderBlockStateWithoutSeed(be.getPipeState(), level, be.getBlockPos(),
+                        blockRenderer, pose, mbs, p_112311_);
         }
     }
 
@@ -212,12 +212,12 @@ public abstract class TransferNodeBlockEntity extends BlockEntity {
             initialized = true;//setChangedは上で呼ばれてる
         }
 
-        isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
-        decreaseCooltime();
 
+        decreaseCooltime();
         while (cooltime <= 0) {
             //if(canWork(POS, FACED))あってもいいけどなくてもいい
             facing();
+            isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
             if (isSearching)
                 setSearch(search.proceed());
             cooltime += 10;

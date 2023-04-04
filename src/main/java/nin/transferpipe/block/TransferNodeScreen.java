@@ -21,6 +21,12 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
     }
 
     @Override
+    public void render(PoseStack p_97795_, int p_97796_, int p_97797_, float p_97798_) {
+        renderBackground(p_97795_);
+        super.render(p_97795_, p_97796_, p_97797_, p_97798_);
+    }
+
+    @Override
     protected void renderBg(PoseStack pose, float p_97788_, int p_97789_, int p_97790_) {
         RenderSystem.setShaderTexture(0, BG);
         blit(pose, this.leftPos, (this.height - 224) / 2, 0, 0, 176, 225);
@@ -47,10 +53,5 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
             super(p_97741_, p_97742_, p_97743_);
         }
 
-        @Override
-        protected void renderBg(PoseStack pose, float p_97788_, int p_97789_, int p_97790_) {
-            super.renderBg(pose, p_97788_, p_97789_, p_97790_);
-            //blit(p_97787_, this.leftPos + 59, this.topPos + 20, 0, this.imageHeight + (this.menu.getSlot(0).hasItem() ? 0 : 16), 110, 16);
-        }
     }
 }

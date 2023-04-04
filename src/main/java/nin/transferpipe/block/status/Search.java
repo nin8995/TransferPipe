@@ -35,6 +35,7 @@ public class Search {
     public Search(TransferNodeBlockEntity be) {
         this.be = be;
         currentPos = be.POS;
+        reset();
     }
 
     public Search reset() {

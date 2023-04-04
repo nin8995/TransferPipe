@@ -15,6 +15,9 @@ import nin.transferpipe.block.state.Connection;
 import nin.transferpipe.block.state.Flow;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 //外部からパイプの各パラメーターを弄る
 public class PipeUtils {
 
@@ -126,8 +129,14 @@ public class PipeUtils {
         return connection == Connection.PIPE && isFlowOpenToPipe(flow, dir);
     }
 
+    public static Set<BlockState> centers = Flow.stream().map(flow -> {
+        var state = defaultState();
+        state.setValue(TransferPipeBlock.FLOW, flow);
+        return state;
+    }).collect(Collectors.toSet());
+
     public static boolean centerOnly(BlockState bs) {
-        return Direction.stream().allMatch(d -> bs.getValue(TransferPipeBlock.CONNECTIONS.get(d)) == Connection.NONE);
+        return centers.contains(bs);
     }
 
     public static boolean usingWrench(Player pl, InteractionHand hand) {

@@ -3,6 +3,7 @@ package nin.transferpipe.util;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -70,11 +71,11 @@ public class TPUtils {
      * レンダー
      */
 
-    public static void renderBlockStateWithoutSeed(BlockState blockState, Level level, BlockPos pos, BlockRenderDispatcher renderer, PoseStack pose, MultiBufferSource mbs, int overlay) {
+    public static void renderBlockStateWithoutSeed(BlockState blockState, Level level, BlockPos pos, BlockRenderDispatcher renderer, PoseStack pose, MultiBufferSource mbs, int nazo) {
         var model = renderer.getBlockModel(blockState);
-        model.getRenderTypes(blockState, RandomSource.create(), ModelData.EMPTY).forEach(renderType ->
+        model.getRenderTypes(blockState, level.random, ModelData.EMPTY).forEach(renderType ->
                 renderer.getModelRenderer().tesselateBlock(level, model, blockState, pos, pose, mbs.getBuffer(renderType),
-                        false, RandomSource.create(), 0, overlay, ModelData.EMPTY, renderType));
+                        true, level.random, nazo, OverlayTexture.NO_OVERLAY));
 
     }
 
