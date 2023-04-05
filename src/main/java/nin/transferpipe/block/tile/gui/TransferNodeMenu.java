@@ -2,17 +2,16 @@ package nin.transferpipe.block.tile.gui;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.*;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import nin.transferpipe.block.SlotFluidItemHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.item.Upgrade;
 
@@ -90,7 +89,7 @@ public abstract class TransferNodeMenu extends BaseMenu {
             addDataSlots(liquidData);
         }
 
-        public FluidStack getLiquid(){
+        public FluidStack getLiquid() {
             return new FluidStack(Block.stateById(liquidData.get(0)).getFluidState().getType(), liquidData.get(1));
         }
 

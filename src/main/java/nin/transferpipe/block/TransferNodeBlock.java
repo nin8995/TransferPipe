@@ -172,7 +172,8 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
         }
     }
 
-    public static class Liquid extends TransferNodeBlock{
+    public static class Liquid extends TransferNodeBlock {
+        
         @Override
         public BlockEntityType<? extends TileTransferNode> getType() {
             return TPBlocks.TRANSFER_NODE_LIQUID.entity();

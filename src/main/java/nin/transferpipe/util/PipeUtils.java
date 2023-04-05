@@ -8,11 +8,11 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.block.tile.TileTransferNode;
 import nin.transferpipe.block.TransferNodeBlock;
 import nin.transferpipe.block.TransferPipeBlock;
 import nin.transferpipe.block.state.Connection;
 import nin.transferpipe.block.state.Flow;
+import nin.transferpipe.block.tile.TileTransferNode;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;

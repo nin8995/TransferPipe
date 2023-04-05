@@ -36,7 +36,7 @@ public enum Flow implements StringRepresentable {
         return Flow.stream().filter(f -> f.name().equals(d.name())).findFirst().orElse(null);
     }
 
-    public Direction toDir(){
+    public Direction toDir() {
         return Direction.stream().filter(d -> d.name().equals(this.name())).findFirst().orElse(null);
     }
 

@@ -8,8 +8,8 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import nin.transferpipe.block.tile.TileTransferNode;
 import nin.transferpipe.block.state.Connection;
+import nin.transferpipe.block.tile.TileTransferNode;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 
