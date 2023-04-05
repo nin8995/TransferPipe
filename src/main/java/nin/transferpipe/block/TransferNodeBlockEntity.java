@@ -24,6 +24,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.status.Search;
 import nin.transferpipe.item.TPItems;
+import nin.transferpipe.item.Upgrade;
 import nin.transferpipe.util.CapabilityUtils;
 import nin.transferpipe.util.ContainerUtils;
 import nin.transferpipe.util.PipeUtils;
@@ -45,18 +46,19 @@ public abstract class TransferNodeBlockEntity extends BlockEntity implements TPI
     private BlockState pipeState = PipeUtils.defaultState();
     private Search search;
     private int cooltime;
-    private boolean initialized;//でもこれは内部的な値なのでsetterなしで済ませてる
+    private boolean firstTick = true;//でもこれは内部的な値なのでsetterなしで済ませてる
     private final ItemStackHandler upgrades;
 
     public static final String PIPE_STATE = "PipeState";
     public static final String SEARCH = "Search";
     public static String COOLTIME = "Cooltime";
-    public static final String INITIALIZED = "Initialized";
+    public static final String FIRST_TICK = "FirstTick";
     public static final String UPGRADES = "Upgrades";
     public final BlockPos POS;
     public final Direction FACING;
     public final BlockPos FACING_POS;
     public final Direction FACED;
+    public boolean initialized;
     public boolean isSearching;
     public int coolRate;
     public boolean stackMode;
@@ -93,7 +95,7 @@ public abstract class TransferNodeBlockEntity extends BlockEntity implements TPI
         FACING_POS = worldPosition.relative(FACING);
         FACED = FACING.getOpposite();
         setSearch(new Search(this));
-        upgrades = new ItemStackHandler(6);
+        upgrades = new Upgrade.ItemHandler(6, this);
     }
 
     /**
@@ -144,7 +146,7 @@ public abstract class TransferNodeBlockEntity extends BlockEntity implements TPI
         tag.put(PIPE_STATE, NbtUtils.writeBlockState(pipeState));
         tag.put(SEARCH, search.write());
         tag.putInt(COOLTIME, cooltime);
-        tag.putBoolean(INITIALIZED, initialized);
+        tag.putBoolean(FIRST_TICK, firstTick);
         tag.put(UPGRADES, upgrades.serializeNBT());
     }
 
@@ -157,8 +159,8 @@ public abstract class TransferNodeBlockEntity extends BlockEntity implements TPI
             search = search.read(tag.getCompound(SEARCH));
         if (tag.contains(COOLTIME))
             cooltime = tag.getInt(COOLTIME);
-        if (tag.contains(INITIALIZED))
-            initialized = tag.getBoolean(INITIALIZED);
+        if (tag.contains(FIRST_TICK))
+            firstTick = tag.getBoolean(FIRST_TICK);
         if (tag.contains(UPGRADES))
             upgrades.deserializeNBT(tag.getCompound(UPGRADES));
     }
@@ -180,6 +182,44 @@ public abstract class TransferNodeBlockEntity extends BlockEntity implements TPI
     /**
      * 一般の機能
      */
+
+    public void tick() {
+        //インスタンス生成時はlevelがnullでpipeState分らんからここで
+        if (firstTick) {
+            setPipeStateAndUpdate(PipeUtils.calcInitialState(level, worldPosition));
+            firstTick = false;//setChangedは上で呼ばれてる
+        }
+
+        if (!initialized) {
+            calcUpgrades();
+            initialized = true;
+        }
+
+
+        cooltime -= coolRate;
+
+        while (cooltime <= 0) {
+            //if(canWork(POS, FACED))あってもいいけどなくてもいい
+            facing();
+            isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
+            if (isSearching)
+                setSearch(search.proceed());
+            cooltime += 20;
+        }
+    }
+
+    public void calcUpgrades() {
+        coolRate = 2;
+        stackMode = false;
+
+        IntStream.range(0, upgrades.getSlots()).forEach(slot -> {
+            var upgrade = upgrades.getStackInSlot(slot);
+            if(upgrade.is(SPEED_UPGRADE.get()))
+                coolRate += upgrade.getCount();
+            if(upgrade.is(STACK_UPGRADE.get()))
+                stackMode = true;
+        });
+    }
 
     //PipeState(特定のパイプの特定の状況)を表示
     // TODO ノード本体が視界外になるだけでPipeStateが表示されなくなる
@@ -206,40 +246,6 @@ public abstract class TransferNodeBlockEntity extends BlockEntity implements TPI
         return !PipeUtils.centerOnly(pipeState);
     }
 
-    public void tick() {
-        //インスタンス生成時はlevelがnullでpipeState分らんからここで
-        if (!initialized) {
-            setPipeStateAndUpdate(PipeUtils.recalcConnections(level, worldPosition));
-            calcUpgrades();
-            initialized = true;//setChangedは上で呼ばれてる
-        }
-
-
-        cooltime -= coolRate;
-
-        while (cooltime <= 0) {
-            //if(canWork(POS, FACED))あってもいいけどなくてもいい
-            facing();
-            isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
-            if (isSearching)
-                setSearch(search.proceed());
-            cooltime += 20;
-        }
-    }
-
-    public void calcUpgrades() {
-        coolRate = 2;
-        stackMode = false;
-
-        IntStream.range(0, upgrades.getSlots()).forEach(slot -> {
-            var upgrade = upgrades.getStackInSlot(slot);
-            if(upgrade.is(SPEED_UPGRADE.get()))
-                coolRate++;
-            if(upgrade.is(STACK_UPGRADE.get()))
-                stackMode = true;
-        });
-    }
-
     /**
      * 搬送種毎の機能
      */
@@ -264,7 +270,7 @@ public abstract class TransferNodeBlockEntity extends BlockEntity implements TPI
 
         public Item(BlockPos p_155229_, BlockState p_155230_) {
             super(TPBlocks.TRANSFER_NODE_ITEM.entity(), p_155229_, p_155230_);
-            itemSlot = new ItemStackHandler();
+            itemSlot = new TileItemHandler(1, this);
         }
 
         public IItemHandler getItemSlotHandler() {

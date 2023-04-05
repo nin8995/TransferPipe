@@ -24,6 +24,7 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
     public void render(PoseStack p_97795_, int p_97796_, int p_97797_, float p_97798_) {
         renderBackground(p_97795_);
         super.render(p_97795_, p_97796_, p_97797_, p_97798_);
+        renderTooltip(p_97795_, p_97796_, p_97797_);
     }
 
     @Override
