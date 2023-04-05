@@ -1,24 +1,43 @@
-package nin.transferpipe.block;
+package nin.transferpipe.block.tile.gui;
 
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class QuickMoveMenu extends AbstractContainerMenu {
+public abstract class BaseMenu extends AbstractContainerMenu {
 
-    public int containerStart;
+    private final ContainerLevelAccess access;
+
+    public int inventoryStart = 0;
+    public int inventoryEnd = inventoryStart + 26;
+    public int hotbarStart = inventoryEnd + 1;
+    public int hotbarEnd = hotbarStart + 8;
+    public int containerStart = hotbarEnd + 1;
     public int containerEnd;
-    public int inventoryStart;
-    public int inventoryEnd;
-    public int hotbarStart;
-    public int hotbarEnd;
 
-    protected QuickMoveMenu(@Nullable MenuType<?> p_38851_, int p_38852_) {
+    protected BaseMenu(@Nullable MenuType<?> p_38851_, int p_38852_, Inventory inv, ContainerLevelAccess access) {
         super(p_38851_, p_38852_);
+        this.access = access;
+
+        for (int l = 0; l < 3; ++l) {
+            for (int k = 0; k < 9; ++k) {
+                this.addSlot(new Slot(inv, k + l * 9 + 9, 8 + k * 18, l * 18 + 22 + getOffsetY()));
+            }
+        }
+
+        for (int i1 = 0; i1 < 9; ++i1) {
+            this.addSlot(new Slot(inv, i1, 8 + i1 * 18, 80 + getOffsetY()));
+        }
     }
+
+    public abstract int getOffsetY();
 
     //返り値がEmptyかスロットのものと違う種類になるまで呼ばれ続ける
     @Override
@@ -27,10 +46,10 @@ public abstract class QuickMoveMenu extends AbstractContainerMenu {
         if (quickMovedSlot.hasItem()) {
             var item = quickMovedSlot.getItem();
 
-            if (quickMovedSlotIndex <= containerEnd) {//コンテナスロットなら
-                if(!moveItemTo(item, inventoryStart, hotbarEnd, true))//インベントリに差して
+            if (containerStart <= quickMovedSlotIndex && quickMovedSlotIndex <= containerEnd) {//コンテナスロットなら
+                if (!moveItemTo(item, inventoryStart, hotbarEnd, true))//インベントリに差して
                     return ItemStack.EMPTY;//差せなければ終わり
-            } else if (quickMovedSlotIndex <= hotbarEnd) {//インベントリスロットなら
+            } else if (inventoryStart <= quickMovedSlotIndex && quickMovedSlotIndex <= hotbarEnd) {//インベントリスロットなら
                 //まず優先度の高いコンテナスロットに差してから
                 var highPriorities = getHighPriorityContainerSlots(item);
                 var slotChanged = false;
@@ -46,6 +65,8 @@ public abstract class QuickMoveMenu extends AbstractContainerMenu {
                     } else if (!moveItemTo(item, inventoryStart, inventoryEnd, false) && !slotChanged)
                         return ItemStack.EMPTY;//終わり
                 }
+            } else {//範囲外なら
+                return ItemStack.EMPTY;//終わり
             }
 
             //スロットが変わった
@@ -62,4 +83,12 @@ public abstract class QuickMoveMenu extends AbstractContainerMenu {
     }
 
     public abstract Pair<Integer, Integer> getHighPriorityContainerSlots(ItemStack item);
+
+    @Override
+    public boolean stillValid(Player player) {
+        return AbstractContainerMenu.stillValid(this.access, player, getBlock());
+    }
+
+    public abstract Block getBlock();
+
 }

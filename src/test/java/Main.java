@@ -5,14 +5,16 @@ import net.minecraft.world.item.ItemStack;
 
 public class Main {
     public static void main(String[] args){
-        Player player;
+
+    }
+
+    /*Player player;
         int slotIndex;
         Slot  slot;
 
         ItemStack item = this.quickMoveStack(player, slotIndex);
         while(!item.isEmpty() && ItemStack.isSame(slot.getItem(), item))
-            item = this.quickMoveStack(player, slotIndex);
-    }
+            item = this.quickMoveStack(player, slotIndex);*/
 
     public static int bitCount(int i){
         i = i - ((i >> 1) & 0x55555555);

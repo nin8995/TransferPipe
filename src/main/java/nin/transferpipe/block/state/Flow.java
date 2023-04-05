@@ -32,8 +32,12 @@ public enum Flow implements StringRepresentable {
         return Arrays.stream(Flow.values());
     }
 
-    public static Flow fromDirection(Direction d) {
-        return Flow.stream().filter(f -> f.name().equals(d.name())).findFirst().get();
+    public static Flow fromDir(Direction d) {
+        return Flow.stream().filter(f -> f.name().equals(d.name())).findFirst().orElse(null);
+    }
+
+    public Direction toDir(){
+        return Direction.stream().filter(d -> d.name().equals(this.name())).findFirst().orElse(null);
     }
 
     public Flow nextOrdinal() {
@@ -73,7 +77,7 @@ public enum Flow implements StringRepresentable {
             connectableDirs.clear();//のでその方角をも除去
         //ブロック置いてみたらいきなりボーダーが出てきたってのもアレなのでALL優先
 
-        validFlows.addAll(connectableDirs.stream().map(Flow::fromDirection).collect(Collectors.toSet()));
+        validFlows.addAll(connectableDirs.stream().map(Flow::fromDir).collect(Collectors.toSet()));
         return validFlows;
     }
 
@@ -84,6 +88,6 @@ public enum Flow implements StringRepresentable {
     }
 
     public static Set<Flow> directionalFlows() {
-        return Direction.stream().map(Flow::fromDirection).collect(Collectors.toSet());
+        return Direction.stream().map(Flow::fromDir).collect(Collectors.toSet());
     }
 }

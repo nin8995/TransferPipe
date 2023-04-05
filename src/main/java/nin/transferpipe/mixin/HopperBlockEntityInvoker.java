@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 @Mixin(HopperBlockEntity.class)
 public class HopperBlockEntityInvoker {
 
-    //なぜかNoClassDefFoundError
+    //なぜかNoClassDefFoundErrorで使えんかった
     @Invoker("canPlaceItemInContainer")
     public static boolean invokeCanPlaceItemInContainer(Container p_59335_, ItemStack p_59336_, int p_59337_, @Nullable Direction p_59338_) {
         throw new AssertionError();

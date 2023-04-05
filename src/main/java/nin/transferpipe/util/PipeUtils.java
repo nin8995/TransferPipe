@@ -8,8 +8,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import nin.transferpipe.block.TPBlocks;
+import nin.transferpipe.block.tile.TileTransferNode;
 import nin.transferpipe.block.TransferNodeBlock;
-import nin.transferpipe.block.TransferNodeBlockEntity;
 import nin.transferpipe.block.TransferPipeBlock;
 import nin.transferpipe.block.state.Connection;
 import nin.transferpipe.block.state.Flow;
@@ -33,7 +33,7 @@ public class PipeUtils {
     public static BlockState currentState(Level level, BlockPos pos) {
         var bs = level.getBlockState(pos);
         return bs.getBlock() instanceof TransferPipeBlock ? bs
-                : level.getBlockEntity(pos) instanceof TransferNodeBlockEntity be ? be.getPipeState()
+                : level.getBlockEntity(pos) instanceof TileTransferNode be ? be.getPipeState()
                 : null;//PipeStateを得得ないときにnull
     }
 
@@ -106,7 +106,7 @@ public class PipeUtils {
 
     //このflowはd方向に開いているか
     public static boolean isFlowOpenToPipe(Flow f, Direction d) {
-        return f == Flow.fromDirection(d) || f == Flow.ALL || f == Flow.IGNORE;
+        return f == Flow.fromDir(d) || f == Flow.ALL || f == Flow.IGNORE;
     }
 
     public static boolean shouldConnectToMachine(Flow f, Level l, BlockPos p, Direction d) {
@@ -115,8 +115,8 @@ public class PipeUtils {
     }
 
     public static boolean isWorkPlace(Level level, BlockPos pos, @Nullable Direction dir) {
-        return CapabilityUtils.hasItemHandler(level, pos, dir)
-                || ContainerUtils.hasContainer(level, pos);
+        return !(level.getBlockEntity(pos) instanceof TileTransferNode)
+                && (HandlerUtils.hasItemHandler(level, pos, dir) || ContainerUtils.hasContainer(level, pos));
     }
 
     /**

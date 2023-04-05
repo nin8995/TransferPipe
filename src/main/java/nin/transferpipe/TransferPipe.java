@@ -15,7 +15,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.block.TransferNodeBlockEntity;
+import nin.transferpipe.block.tile.TileTransferNode;
 import nin.transferpipe.item.TPItems;
 import org.slf4j.Logger;
 
@@ -59,6 +59,6 @@ public class TransferPipe {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers e) {
         TPBlocks.NODE_BES.getEntries().forEach(type ->
-                e.registerBlockEntityRenderer((BlockEntityType<? extends TransferNodeBlockEntity>) type.get(), TransferNodeBlockEntity.Renderer::new));
+                e.registerBlockEntityRenderer((BlockEntityType<? extends TileTransferNode>) type.get(), TileTransferNode.Renderer::new));
     }
 }

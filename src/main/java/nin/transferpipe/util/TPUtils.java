@@ -1,28 +1,39 @@
 package nin.transferpipe.util;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.fluids.FluidStack;
 import nin.transferpipe.TransferPipe;
+import nin.transferpipe.mixin.AtlasAccessor;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -79,6 +90,66 @@ public class TPUtils {
 
     }
 
+    public static void renderLiquid(FluidStack liquid, PoseStack pose, int x, int y, int size) {
+        var color = IClientFluidTypeExtensions.of(liquid.getFluid()).getTintColor();
+
+        renderWithColor(color, () -> forStillFluidSprite(liquid, sprite -> blit(sprite, pose, x, y, size)));
+    }
+
+    public static void renderWithColor(int argb, Runnable renderer) {
+        float a = ARGB32.alpha(argb) / 255F;
+        float r = ARGB32.red(argb) / 255F;
+        float g = ARGB32.green(argb) / 255F;
+        float b = ARGB32.blue(argb) / 255F;
+
+        RenderSystem.enableBlend();
+        RenderSystem.setShaderColor(r, g, b, a);
+
+        renderer.run();
+
+        RenderSystem.setShaderColor(1, 1, 1, 1);
+        RenderSystem.disableBlend();
+    }
+
+    public static void forStillFluidSprite(FluidStack fluidStack, Consumer<TextureAtlasSprite> func) {
+        var fluid = fluidStack.getFluid();
+        var renderProperties = IClientFluidTypeExtensions.of(fluid);
+        var fluidStill = renderProperties.getStillTexture(fluidStack);
+
+        var sprite = Minecraft.getInstance()
+                .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
+                .apply(fluidStill);
+        if (sprite.atlasLocation() != MissingTextureAtlasSprite.getLocation())
+            func.accept(sprite);
+    }
+
+    public static void blit(TextureAtlasSprite sprite, PoseStack pose, int x, int y, int blitSize) {
+        var atlas = (AtlasAccessor) Minecraft.getInstance().getModelManager().getAtlas(sprite.atlasLocation());
+        var image = sprite.contents().getOriginalImage();
+
+        var textureLoc = sprite.atlasLocation();
+        var textureWidth = atlas.getWidth();
+        var textureHeight = atlas.getHeight();
+        var imageStartX = sprite.getX();
+        var imageStartY = sprite.getY();
+        var imageSize = Math.min(image.getWidth(), image.getHeight());
+
+        TPUtils.blit(textureLoc, pose, x, y, blitSize, textureWidth, textureHeight, imageStartX, imageStartY, imageSize);
+    }
+
+    public static void blit(ResourceLocation texture, PoseStack pose, int x, int y, int blitSize, int textureWidth, int textureHeight, int imageStartX, int imageStartY, int imageSize) {
+        var scale = imageSize / blitSize;
+
+        textureWidth /= scale;
+        textureHeight /= scale;
+        imageStartX /= scale;
+        imageStartY /= scale;
+        imageSize /= scale;
+
+        RenderSystem.setShaderTexture(0, texture);
+        GuiComponent.blit(pose, x, y, imageStartX, imageStartY, imageSize, imageSize, textureWidth, textureHeight);
+    }
+
     /**
      * パーティクル
      */
@@ -101,5 +172,9 @@ public class TPUtils {
 
     public static ResourceLocation modLoc(String id) {
         return new ResourceLocation(TransferPipe.MODID, id);
+    }
+
+    public static String toMilliBucket(int amount) {
+        return String.format("%,d", amount) + "mb";
     }
 }

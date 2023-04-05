@@ -8,6 +8,7 @@
     "HopperBlockEntityInvoker"
   ],
   "client": [
+    "AtlasAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

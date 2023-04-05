@@ -8,7 +8,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import nin.transferpipe.block.TransferNodeBlockEntity;
+import nin.transferpipe.block.tile.TileTransferNode;
 import nin.transferpipe.block.state.Connection;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
@@ -28,11 +28,11 @@ public class Search {
     public static String CURRENT_POS = "CurrentPos";
     public static String NEXT_POS = "NextPos";
     public static String PREVIOUS_POS_DIR = "PreviousPosDir";
-    public TransferNodeBlockEntity be;
+    public TileTransferNode be;
     public Level level;//beから取れるけど簡略化
     private boolean initialized;//levelをフィールドに使うということは最初の動作時に初期化しないといけないことを意味する
 
-    public Search(TransferNodeBlockEntity be) {
+    public Search(TileTransferNode be) {
         this.be = be;
         currentPos = be.POS;
         reset();

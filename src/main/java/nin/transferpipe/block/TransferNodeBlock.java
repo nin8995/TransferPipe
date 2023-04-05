@@ -29,6 +29,10 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
+import nin.transferpipe.block.tile.TileTransferNode;
+import nin.transferpipe.block.tile.TileTransferNodeItem;
+import nin.transferpipe.block.tile.TileTransferNodeLiquid;
+import nin.transferpipe.block.tile.gui.TransferNodeMenu;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.Nullable;
@@ -69,7 +73,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return type == getType() ? (Level l, BlockPos p, BlockState bs, T t) -> {
-            if (t instanceof TransferNodeBlockEntity be)
+            if (t instanceof TileTransferNode be)
                 be.tick();
         } : null;
     }
@@ -104,7 +108,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
 
     @Override
     public void neighborChanged(BlockState p_60509_, Level level, BlockPos pos, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
-        if (level.getBlockEntity(pos) instanceof TransferNodeBlockEntity be) {
+        if (level.getBlockEntity(pos) instanceof TileTransferNode be) {
             var prevState = be.getPipeState();
             var currentState = PipeUtils.recalcConnections(level, pos);
             if (prevState != currentState)
@@ -116,7 +120,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
-        if (level.getBlockEntity(pos) instanceof TransferNodeBlockEntity be) {
+        if (level.getBlockEntity(pos) instanceof TileTransferNode be) {
             if (PipeUtils.usingWrench(player, hand)) {
                 be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos));
                 return InteractionResult.SUCCESS;
@@ -141,7 +145,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
         return entityCreator().apply(p_153215_, p_153216_);
     }
 
-    public abstract BlockEntityType<? extends TransferNodeBlockEntity> getType();
+    public abstract BlockEntityType<? extends TileTransferNode> getType();
 
     //いちいち引数書くのめんどいから::だけで実装したい
     public abstract BiFunction<BlockPos, BlockState, BlockEntity> entityCreator();
@@ -149,21 +153,42 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
     public static class Item extends TransferNodeBlock {
 
         @Override
-        public BlockEntityType<? extends TransferNodeBlockEntity> getType() {
+        public BlockEntityType<? extends TileTransferNode> getType() {
             return TPBlocks.TRANSFER_NODE_ITEM.entity();
         }
 
         @Override
         public BiFunction<BlockPos, BlockState, BlockEntity> entityCreator() {
-            return TransferNodeBlockEntity.Item::new;
+            return TileTransferNodeItem::new;
         }
 
         @Nullable
         @Override
         public MenuProvider getMenuProvider(BlockState p_60563_, Level level, BlockPos pos) {
-            return level.getBlockEntity(pos) instanceof TransferNodeBlockEntity.Item be ? new SimpleMenuProvider(
-                    (i, inv, pl) -> new TransferNodeMenu.Item(be.getItemSlotHandler(), be.getUpgrades(), be.data, i, inv, ContainerLevelAccess.create(level, pos)),
+            return level.getBlockEntity(pos) instanceof TileTransferNodeItem be ? new SimpleMenuProvider(
+                    (i, inv, pl) -> new TransferNodeMenu.Item(be.getItemSlotHandler(), be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
                     Component.translatable("menu.title.transferpipe.node_item"))
+                    : null;
+        }
+    }
+
+    public static class Liquid extends TransferNodeBlock{
+        @Override
+        public BlockEntityType<? extends TileTransferNode> getType() {
+            return TPBlocks.TRANSFER_NODE_LIQUID.entity();
+        }
+
+        @Override
+        public BiFunction<BlockPos, BlockState, BlockEntity> entityCreator() {
+            return TileTransferNodeLiquid::new;
+        }
+
+        @Nullable
+        @Override
+        public MenuProvider getMenuProvider(BlockState p_60563_, Level level, BlockPos pos) {
+            return level.getBlockEntity(pos) instanceof TileTransferNodeLiquid be ? new SimpleMenuProvider(
+                    (i, inv, pl) -> new TransferNodeMenu.Liquid(be.liquidData, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
+                    Component.translatable("menu.title.transferpipe.node_liquid"))
                     : null;
         }
     }

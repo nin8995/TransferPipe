@@ -1,12 +1,10 @@
 package nin.transferpipe.item;
 
-import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import nin.transferpipe.block.TileItemHandler;
-import nin.transferpipe.block.TransferNodeBlockEntity;
+import nin.transferpipe.block.tile.TileTransferNode;
+import nin.transferpipe.util.HandlerUtils;
 import org.jetbrains.annotations.NotNull;
 
 public interface Upgrade {
@@ -37,9 +35,9 @@ public interface Upgrade {
         }
     }
 
-    class ItemHandler extends TileItemHandler<TransferNodeBlockEntity>{
+    class Handler extends HandlerUtils.TileItem<TileTransferNode> {
 
-        public ItemHandler(int size, TransferNodeBlockEntity be) {
+        public Handler(int size, TileTransferNode be) {
             super(size, be);
         }
 
