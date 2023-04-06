@@ -177,4 +177,8 @@ public class TPUtils {
     public static String toMilliBucket(int amount) {
         return String.format("%,d", amount) + "mb";
     }
+
+    public static String toFE(int energy) {
+        return String.format("%,d", energy) + "FE";
+    }
 }

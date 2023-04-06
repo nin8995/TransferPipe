@@ -2,11 +2,14 @@ package nin.transferpipe.block.tile;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -15,6 +18,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.util.ContainerUtils;
 import nin.transferpipe.util.HandlerUtils;
+import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -217,5 +221,11 @@ public class TileTransferNodeItem extends TileTransferNode {
         else if (ContainerUtils.hasContainer(level, pos))
             ContainerUtils.forContainer(level, pos, d, (container, dir) -> canInsert.set(canInsert(container, dir)));
         return canInsert.get();
+    }
+
+    @Override
+    public void addSearchParticle(Vec3 pos) {
+        if (level instanceof ServerLevel sl)
+            TPUtils.addParticle(sl, ParticleTypes.ANGRY_VILLAGER, pos, Vec3.ZERO, 0);
     }
 }

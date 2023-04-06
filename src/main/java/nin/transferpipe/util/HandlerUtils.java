@@ -6,7 +6,6 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -94,9 +93,9 @@ public class HandlerUtils {
             refreshItemFluid();
         }
 
-        public void refreshItemFluid(){
+        public void refreshItemFluid() {
             var fluidItem = new FluidHandlerItemStack(Items.ENDER_DRAGON_SPAWN_EGG.getDefaultInstance(), Integer.MAX_VALUE);
-             fluidItem.fill(getFluid(), FluidAction.EXECUTE);
+            fluidItem.fill(getFluid(), FluidAction.EXECUTE);
             dummyLiquidItem.setStackInSlot(0, fluidItem.getContainer());
         }
     }

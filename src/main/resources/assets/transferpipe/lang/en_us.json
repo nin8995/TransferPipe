@@ -3,5 +3,6 @@
   "menu.title.transferpipe.node_item": "Transfer Node (Item)",
   "menu.title.transferpipe.node_liquid": "Transfer Node (Liquid)",
   "gui.transferpipe.searching": "Searching for inventories at",
-  "gui.transferpipe.holding_liquid": "Holding: %s of %s"
+  "gui.transferpipe.holding_liquid": "Holding: %s of %s",
+  "gui.transferpipe.holding_energy": "Holding: %s"
 }

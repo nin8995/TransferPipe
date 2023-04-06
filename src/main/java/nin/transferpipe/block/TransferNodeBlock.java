@@ -30,6 +30,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 import nin.transferpipe.block.tile.TileTransferNode;
+import nin.transferpipe.block.tile.TileTransferNodeEnergy;
 import nin.transferpipe.block.tile.TileTransferNodeItem;
 import nin.transferpipe.block.tile.TileTransferNodeLiquid;
 import nin.transferpipe.block.tile.gui.TransferNodeMenu;
@@ -51,21 +52,8 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
      * 基本情報
      */
 
-    public static DirectionProperty FACING = BlockStateProperties.FACING;
-
     public TransferNodeBlock() {
         super(BlockBehaviour.Properties.of(Material.STONE));
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getClickedFace().getOpposite());
     }
 
     @Override
@@ -76,28 +64,53 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
         } : null;
     }
 
-    /**
-     * 当たり判定
-     */
+    //energy nodeかそうじゃないか
+    public abstract static class FacingNode extends TransferNodeBlock {
 
-    public static final Map<Direction, VoxelShape> ROTATED_NODES = TPUtils.getRotatedShapes(Stream.of(
-            Block.box(1, 1, 0, 15, 15, 1),
-            Block.box(3, 3, 1, 13, 13, 4),
-            Block.box(5, 5, 4, 11, 11, 6)
-    ).reduce(Shapes::or).get());
-    public final Map<BlockState, VoxelShape> shapeCache = this.stateDefinition.getPossibleStates().stream().collect(Collectors.toMap(
-            UnaryOperator.identity(),
-            bs -> ROTATED_NODES.get(bs.getValue(FACING))));
+        public static DirectionProperty FACING = BlockStateProperties.FACING;
 
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter blockGetter, BlockPos pos, CollisionContext context) {
-        var shape = new AtomicReference<>(shapeCache.get(state));
-        blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
-            if (be.shouldRenderPipe())
-                shape.set(Shapes.or(shape.get(), TransferPipeBlock.getShape(be.getPipeState())));
-        });
+        public FacingNode() {
+            super();
+            registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+        }
 
-        return shape.get();
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(FACING);
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState().setValue(FACING, context.getClickedFace().getOpposite());
+        }
+
+        public static final Map<Direction, VoxelShape> ROTATED_NODES = TPUtils.getRotatedShapes(Stream.of(
+                Block.box(1, 1, 0, 15, 15, 1),
+                Block.box(3, 3, 1, 13, 13, 4),
+                Block.box(5, 5, 4, 11, 11, 6)
+        ).reduce(Shapes::or).get());
+        public final Map<BlockState, VoxelShape> shapeCache = this.stateDefinition.getPossibleStates().stream().collect(Collectors.toMap(
+                UnaryOperator.identity(),
+                bs -> ROTATED_NODES.get(bs.getValue(FACING))));
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter blockGetter, BlockPos pos, CollisionContext context) {
+            var shape = new AtomicReference<>(shapeCache.get(state));
+            blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
+                if (be.shouldRenderPipe())
+                    shape.set(Shapes.or(shape.get(), TransferPipeBlock.getShape(be.getPipeState())));
+            });
+
+            return shape.get();
+        }
+
+        public Direction facing(Level level, BlockPos pos) {
+            return facing(level.getBlockState(pos));
+        }
+
+        public Direction facing(BlockState state) {
+            return state.getValue(TransferNodeBlock.FacingNode.FACING);
+        }
     }
 
     /**
@@ -148,7 +161,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
     //いちいち引数書くのめんどいから::だけで実装したい
     public abstract BiFunction<BlockPos, BlockState, BlockEntity> entityCreator();
 
-    public static class Item extends TransferNodeBlock {
+    public static class Item extends FacingNode {
 
         @Override
         public BlockEntityType<? extends TileTransferNode> getType() {
@@ -170,7 +183,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
         }
     }
 
-    public static class Liquid extends TransferNodeBlock {
+    public static class Liquid extends FacingNode {
 
         @Override
         public BlockEntityType<? extends TileTransferNode> getType() {
@@ -189,6 +202,45 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
                     (i, inv, pl) -> new TransferNodeMenu.Liquid(be.dummyLiquidItem, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
                     Component.translatable("menu.title.transferpipe.node_liquid"))
                     : null;
+        }
+    }
+
+    public static class Energy extends TransferNodeBlock {
+
+        @Override
+        public BlockEntityType<? extends TileTransferNode> getType() {
+            return TPBlocks.TRANSFER_NODE_ENERGY.entity();
+        }
+
+        @Override
+        public BiFunction<BlockPos, BlockState, BlockEntity> entityCreator() {
+            return TileTransferNodeEnergy::new;
+        }
+
+        @Nullable
+        @Override
+        public MenuProvider getMenuProvider(BlockState p_60563_, Level level, BlockPos pos) {
+            return level.getBlockEntity(pos) instanceof TileTransferNodeEnergy be ? new SimpleMenuProvider(
+                    (i, inv, pl) -> new TransferNodeMenu.Energy(be.energyData, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
+                    Component.translatable("menu.title.transferpipe.node_energy"))
+                    : null;
+        }
+
+        public static final VoxelShape ENERGY_NODE = Stream.of(
+                Block.box(1, 1, 0, 15, 15, 1),
+                Block.box(3, 3, 1, 13, 13, 4),
+                Block.box(5, 5, 4, 11, 11, 6)
+        ).reduce(Shapes::or).get();
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter blockGetter, BlockPos pos, CollisionContext context) {
+            var shape = new AtomicReference<>(ENERGY_NODE);
+            blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
+                if (be.shouldRenderPipe())
+                    shape.set(Shapes.or(shape.get(), TransferPipeBlock.getShape(be.getPipeState())));
+            });
+
+            return shape.get();
         }
     }
 }

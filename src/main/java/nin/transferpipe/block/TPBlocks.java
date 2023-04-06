@@ -24,6 +24,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.state.Flow;
 import nin.transferpipe.block.tile.TileTransferNode;
+import nin.transferpipe.block.tile.TileTransferNodeEnergy;
 import nin.transferpipe.block.tile.TileTransferNodeItem;
 import nin.transferpipe.block.tile.TileTransferNodeLiquid;
 import nin.transferpipe.block.tile.gui.TransferNodeMenu;
@@ -57,6 +58,8 @@ public interface TPBlocks {
             TransferNodeBlock.Item::new, TileTransferNodeItem::new, TransferNodeMenu.Item::new, TransferNodeScreen.Item::new);
     RegistryGUIEntityBlock<TileTransferNodeLiquid, TransferNodeMenu.Liquid, TransferNodeScreen.Liquid> TRANSFER_NODE_LIQUID = registerNode("transfer_node_liquid",
             TransferNodeBlock.Liquid::new, TileTransferNodeLiquid::new, TransferNodeMenu.Liquid::new, TransferNodeScreen.Liquid::new);
+    RegistryGUIEntityBlock<TileTransferNodeEnergy, TransferNodeMenu.Energy, TransferNodeScreen.Energy> TRANSFER_NODE_ENERGY = registerNode("transfer_node_energy",
+            TransferNodeBlock.Energy::new, TileTransferNodeEnergy::new, TransferNodeMenu.Energy::new, TransferNodeScreen.Energy::new);
 
     static RegistryObject<Block> registerPipe(String id, Supplier<Block> block) {
         var ro = PIPES.register(id, block);
@@ -122,10 +125,10 @@ public interface TPBlocks {
 
         private void pipe(RegistryObject<Block> ro) {
             var block = ro.get();
-            var id = ro.getId().getPath();
-            var center = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_center"));
-            var limb = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_limb"));
-            var joint = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_joint"));
+            var name = ro.getId().getPath();
+            var center = new ModelFile.UncheckedModelFile(modLoc("block/" + name + "_center"));
+            var limb = new ModelFile.UncheckedModelFile(modLoc("block/" + name + "_limb"));
+            var joint = new ModelFile.UncheckedModelFile(modLoc("block/" + name + "_joint"));
             var overlayIgnoreCenter = new ModelFile.UncheckedModelFile(modLoc("block/overlay_ignore_center"));
             var overlayIgnoreLimb = new ModelFile.UncheckedModelFile(modLoc("block/overlay_ignore_limb"));
             var overlayOneway = new ModelFile.UncheckedModelFile(modLoc("block/overlay_oneway"));
@@ -152,21 +155,24 @@ public interface TPBlocks {
                         .condition(CONNECTIONS.get(dir), PIPE).end();//パイプに向けて
             });
 
-            var inv = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_inv"));
+            var inv = new ModelFile.UncheckedModelFile(modLoc("block/" + name + "_inv"));
             simpleBlockItem(block, inv);
         }
 
         private void node(RegistryObject<Block> ro) {
             var block = ro.get();
-            var id = ro.getId().getPath();
-            var model = new ModelFile.UncheckedModelFile(modLoc("block/" + id));
+            var name = ro.getId().getPath();
+            var model = new ModelFile.UncheckedModelFile(modLoc("block/" + name));
 
-            var mb = getMultipartBuilder(block);
-            Direction.stream().forEach(dir ->
-                    rotate(mb.part().modelFile(model), dir).addModel()
-                            .condition(TransferNodeBlock.FACING, dir).end());
+            if (block instanceof TransferNodeBlock.FacingNode) {
+                var mb = getMultipartBuilder(block);
+                Direction.stream().forEach(dir ->
+                        rotate(mb.part().modelFile(model), dir).addModel()
+                                .condition(TransferNodeBlock.FacingNode.FACING, dir).end());
+            } else
+                simpleBlock(block, model);
 
-            var inv = new ModelFile.UncheckedModelFile(modLoc("block/" + id + "_inv"));
+            var inv = new ModelFile.UncheckedModelFile(modLoc("block/" + name + "_inv"));
             simpleBlockItem(block, inv);
         }
 

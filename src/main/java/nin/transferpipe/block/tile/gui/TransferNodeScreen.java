@@ -87,4 +87,19 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
             super.drawCenteredTexts(pose);
         }
     }
+
+    public static class Energy extends TransferNodeScreen<TransferNodeMenu.Energy> {
+
+        public Energy(TransferNodeMenu.Energy p_97741_, Inventory p_97742_, Component p_97743_) {
+            super(p_97741_, p_97742_, p_97743_);
+        }
+
+        @Override
+        public void drawCenteredTexts(PoseStack pose) {
+            var energy = menu.getEnergy();
+            if (energy != 0)
+                drawCentered(pose, Component.translatable("gui.transferpipe.holding_energy", energy));
+            super.drawCenteredTexts(pose);
+        }
+    }
 }

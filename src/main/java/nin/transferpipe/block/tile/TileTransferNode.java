@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
@@ -51,13 +52,15 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
     public static final String FIRST_TICK = "FirstTick";
     public static final String UPGRADES = "Upgrades";
     public final BlockPos POS;
-    public final Direction FACING;
-    public final BlockPos FACING_POS;
-    public final Direction FACED;
+    @Nullable
+    public Direction FACING;
     public boolean initialized;
     public boolean isSearching;
     public int coolRate;
     public boolean stackMode;
+    public boolean pseudoRoundRobin;
+    public boolean depthFirst;
+    public boolean breadthFirst;
     public ContainerData searchData = new ContainerData() {
         public int get(int p_58431_) {
             return switch (p_58431_) {
@@ -87,16 +90,12 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
     public TileTransferNode(BlockEntityType<? extends TileTransferNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
         super(p_155228_, p_155229_, p_155230_);
         POS = this.worldPosition;
-        FACING = getBlockState().getValue(TransferNodeBlock.FACING);
-        FACING_POS = worldPosition.relative(FACING);
-        FACED = FACING.getOpposite();
+        if (getBlockState().getBlock() instanceof TransferNodeBlock.FacingNode node)
+            FACING = node.facing(getBlockState());
+
         setSearch(new Search(this));
         upgrades = new Upgrade.Handler(6, this);
     }
-
-    /**
-     * フィールドの取り扱い
-     */
 
     public BlockState getPipeState() {
         return pipeState;
@@ -131,10 +130,6 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
     public IItemHandler getUpgrades() {
         return upgrades;
     }
-
-    /**
-     * NBT変換
-     */
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
@@ -194,8 +189,11 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
         cooltime -= coolRate;
 
         while (cooltime <= 0) {
-            //if(canWork(POS, FACED))あってもいいけどなくてもいい
-            facing(FACING_POS, FACED);
+            if (FACING != null)//if(canWork(POS, FACED))あってもいいけどなくてもいい
+                facing(POS.relative(FACING), FACING.getOpposite());
+            else
+                Direction.stream().forEach(d -> facing(POS.relative(d), d.getOpposite()));
+
             isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
             if (isSearching)
                 setSearch(search.proceed());
@@ -203,9 +201,18 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
         }
     }
 
+    public abstract boolean shouldSearch();
+
+    public abstract void facing(BlockPos pos, Direction dir);
+
+    public abstract void terminal(BlockPos pos, Direction dir);
+
     public void calcUpgrades() {
         coolRate = 2;
         stackMode = false;
+        pseudoRoundRobin = false;
+        depthFirst = false;
+        breadthFirst = false;
 
         IntStream.range(0, upgrades.getSlots()).forEach(slot -> {
             var upgrade = upgrades.getStackInSlot(slot);
@@ -213,7 +220,17 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
                 coolRate += upgrade.getCount();
             if (upgrade.is(STACK_UPGRADE.get()))
                 stackMode = true;
+            if (upgrade.is(PSEUDO_ROUND_ROBIN_UPGRADE.get()))
+                pseudoRoundRobin = true;
+            if (upgrade.is(DEPTH_FIRST_SEARCH_UPGRADE.get()))
+                depthFirst = true;
+            if (upgrade.is(BREADTH_FIRST_SEARCH_UPGRADE.get()))
+                breadthFirst = true;
         });
+    }
+
+    public boolean isNormalSearch() {
+        return !(breadthFirst || depthFirst);
     }
 
     //PipeState(特定のパイプの特定の状況)を表示
@@ -241,15 +258,7 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
         return !PipeUtils.centerOnly(pipeState);
     }
 
-    /**
-     * 搬送種毎の機能
-     */
-
-    public abstract boolean shouldSearch();
-
-    public abstract void facing(BlockPos pos, Direction dir);
-
-    public abstract void terminal(BlockPos pos, Direction dir);
+    public abstract void addSearchParticle(Vec3 pos);
 
     public abstract boolean canWork(BlockPos pos, Direction d);
 }

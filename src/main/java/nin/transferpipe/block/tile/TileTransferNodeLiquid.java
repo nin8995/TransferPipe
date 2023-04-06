@@ -3,13 +3,11 @@ package nin.transferpipe.block.tile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.ItemStackHandler;
@@ -37,33 +35,6 @@ public class TileTransferNodeLiquid extends TileTransferNode {
 
     public static final String LIQUID_SLOT = "LiquidSlot";
     private final int baseSpeed = 200;
-    public ContainerData liquidData = new ContainerData() {
-        @Override
-        public int get(int p_39284_) {
-            return switch (p_39284_) {
-                case 0 -> Block.getId(liquidSlot.getFluid().getFluid().defaultFluidState().createLegacyBlock());
-                case 1 -> liquidSlot.getFluidAmount();
-                default -> -1;
-            };
-        }
-
-        @Override
-        public void set(int p_39285_, int p_39286_) {
-            switch (p_39285_) {
-                case 0 -> liquidSlot.setFluid(new FluidStack(Block.stateById(p_39286_).getFluidState().getType(), 1));
-                case 1 -> {
-                    var f = liquidSlot.getFluid();
-                    f.setAmount(p_39286_);
-                    liquidSlot.setFluid(f);
-                }
-            }
-        }
-
-        @Override
-        public int getCount() {
-            return 2;
-        }
-    };
 
     public TileTransferNodeLiquid(BlockPos p_155229_, BlockState p_155230_) {
         super(TPBlocks.TRANSFER_NODE_LIQUID.entity(), p_155229_, p_155230_);
@@ -164,5 +135,10 @@ public class TileTransferNodeLiquid extends TileTransferNode {
         var canInsert = new AtomicBoolean(false);
         HandlerUtils.forFluidHandler(level, pos, d, handler -> canInsert.set(canInsert(handler)));
         return canInsert.get();
+    }
+
+    @Override
+    public void addSearchParticle(Vec3 pos) {
+
     }
 }

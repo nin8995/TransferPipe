@@ -65,7 +65,7 @@ public enum Flow implements StringRepresentable {
         var validFlows = nonDirectionalFlows();
 
         //つながる方角を抽出
-        var nodeDir = level.getBlockState(pos).getBlock() instanceof TransferNodeBlock ? level.getBlockState(pos).getValue(TransferNodeBlock.FACING) : null;
+        var nodeDir = level.getBlockState(pos).getBlock() instanceof TransferNodeBlock.FacingNode node ? node.facing(level, pos) : null;
         var connectableDirs = Direction.stream()
                 .filter(d -> d != nodeDir)
                 .filter(d -> PipeUtils.isPipe(level, pos, d)).collect(Collectors.toSet());

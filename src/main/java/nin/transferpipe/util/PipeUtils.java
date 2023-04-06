@@ -92,11 +92,11 @@ public class PipeUtils {
         return isPipe(l, bp, d) && isPipe(l, bp.relative(d), d.getOpposite());
     }
 
-    //bpからdを見たらパイプか
-    public static boolean isPipe(Level l, BlockPos bp, Direction d) {
-        var bs = l.getBlockState(bp.relative(d));
+    //posのdir方向はパイプか
+    public static boolean isPipe(Level level, BlockPos pos, Direction dir) {
+        var bs = level.getBlockState(pos.relative(dir));
         return bs.getBlock() instanceof TransferPipeBlock//パイプならOK
-                || (bs.getBlock() instanceof TransferNodeBlock && bs.getValue(TransferNodeBlock.FACING) != d.getOpposite());//ノードでも接地面じゃなければOK
+                || (bs.getBlock() instanceof TransferNodeBlock.FacingNode node && node.facing(bs) != dir.getOpposite());//ノードでも接地面じゃなければOK
     }
 
     //自分と相手との間をどちらか一方でも実際に進めるか
@@ -110,7 +110,8 @@ public class PipeUtils {
     }
 
     public static boolean shouldConnectToMachine(Flow f, Level l, BlockPos p, Direction d) {
-        return f != Flow.IGNORE && !(l.getBlockState(p).getBlock() instanceof TransferNodeBlock && l.getBlockState(p).getValue(TransferNodeBlock.FACING) == d)
+        return f != Flow.IGNORE
+                && !(l.getBlockState(p).getBlock() instanceof TransferNodeBlock.FacingNode node && node.facing(l, p) == d)
                 && isWorkPlace(l, p.relative(d), d.getOpposite());
     }
 

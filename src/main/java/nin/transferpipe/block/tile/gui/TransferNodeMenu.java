@@ -20,16 +20,16 @@ import org.jetbrains.annotations.NotNull;
 
 public abstract class TransferNodeMenu extends BaseMenu {
 
-    private final ContainerData data;
+    private final ContainerData searchData;
 
     public static final int upgradesY = 92;
     public int upgradesStart = containerStart;
     public int upgradesEnd = upgradesStart + 5;
 
-    public TransferNodeMenu(IItemHandler upgrades, ContainerData data, MenuType type, int containerId, Inventory inv, ContainerLevelAccess access) {
+    public TransferNodeMenu(IItemHandler upgrades, ContainerData searchData, MenuType type, int containerId, Inventory inv, ContainerLevelAccess access) {
         super(type, containerId, inv, access);
-        this.data = data;
-        this.addDataSlots(data);
+        this.searchData = searchData;
+        this.addDataSlots(searchData);
 
         for (int ix = 0; ix < upgrades.getSlots(); ++ix) {
             this.addSlot(new Upgrade.Slot(upgrades, ix, 35 + ix * 18, upgradesY));
@@ -48,11 +48,11 @@ public abstract class TransferNodeMenu extends BaseMenu {
     }
 
     public boolean isSearching() {
-        return data.get(0) == 1;
+        return searchData.get(0) == 1;
     }
 
     public String getSearchPosMsg() {
-        return "x: " + data.get(1) + " y: " + data.get(2) + " z: " + data.get(3);
+        return "x: " + searchData.get(1) + " y: " + searchData.get(2) + " z: " + searchData.get(3);
     }
 
 
@@ -86,13 +86,13 @@ public abstract class TransferNodeMenu extends BaseMenu {
         }
 
         //server
-        public Liquid(IItemHandler dummyLiquidItem, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv, ContainerLevelAccess access) {
-            super(upgrades, data, TPBlocks.TRANSFER_NODE_LIQUID.menu(), containerId, inv, access);
+        public Liquid(IItemHandler dummyLiquidItem, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv, ContainerLevelAccess access) {
+            super(upgrades, searchData, TPBlocks.TRANSFER_NODE_LIQUID.menu(), containerId, inv, access);
             this.dummyLiquidItem = dummyLiquidItem;
             addSlot(new DummyItemSlot(dummyLiquidItem, 0, 114514, 0));
         }
 
-        public static class DummyItemSlot extends SlotItemHandler{
+        public static class DummyItemSlot extends SlotItemHandler {
 
             public DummyItemSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
                 super(itemHandler, index, xPosition, yPosition);
@@ -117,6 +117,30 @@ public abstract class TransferNodeMenu extends BaseMenu {
         @Override
         public Block getBlock() {
             return TPBlocks.TRANSFER_NODE_LIQUID.block();
+        }
+    }
+
+    public static class Energy extends TransferNodeMenu {
+
+        private final ContainerData energyData;
+
+        public Energy(int containerId, Inventory inv) {
+            this(new SimpleContainerData(1), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv, ContainerLevelAccess.NULL);
+        }
+
+        public Energy(ContainerData energyData, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv, ContainerLevelAccess access) {
+            super(upgrades, data, TPBlocks.TRANSFER_NODE_ENERGY.menu(), containerId, inv, access);
+            this.energyData = energyData;
+            addDataSlots(energyData);
+        }
+
+        @Override
+        public Block getBlock() {
+            return TPBlocks.TRANSFER_NODE_ENERGY.block();
+        }
+
+        public int getEnergy() {
+            return energyData.get(0);
         }
     }
 }
