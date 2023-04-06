@@ -2,6 +2,7 @@ package nin.transferpipe.block.tile.gui;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
@@ -9,11 +10,13 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.item.Upgrade;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class TransferNodeMenu extends BaseMenu {
 
@@ -75,22 +78,40 @@ public abstract class TransferNodeMenu extends BaseMenu {
 
     public static class Liquid extends TransferNodeMenu {
 
-        private final ContainerData liquidData;
+        private final IItemHandler dummyLiquidItem;
 
         //client
         public Liquid(int containerId, Inventory inv) {
-            this(new SimpleContainerData(2), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv, ContainerLevelAccess.NULL);
+            this(new ItemStackHandler(), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv, ContainerLevelAccess.NULL);
         }
 
         //server
-        public Liquid(ContainerData liquidData, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv, ContainerLevelAccess access) {
+        public Liquid(IItemHandler dummyLiquidItem, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv, ContainerLevelAccess access) {
             super(upgrades, data, TPBlocks.TRANSFER_NODE_LIQUID.menu(), containerId, inv, access);
-            this.liquidData = liquidData;
-            addDataSlots(liquidData);
+            this.dummyLiquidItem = dummyLiquidItem;
+            addSlot(new DummyItemSlot(dummyLiquidItem, 0, 114514, 0));
+        }
+
+        public static class DummyItemSlot extends SlotItemHandler{
+
+            public DummyItemSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+                super(itemHandler, index, xPosition, yPosition);
+            }
+
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return false;
+            }
+
+            @Override
+            public boolean mayPickup(Player playerIn) {
+                return false;
+            }
         }
 
         public FluidStack getLiquid() {
-            return new FluidStack(Block.stateById(liquidData.get(0)).getFluidState().getType(), liquidData.get(1));
+            var a = dummyLiquidItem.getStackInSlot(0);
+            return new FluidHandlerItemStack(a, Integer.MAX_VALUE).getFluid();
         }
 
         @Override

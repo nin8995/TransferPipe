@@ -4,12 +4,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.common.util.NonNullConsumer;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
@@ -67,16 +71,33 @@ public class HandlerUtils {
     public static class TileLiquid<T extends BlockEntity> extends FluidTank {
 
         public final T be;
+        private final ItemStackHandler dummyLiquidItem;
 
-        public TileLiquid(int capacity, T be) {
+        public TileLiquid(int capacity, T be, ItemStackHandler dummyLiquidItem) {
             super(capacity, e -> true);
             this.be = be;
+            this.dummyLiquidItem = dummyLiquidItem;
+            refreshItemFluid();
         }
 
         @Override
         protected void onContentsChanged() {
             super.onContentsChanged();
             be.setChanged();
+            refreshItemFluid();
+        }
+
+        //nbtから読むとき用
+        @Override
+        public void setFluid(FluidStack stack) {
+            super.setFluid(stack);
+            refreshItemFluid();
+        }
+
+        public void refreshItemFluid(){
+            var fluidItem = new FluidHandlerItemStack(Items.ENDER_DRAGON_SPAWN_EGG.getDefaultInstance(), Integer.MAX_VALUE);
+             fluidItem.fill(getFluid(), FluidAction.EXECUTE);
+            dummyLiquidItem.setStackInSlot(0, fluidItem.getContainer());
         }
     }
 }

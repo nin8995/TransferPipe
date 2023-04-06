@@ -33,7 +33,7 @@ public class TileTransferNodeLiquid extends TileTransferNode {
      */
 
     public final FluidTank liquidSlot;
-    public final ItemStackHandler liquidItemSlot;
+    public final ItemStackHandler dummyLiquidItem;
 
     public static final String LIQUID_SLOT = "LiquidSlot";
     private final int baseSpeed = 200;
@@ -67,8 +67,8 @@ public class TileTransferNodeLiquid extends TileTransferNode {
 
     public TileTransferNodeLiquid(BlockPos p_155229_, BlockState p_155230_) {
         super(TPBlocks.TRANSFER_NODE_LIQUID.entity(), p_155229_, p_155230_);
-        liquidItemSlot = new ItemStackHandler();
-        liquidSlot = new HandlerUtils.TileLiquid<>(8000, this);
+        dummyLiquidItem = new ItemStackHandler();
+        liquidSlot = new HandlerUtils.TileLiquid<>(8000, this, dummyLiquidItem);
     }
 
     @Override
@@ -123,8 +123,7 @@ public class TileTransferNodeLiquid extends TileTransferNode {
 
     public int getPullAmount(IFluidHandler handler, int slot) {
         var fluid = handler.getFluidInTank(slot);
-        var pullableAmount = stackMode ? fluid.getAmount() : 1;
-        pullableAmount *= baseSpeed;
+        var pullableAmount = stackMode ? fluid.getAmount() : baseSpeed;
         var drained = handler.drain(pullableAmount, SIMULATE);
         var filled = liquidSlot.fill(drained, SIMULATE);
         return filled;

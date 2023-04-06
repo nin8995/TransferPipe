@@ -53,8 +53,6 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
 
     public static DirectionProperty FACING = BlockStateProperties.FACING;
 
-    private static final Component CONTAINER_TITLE = Component.translatable("block.node.menu");
-
     public TransferNodeBlock() {
         super(BlockBehaviour.Properties.of(Material.STONE));
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
@@ -173,7 +171,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
     }
 
     public static class Liquid extends TransferNodeBlock {
-        
+
         @Override
         public BlockEntityType<? extends TileTransferNode> getType() {
             return TPBlocks.TRANSFER_NODE_LIQUID.entity();
@@ -188,7 +186,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
         @Override
         public MenuProvider getMenuProvider(BlockState p_60563_, Level level, BlockPos pos) {
             return level.getBlockEntity(pos) instanceof TileTransferNodeLiquid be ? new SimpleMenuProvider(
-                    (i, inv, pl) -> new TransferNodeMenu.Liquid(be.liquidData, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
+                    (i, inv, pl) -> new TransferNodeMenu.Liquid(be.dummyLiquidItem, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
                     Component.translatable("menu.title.transferpipe.node_liquid"))
                     : null;
         }
