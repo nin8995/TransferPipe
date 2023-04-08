@@ -26,7 +26,7 @@ public class Search {
 
     private BlockPos currentPos = BlockPos.ZERO;//なぜか置いた瞬間にwriteが呼ばれるから初期化しないとエラー
     private BlockPos nextPos;
-    private Set<Direction> previousPosDirs = new HashSet<>();//これも
+    private Set<Direction> prevSearchedDirs = new HashSet<>();//これも
     private final OrderedHashMap<BlockPos, Set<Direction>> queue = new OrderedHashMap<>();
 
     public static String CURRENT_POS = "CurrentPos";
@@ -121,7 +121,9 @@ public class Search {
 
         //進
         currentPos = nextPos;
-        previousPosDirs = queue.get(currentPos);
+        prevSearchedDirs = queue.get(currentPos);
+        if(prevSearchedDirs == null)//ブロック破壊などで検索先がなくなった
+            return reset();
         queue.remove(currentPos);
 
         //分かりやすさのための検索状況パーティクル
@@ -132,6 +134,7 @@ public class Search {
         var workableDir = random(workableDirs);
         if (workableDir != null) {
             be.terminal(currentPos.relative(workableDir), workableDir.getOpposite());
+            be.addTerminalParticle(currentPos.relative(workableDir).getCenter());
             if (!be.pseudoRoundRobin)
                 return reset();
         }
@@ -160,19 +163,19 @@ public class Search {
 
     public Set<Direction> getProceedablePipeDirs() {
         return Direction.stream()
-                .filter(d -> !previousPosDirs.contains(d))
+                .filter(d -> !prevSearchedDirs.contains(d))
                 .filter(d -> PipeUtils.canProceedPipe(level, currentPos, d)).collect(Collectors.toSet());
     }
 
     public Set<Direction> getPipeDirsToSearch() {
         return Direction.stream()
-                .filter(d -> !previousPosDirs.contains(d))
+                .filter(d -> !prevSearchedDirs.contains(d))
                 .filter(d -> PipeUtils.isPipe(level, currentPos, d)).collect(Collectors.toSet());
     }
 
     public Set<Direction> getWorkableDirs() {
         return Direction.stream()
-                .filter(d -> !previousPosDirs.contains(d))
+                .filter(d -> !prevSearchedDirs.contains(d))
                 .filter(d -> PipeUtils.currentConnection(level, currentPos, d) == Connection.MACHINE)
                 .filter(d -> be.canWork(currentPos.relative(d), d.getOpposite())).collect(Collectors.toSet());
     }

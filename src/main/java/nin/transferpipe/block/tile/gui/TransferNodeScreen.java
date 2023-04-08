@@ -76,6 +76,7 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
 
             if (!liquid.isEmpty())
                 TPUtils.renderLiquid(liquid, pose, 80, -38 + TransferNodeMenu.upgradesY, 16);
+
         }
 
         @Override

@@ -9,6 +9,8 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class BaseMenu extends AbstractContainerMenu {
@@ -47,8 +49,10 @@ public abstract class BaseMenu extends AbstractContainerMenu {
             var item = quickMovedSlot.getItem();
 
             if (containerStart <= quickMovedSlotIndex && quickMovedSlotIndex <= containerEnd) {//コンテナスロットなら
-                if (!moveItemTo(item, inventoryStart, hotbarEnd, true))//インベントリに差して
+                if (!moveItemTo(item/*SlotItemHandlerから取られたアイテムは本来加工してはいけないが*/, inventoryStart, hotbarEnd, true))//インベントリに差して
                     return ItemStack.EMPTY;//差せなければ終わり
+                else if(quickMovedSlot instanceof SlotItemHandler handlerSlot && handlerSlot.getItemHandler() instanceof ItemStackHandler handler)
+                    handler.setStackInSlot(0, handler.getStackInSlot(0));//適当に何もしない更新をかけることで、このmodにおいては大丈夫
             } else if (inventoryStart <= quickMovedSlotIndex && quickMovedSlotIndex <= hotbarEnd) {//インベントリスロットなら
                 //まず優先度の高いコンテナスロットに差してから
                 var highPriorities = getHighPriorityContainerSlots(item);
@@ -70,6 +74,7 @@ public abstract class BaseMenu extends AbstractContainerMenu {
             }
 
             //スロットが変わった
+            quickMovedSlot.setChanged();
             quickMovedSlot.onTake(player, item);//ここに入れるitemは種類だけでいい。何個削られたかはそれぞれのslotが勝手にremoveCountを記録している。
             //return item;//まだ残りがあってスロットにも空きがあるからitemを、、、って、そんな状況ないんですけどー..
         }

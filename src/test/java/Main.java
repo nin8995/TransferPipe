@@ -7,29 +7,31 @@ import java.util.LinkedHashMap;
 
 public class Main {
     public static void main(String[] args){
-        var map = new LinkedHashMap<String, Integer>();
+        System.out.println(1/2F*2);
+    }
+/*
+    var map = new LinkedHashMap<String, Integer>();
         map.put("ha", 1);
         map.put("hea", 2);
         map.put("hae", 3);
 
-        var key = map.keySet().iterator().next();
+    var key = map.keySet().iterator().next();
         System.out.println(map.get(key));
         map.remove(key);
 
-        key = map.keySet().iterator().next();
+    key = map.keySet().iterator().next();
         System.out.println(map.get(key));
         map.remove(key);
 
-        key = map.keySet().iterator().next();
+    key = map.keySet().iterator().next();
         System.out.println(map.get(key));
         map.remove(key);
 
         if(map.keySet().iterator().hasNext()) {
-            key = map.keySet().iterator().next();
-            System.out.println(map.get(key));
-            map.remove(key);
-        }
-    }
+        key = map.keySet().iterator().next();
+        System.out.println(map.get(key));
+        map.remove(key);
+    }*/
 
     /*Player player;
         int slotIndex;

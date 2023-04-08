@@ -12,6 +12,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
+import nin.transferpipe.particle.ColorSquare;
+import nin.transferpipe.particle.TPParticles;
 import nin.transferpipe.util.HandlerUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -138,7 +140,7 @@ public class TileTransferNodeLiquid extends TileTransferNode {
     }
 
     @Override
-    public void addSearchParticle(Vec3 pos) {
-
+    public ColorSquare.Option getParticleOption() {
+        return new ColorSquare.Option(0, 0, 0.5F + 0.5F * level.random.nextFloat(), 1);
     }
 }

@@ -2,11 +2,15 @@ package nin.transferpipe;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.event.CreativeModeTabEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -17,6 +21,7 @@ import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.tile.TileTransferNode;
 import nin.transferpipe.item.TPItems;
+import nin.transferpipe.particle.TPParticles;
 import org.slf4j.Logger;
 
 //初期化＆イベント処理
@@ -31,6 +36,7 @@ public class TransferPipe {
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
         TPBlocks.init(bus);
         TPItems.init(bus);
+        TPParticles.init(bus);
 
         //クリエタブ登録
         bus.addListener((CreativeModeTabEvent.Register e) -> e.registerCreativeModeTab(new ResourceLocation(MODID, MODID), b -> b
@@ -60,5 +66,10 @@ public class TransferPipe {
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers e) {
         TPBlocks.NODE_BES.getEntries().forEach(type ->
                 e.registerBlockEntityRenderer((BlockEntityType<? extends TileTransferNode>) type.get(), TileTransferNode.Renderer::new));
+    }
+
+    @SubscribeEvent
+    public static void registerParticles(RegisterParticleProvidersEvent e) {
+        TPParticles.clientInit(e);
     }
 }

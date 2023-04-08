@@ -6,6 +6,8 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import nin.transferpipe.block.TPBlocks;
+import nin.transferpipe.particle.ColorSquare;
+import nin.transferpipe.particle.TPParticles;
 
 public class TileTransferNodeEnergy extends TileTransferNode {
 
@@ -48,7 +50,7 @@ public class TileTransferNodeEnergy extends TileTransferNode {
 
     @Override
     public boolean shouldSearch() {
-        return false;
+        return true;
     }
 
     @Override
@@ -63,11 +65,12 @@ public class TileTransferNodeEnergy extends TileTransferNode {
 
     @Override
     public boolean canWork(BlockPos pos, Direction d) {
-        return false;
+        return true;
     }
 
     @Override
-    public void addSearchParticle(Vec3 pos) {
-
+    public ColorSquare.Option getParticleOption() {
+        var rand = level.random.nextFloat();
+        return new ColorSquare.Option(0.5F + 0.5F * rand, 0.5F + 0.5F * rand, 0, 1);
     }
 }
