@@ -2,7 +2,14 @@
   "_comment": "GUI",
   "menu.title.transferpipe.node_item": "Transfer Node (Item)",
   "menu.title.transferpipe.node_liquid": "Transfer Node (Liquid)",
-  "gui.transferpipe.searching": "Searching for inventories at",
-  "gui.transferpipe.holding_liquid": "Holding: %s of %s",
-  "gui.transferpipe.holding_energy": "Holding: %s"
+  "menu.title.transferpipe.node_energy": "Transfer Node (Energy)",
+  "gui.transferpipe.searching_item": "Searching for inventories at",
+  "gui.transferpipe.searching_liquid": "Searching for tanks at",
+  "gui.transferpipe.searching_energy": "Searching for machines at",
+  "gui.transferpipe.searching_pos": "x: %s y: %s z: %s",
+  "gui.transferpipe.liquid_amount": "Holding: %s of %s",
+  "gui.transferpipe.energy_amount": "Holding: %s",
+  "gui.transferpipe.connection": "Sustaining connections of",
+  "gui.transferpipe.connection_amounts": "Extract: %s Receive: %s Both: %s",
+  "gui.transferpipe.energy_extraction_pipe_amount": "Referenced by %s Energy Extraction Pipe"
 }

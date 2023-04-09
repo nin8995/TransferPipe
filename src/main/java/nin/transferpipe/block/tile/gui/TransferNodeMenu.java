@@ -1,6 +1,7 @@
 package nin.transferpipe.block.tile.gui;
 
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
@@ -20,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 public abstract class TransferNodeMenu extends BaseMenu {
 
-    private final ContainerData searchData;
+    public final ContainerData searchData;
 
     public static final int upgradesY = 92;
     public int upgradesStart = containerStart;
@@ -51,8 +52,8 @@ public abstract class TransferNodeMenu extends BaseMenu {
         return searchData.get(0) == 1;
     }
 
-    public String getSearchPosMsg() {
-        return "x: " + searchData.get(1) + " y: " + searchData.get(2) + " z: " + searchData.get(3);
+    public BlockPos getSearchPos() {
+        return new BlockPos(searchData.get(1), searchData.get(2), searchData.get(3));
     }
 
 
@@ -122,16 +123,16 @@ public abstract class TransferNodeMenu extends BaseMenu {
 
     public static class Energy extends TransferNodeMenu {
 
-        private final ContainerData energyData;
+        private final ContainerData energyNodeData;
 
         public Energy(int containerId, Inventory inv) {
-            this(new SimpleContainerData(1), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv, ContainerLevelAccess.NULL);
+            this(new SimpleContainerData(4), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv, ContainerLevelAccess.NULL);
         }
 
-        public Energy(ContainerData energyData, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv, ContainerLevelAccess access) {
+        public Energy(ContainerData energyNodeData, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv, ContainerLevelAccess access) {
             super(upgrades, data, TPBlocks.TRANSFER_NODE_ENERGY.menu(), containerId, inv, access);
-            this.energyData = energyData;
-            addDataSlots(energyData);
+            this.energyNodeData = energyNodeData;
+            addDataSlots(energyNodeData);
         }
 
         @Override
@@ -140,7 +141,19 @@ public abstract class TransferNodeMenu extends BaseMenu {
         }
 
         public int getEnergy() {
-            return energyData.get(0);
+            return energyNodeData.get(0);
+        }
+
+        public int getExtractables() {
+            return energyNodeData.get(1);
+        }
+
+        public int getReceivables() {
+            return energyNodeData.get(2);
+        }
+
+        public int getBoth() {
+            return energyNodeData.get(3);
         }
     }
 }

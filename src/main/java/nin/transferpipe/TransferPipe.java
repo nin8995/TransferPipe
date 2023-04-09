@@ -2,13 +2,9 @@ package nin.transferpipe;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.TextureSheetParticle;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.data.event.GatherDataEvent;
@@ -64,8 +60,7 @@ public class TransferPipe {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers e) {
-        TPBlocks.NODE_BES.getEntries().forEach(type ->
-                e.registerBlockEntityRenderer((BlockEntityType<? extends TileTransferNode>) type.get(), TileTransferNode.Renderer::new));
+        TPBlocks.NODES.forEach(node -> e.registerBlockEntityRenderer(node.entity(), TileTransferNode.Renderer::new));
     }
 
     @SubscribeEvent

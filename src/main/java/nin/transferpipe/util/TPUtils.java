@@ -11,12 +11,9 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.core.particles.ParticleType;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
@@ -32,10 +29,9 @@ import net.minecraftforge.fluids.FluidStack;
 import nin.transferpipe.TransferPipe;
 import nin.transferpipe.mixin.AtlasAccessor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -175,5 +171,74 @@ public class TPUtils {
 
     public static String toFE(int energy) {
         return String.format("%,d", energy) + "FE";
+    }
+
+    public static <K, V> void addToSetMap(Map<K, Set<V>> map, K key, V value) {
+        if (map.containsKey(key))
+            map.get(key).add(value);
+        else
+            map.put(key, new HashSet<>(Set.of(value)));
+    }
+
+    public static <K1, K2, V> void addToMapMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2, V value) {
+        if (map.containsKey(key1))
+            map.get(key1).put(key2, value);
+        else
+            map.put(key1, new HashMap<>(Map.of(key2, value)));
+    }
+
+    public static <K1, K2, V> void removeFromMapMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2) {
+        map.get(key1).remove(key2);
+        if (map.get(key1).isEmpty())
+            map.remove(key1);
+    }
+
+    public static String POS = "Pos";
+    public static String DIRS = "Dirs";
+
+    @SafeVarargs
+    public static CompoundTag writePosDirsSetMap(Map<BlockPos, Set<Direction>>... setMaps) {
+        var tag = new CompoundTag();
+        AtomicInteger i = new AtomicInteger(0);
+        for (Map<BlockPos, Set<Direction>> setMap : setMaps)
+            putPosDirsFromSetMapTo(setMap, tag, i);
+
+        return tag;
+    }
+
+    @SafeVarargs
+    public static <T> CompoundTag writePosDirsMapMap(Map<BlockPos, Map<Direction, T>>... mapMaps) {
+        var tag = new CompoundTag();
+        AtomicInteger i = new AtomicInteger(0);
+        for (Map<BlockPos, Map<Direction, T>> mapMap : mapMaps)
+            putPosDirsFromMapMapTo(mapMap, tag, i);
+
+        return tag;
+    }
+
+    public static void putPosDirsFromSetMapTo(Map<BlockPos, Set<Direction>> setMap, CompoundTag tag, AtomicInteger i) {
+        setMap.forEach((pos, dirs) -> putPosDirsTo(tag, pos, dirs, i));
+    }
+
+    public static <T> void putPosDirsFromMapMapTo(Map<BlockPos, Map<Direction, T>> mapMap, CompoundTag tag, AtomicInteger i) {
+        mapMap.forEach((pos, value) -> putPosDirsTo(tag, pos, value.keySet(), i));
+    }
+
+    public static void putPosDirsTo(CompoundTag tag, BlockPos pos, Set<Direction> dirs, AtomicInteger i) {
+        var subTag = new CompoundTag();
+        subTag.put(POS, NbtUtils.writeBlockPos(pos));
+        subTag.putIntArray(DIRS, dirs.stream().map(Enum::ordinal).toList());
+
+        tag.put(String.valueOf(i), subTag);
+        i.getAndIncrement();
+    }
+
+    public static void readPosDirs(CompoundTag tag, BiConsumer<BlockPos, Set<Direction>> readFunc) {
+        tag.getAllKeys().forEach(i -> {
+            var entryTag = tag.getCompound(i);
+            var pos = NbtUtils.readBlockPos(entryTag.getCompound(POS));
+            var dirs = Arrays.stream(entryTag.getIntArray(DIRS)).mapToObj(j -> Direction.values()[j]).collect(Collectors.toSet());
+            readFunc.accept(pos, dirs);
+        });
     }
 }

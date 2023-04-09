@@ -169,11 +169,12 @@ public interface TPBlocks {
                 Direction.stream().forEach(dir ->
                         rotate(mb.part().modelFile(model), dir).addModel()
                                 .condition(TransferNodeBlock.FacingNode.FACING, dir).end());
-            } else
-                simpleBlock(block, model);
 
-            var inv = new ModelFile.UncheckedModelFile(modLoc("block/" + name + "_inv"));
-            simpleBlockItem(block, inv);
+                var inv = new ModelFile.UncheckedModelFile(modLoc("block/" + name + "_inv"));
+                simpleBlockItem(block, inv);
+            } else {
+                simpleBlockWithItem(block, model);
+            }
         }
 
         public static ConfiguredModel.Builder<MultiPartBlockStateBuilder.PartBuilder> rotate(ConfiguredModel.Builder<MultiPartBlockStateBuilder.PartBuilder> m, Direction d) {

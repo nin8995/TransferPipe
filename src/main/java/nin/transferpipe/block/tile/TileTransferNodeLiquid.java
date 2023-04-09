@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -13,7 +12,6 @@ import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.particle.ColorSquare;
-import nin.transferpipe.particle.TPParticles;
 import nin.transferpipe.util.HandlerUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -141,6 +139,6 @@ public class TileTransferNodeLiquid extends TileTransferNode {
 
     @Override
     public ColorSquare.Option getParticleOption() {
-        return new ColorSquare.Option(0, 0, 0.5F + 0.5F * level.random.nextFloat(), 1);
+        return new ColorSquare.Option(0, 0, 1, 1);
     }
 }

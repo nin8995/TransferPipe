@@ -19,19 +19,25 @@ import net.minecraft.util.Mth;
 import org.joml.Vector3f;
 
 import java.util.Locale;
+import java.util.function.Function;
 
 public class ColorSquare extends TextureSheetParticle {
 
     public static final float baseSize = 0.05F;
 
-    public ColorSquare(Vector3f color, float a, ClientLevel p_107665_, double x, double y, double z, double xd, double yd, double zd) {
-        super(p_107665_, x, y, z);
-        setColor(color);
+    public ColorSquare(Vector3f color, float a, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        super(level, x, y, z);
+        float f4 = level.random.nextFloat() * 0.4F + 0.6F;
+        setColor(forEachValue(color, f -> f * f4 * (level.random.nextFloat() * 0.2F + 0.8F)));
         setAlpha(a);
         calcSize(0);
         setParticleSpeed(xd, yd, zd);
         lifetime = (int) (10.0 / (Math.random() * 0.2 + 0.6));
         hasPhysics = false;
+    }
+
+    public Vector3f forEachValue(Vector3f v, Function<Float, Float> f) {
+        return new Vector3f(f.apply(v.x), f.apply(v.y), f.apply(v.z));
     }
 
     public void setColor(Vector3f color) {

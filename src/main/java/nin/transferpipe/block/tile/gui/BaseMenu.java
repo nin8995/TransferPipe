@@ -51,7 +51,7 @@ public abstract class BaseMenu extends AbstractContainerMenu {
             if (containerStart <= quickMovedSlotIndex && quickMovedSlotIndex <= containerEnd) {//コンテナスロットなら
                 if (!moveItemTo(item/*SlotItemHandlerから取られたアイテムは本来加工してはいけないが*/, inventoryStart, hotbarEnd, true))//インベントリに差して
                     return ItemStack.EMPTY;//差せなければ終わり
-                else if(quickMovedSlot instanceof SlotItemHandler handlerSlot && handlerSlot.getItemHandler() instanceof ItemStackHandler handler)
+                else if (quickMovedSlot instanceof SlotItemHandler handlerSlot && handlerSlot.getItemHandler() instanceof ItemStackHandler handler)
                     handler.setStackInSlot(0, handler.getStackInSlot(0));//適当に何もしない更新をかけることで、このmodにおいては大丈夫
             } else if (inventoryStart <= quickMovedSlotIndex && quickMovedSlotIndex <= hotbarEnd) {//インベントリスロットなら
                 //まず優先度の高いコンテナスロットに差してから

@@ -50,7 +50,7 @@ public interface TPParticles {
     static void addSquares(Level level, Vec3 pos, float relativeScale, float velocityRandomness, float velocityScale, ColorSquare.Option option) {
         if (level instanceof ServerLevel sl)
             plusMinusOne(x -> plusMinusOne(y -> plusMinusOne(z ->
-                    addParticle(sl, option, pos.add(new Vec3(x,y,z).scale(relativeScale)),
+                    addParticle(sl, option, pos.add(new Vec3(x, y, z).scale(relativeScale)),
                             new Vec3(x + level.random.nextGaussian() * velocityRandomness,
                                     y + level.random.nextGaussian() * velocityRandomness,
                                     z + level.random.nextGaussian() * velocityRandomness).scale(velocityScale)))));

@@ -42,10 +42,13 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
 
     public void drawCenteredTexts(PoseStack pose) {
         if (menu.isSearching()) {
-            drawCentered(pose, Component.translatable("gui.transferpipe.searching"));
-            drawCentered(pose, menu.getSearchPosMsg());
+            drawCentered(pose, Component.translatable(getSearchMsg()));
+            var pos = menu.getSearchPos();
+            drawCentered(pose, Component.translatable("gui.transferpipe.searching_pos", pos.getX(), pos.getY(), pos.getZ()));
         }
     }
+
+    public abstract String getSearchMsg();
 
     public void drawCentered(PoseStack pose, Component c) {
         drawCentered(pose, c.getString());
@@ -60,6 +63,11 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
 
         public Item(TransferNodeMenu.Item p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
+        }
+
+        @Override
+        public String getSearchMsg() {
+            return "gui.transferpipe.searching_item";
         }
     }
 
@@ -80,10 +88,15 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
         }
 
         @Override
+        public String getSearchMsg() {
+            return "gui.transferpipe.searching_liquid";
+        }
+
+        @Override
         public void drawCenteredTexts(PoseStack pose) {
             var liquid = menu.getLiquid();
             if (!liquid.isEmpty())
-                drawCentered(pose, Component.translatable("gui.transferpipe.holding_liquid",
+                drawCentered(pose, Component.translatable("gui.transferpipe.liquid_amount",
                         TPUtils.toMilliBucket(liquid.getAmount()), liquid.getDisplayName()));
             super.drawCenteredTexts(pose);
         }
@@ -96,10 +109,22 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
         }
 
         @Override
+        public String getSearchMsg() {
+            return "gui.transferpipe.searching_energy";
+        }
+
+        @Override
         public void drawCenteredTexts(PoseStack pose) {
             var energy = menu.getEnergy();
             if (energy != 0)
-                drawCentered(pose, Component.translatable("gui.transferpipe.holding_energy", energy));
+                drawCentered(pose, Component.translatable("gui.transferpipe.energy_amount", TPUtils.toFE(energy)));
+            var extractables = menu.getExtractables();
+            var receivables = menu.getReceivables();
+            var both = menu.getBoth();
+            if (!(extractables == 0 && receivables == 0 && both == 0)) {
+                drawCentered(pose, Component.translatable("gui.transferpipe.connection"));
+                drawCentered(pose, Component.translatable("gui.transferpipe.connection_amounts", extractables, receivables, both));
+            }
             super.drawCenteredTexts(pose);
         }
     }

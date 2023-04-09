@@ -161,6 +161,11 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:rftools-base-326041:${rftoolsbase}")
     runtimeOnly fg.deobf("curse.maven:mcjtylib-233105:${mcjtylib}")
     runtimeOnly fg.deobf("curse.maven:the-one-probe-245211:${theoneprobe}")
+    runtimeOnly fg.deobf("curse.maven:rftools-power-290209:${rftoolspower}")
+    runtimeOnly fg.deobf("curse.maven:edivadlib-638508:${edivadlib}")
+    runtimeOnly fg.deobf("curse.maven:solargeneration-336538:${solargeneration}")
+    runtimeOnly fg.deobf("curse.maven:energized-power-782147:${energizedpower}")
+    runtimeOnly fg.deobf("curse.maven:miniature-power-plant-561733:${miniaturepowerplant}")
     // For more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html

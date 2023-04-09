@@ -3,12 +3,10 @@ package nin.transferpipe.block.tile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -16,10 +14,8 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.particle.ColorSquare;
-import nin.transferpipe.particle.TPParticles;
 import nin.transferpipe.util.ContainerUtils;
 import nin.transferpipe.util.HandlerUtils;
-import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -226,6 +222,6 @@ public class TileTransferNodeItem extends TileTransferNode {
 
     @Override
     public ColorSquare.Option getParticleOption() {
-        return new ColorSquare.Option(0.5F + 0.5F * level.random.nextFloat(), 0, 0, 1);
+        return new ColorSquare.Option(1, 0, 0, 1);
     }
 }

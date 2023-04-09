@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.common.util.NonNullConsumer;
+import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
@@ -98,5 +99,21 @@ public class HandlerUtils {
             fluidItem.fill(getFluid(), FluidAction.EXECUTE);
             dummyLiquidItem.setStackInSlot(0, fluidItem.getContainer());
         }
+    }
+
+    public static void forEnergyStorage(Level level, BlockPos pos, Direction dir, NonNullConsumer<? super IEnergyStorage> func) {
+        var optional = getEnergyStorageOptional(level, pos, dir);
+        if (optional != null)
+            optional.ifPresent(func);
+    }
+
+    public static boolean hasEnergyStorage(Level level, BlockPos pos, Direction dir) {
+        var optional = getEnergyStorageOptional(level, pos, dir);
+        return optional != null && optional.isPresent();
+    }
+
+    public static LazyOptional<IEnergyStorage> getEnergyStorageOptional(Level level, BlockPos pos, Direction dir) {
+        var be = level.getBlockEntity(pos);
+        return be != null ? be.getCapability(ForgeCapabilities.ENERGY, dir) : null;
     }
 }

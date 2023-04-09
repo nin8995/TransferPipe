@@ -2,7 +2,6 @@ package nin.transferpipe.item;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import nin.transferpipe.block.tile.TileTransferNode;
 import nin.transferpipe.util.HandlerUtils;

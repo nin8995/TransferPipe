@@ -12,10 +12,8 @@ import nin.transferpipe.util.TPUtils;
 import org.antlr.v4.misc.OrderedHashMap;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class Search {
@@ -69,7 +67,7 @@ public class Search {
         var tag = new CompoundTag();
         tag.put(CURRENT_POS, NbtUtils.writeBlockPos(currentPos));
         tag.put(NEXT_POS, NbtUtils.writeBlockPos(nextPos));
-        tag.put(QUEUE, writeQueue());
+        tag.put(QUEUE, TPUtils.writePosDirsSetMap(queue));
 
         return tag;
     }
@@ -80,33 +78,9 @@ public class Search {
         if (tag.contains(NEXT_POS))
             nextPos = NbtUtils.readBlockPos(tag.getCompound(NEXT_POS));
         if (tag.contains(QUEUE))
-            readQueue(tag.getCompound(QUEUE));
+            TPUtils.readPosDirs(tag.getCompound(QUEUE), queue::put);
 
         return this;
-    }
-
-    public CompoundTag writeQueue() {
-        var queueTag = new CompoundTag();
-        AtomicInteger i = new AtomicInteger(0);
-        queue.forEach((pos, dirs) -> {
-            var entryTag = new CompoundTag();
-            entryTag.put(POS, NbtUtils.writeBlockPos(pos));
-            entryTag.putIntArray(DIRS, dirs.stream().map(Enum::ordinal).toList());
-
-            queueTag.put(String.valueOf(i), entryTag);
-            i.getAndIncrement();
-        });
-
-        return queueTag;
-    }
-
-    public void readQueue(CompoundTag tag) {
-        tag.getAllKeys().forEach(i -> {
-            var entryTag = tag.getCompound(i);
-            var pos = NbtUtils.readBlockPos(entryTag.getCompound(POS));
-            var dirs = Arrays.stream(entryTag.getIntArray(DIRS)).mapToObj(j -> Direction.values()[j]).collect(Collectors.toSet());
-            queue.put(pos, dirs);
-        });
     }
 
     /**
@@ -122,7 +96,7 @@ public class Search {
         //進
         currentPos = nextPos;
         prevSearchedDirs = queue.get(currentPos);
-        if(prevSearchedDirs == null)//ブロック破壊などで検索先がなくなった
+        if (prevSearchedDirs == null)//ブロック破壊などで検索先がなくなった
             return reset();
         queue.remove(currentPos);
 
@@ -131,10 +105,12 @@ public class Search {
 
         //仕事先があれば即出勤
         var workableDirs = getWorkableDirs();
-        var workableDir = random(workableDirs);
-        if (workableDir != null) {
-            be.terminal(currentPos.relative(workableDir), workableDir.getOpposite());
-            be.addTerminalParticle(currentPos.relative(workableDir).getCenter());
+        if (!workableDirs.isEmpty()) {
+            if (be.canWorkMultipleAtTime())
+                workableDirs.forEach(this::onTerminal);
+            else
+                onTerminal(random(workableDirs));
+
             if (!be.pseudoRoundRobin)
                 return reset();
         }
@@ -185,13 +161,15 @@ public class Search {
     }
 
     public void addQueue(BlockPos pos, @NotNull Direction dir) {
-        if (!queue.containsKey(pos))
-            queue.put(pos, new HashSet<>(Set.of(dir)));
-        else
-            queue.get(pos).add(dir);
+        TPUtils.addToSetMap(queue, pos, dir);
     }
 
     public boolean hasNextQueue() {
         return queue.entrySet().iterator().hasNext();
+    }
+
+    public void onTerminal(Direction dir) {
+        be.terminal(currentPos.relative(dir), dir.getOpposite());
+        be.addTerminalParticle(currentPos.relative(dir).getCenter());
     }
 }

@@ -80,6 +80,20 @@ public class PipeUtils {
                 : Connection.NONE;
     }
 
+    public static boolean shouldConnectToMachine(Flow f, Level l, BlockPos p, Direction d) {
+        return f != Flow.IGNORE
+                && !(l.getBlockState(p).getBlock() instanceof TransferNodeBlock.FacingNode node && node.facing(l, p) == d)
+                && isWorkPlace(l, p.relative(d), d.getOpposite());
+    }
+
+    public static boolean isWorkPlace(Level level, BlockPos pos, @Nullable Direction dir) {
+        return !(level.getBlockEntity(pos) instanceof TileTransferNode)
+                && (HandlerUtils.hasItemHandler(level, pos, dir)
+                || ContainerUtils.hasContainer(level, pos)
+                || HandlerUtils.hasFluidHandler(level, pos, dir)
+                || HandlerUtils.hasEnergyStorage(level, pos, dir));
+    }
+
     public static boolean shouldConnectToPipe(Flow myFlow, Level l, BlockPos bp, Direction d) {
         if (eachOtherIsPipe(l, bp, d)) {//パイプ同士になっているか
             var yourFlow = currentFlow(l, bp.relative(d));//パイプである確証があるので絶対に非null
@@ -96,7 +110,8 @@ public class PipeUtils {
     public static boolean isPipe(Level level, BlockPos pos, Direction dir) {
         var bs = level.getBlockState(pos.relative(dir));
         return bs.getBlock() instanceof TransferPipeBlock//パイプならOK
-                || (bs.getBlock() instanceof TransferNodeBlock.FacingNode node && node.facing(bs) != dir.getOpposite());//ノードでも接地面じゃなければOK
+                || (bs.getBlock() instanceof TransferNodeBlock node //ノードなら
+                && !(node instanceof TransferNodeBlock.FacingNode facingNode && facingNode.facing(bs) == dir.getOpposite()));//接地面じゃなければOK
     }
 
     //自分と相手との間をどちらか一方でも実際に進めるか
@@ -107,17 +122,6 @@ public class PipeUtils {
     //このflowはd方向に開いているか
     public static boolean isFlowOpenToPipe(Flow f, Direction d) {
         return f == Flow.fromDir(d) || f == Flow.ALL || f == Flow.IGNORE;
-    }
-
-    public static boolean shouldConnectToMachine(Flow f, Level l, BlockPos p, Direction d) {
-        return f != Flow.IGNORE
-                && !(l.getBlockState(p).getBlock() instanceof TransferNodeBlock.FacingNode node && node.facing(l, p) == d)
-                && isWorkPlace(l, p.relative(d), d.getOpposite());
-    }
-
-    public static boolean isWorkPlace(Level level, BlockPos pos, @Nullable Direction dir) {
-        return !(level.getBlockEntity(pos) instanceof TileTransferNode)
-                && (HandlerUtils.hasItemHandler(level, pos, dir) || ContainerUtils.hasContainer(level, pos));
     }
 
     /**

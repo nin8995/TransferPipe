@@ -227,9 +227,10 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
         }
 
         public static final VoxelShape ENERGY_NODE = Stream.of(
-                Block.box(1, 1, 0, 15, 15, 1),
-                Block.box(3, 3, 1, 13, 13, 4),
-                Block.box(5, 5, 4, 11, 11, 6)
+                Block.box(5, 3, 5, 11, 13, 11),
+                Block.box(5, 5, 3, 11, 11, 13),
+                Block.box(3, 5, 5, 13, 11, 11),
+                Block.box(4, 4, 4, 12, 12, 12)
         ).reduce(Shapes::or).get();
 
         @Override
