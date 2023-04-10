@@ -48,6 +48,10 @@ public class Search {
             queue.put(nextPos, new HashSet<>());
         else
             addQueue(nextPos, be.FACING);
+
+        if (be.initialized)//インスタンス生成時に呼ばれるresetじゃない→探索が終わったときのreset
+            be.onSearchEnd();
+
         return this;
     }
 

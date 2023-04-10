@@ -1,5 +1,6 @@
 package nin.transferpipe.block.tile;
 
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -20,19 +21,19 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 
 public class TileTransferNodeEnergy extends TileTransferNode {
 
     private final EnergyStorage energyStorage;
-    private final Map<BlockPos, Map<Direction, LazyOptional<IEnergyStorage>>> extractablesLOs = new HashMap<>();
-    private final Map<BlockPos, Map<Direction, LazyOptional<IEnergyStorage>>> receivableLOs = new HashMap<>();
-    private final Map<BlockPos, Map<Direction, LazyOptional<IEnergyStorage>>> bothLOs = new HashMap<>();
+    private final Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> extractablesLOs = new HashMap<>();
+    private final Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> receivableLOs = new HashMap<>();
+    private final Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> bothLOs = new HashMap<>();
 
     public static final String ENERGY_STORAGE = "EnergyStorage";
     public static final String CONNECTIONS = "Connections";
-    private final Map<BlockPos, Set<Direction>> loadCache = new HashMap<>();
+    public static final String SEARCHED = "Searched";
+    private final Map<BlockPos, Map<Direction, Boolean>> loadCache = new HashMap<>();
     public ContainerData energyData = new ContainerData() {
         @Override
         public int get(int p_39284_) {
@@ -78,7 +79,7 @@ public class TileTransferNodeEnergy extends TileTransferNode {
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putInt(ENERGY_STORAGE, energyStorage.getEnergyStored());
-        tag.put(CONNECTIONS, TPUtils.writePosDirsMapMap(extractablesLOs, receivableLOs, bothLOs));
+        tag.put(CONNECTIONS, TPUtils.writePosDirsMapMap((tTag, pair) -> tTag.putBoolean(SEARCHED, pair.getSecond()), extractablesLOs, receivableLOs, bothLOs));
     }
 
     @Override
@@ -87,7 +88,7 @@ public class TileTransferNodeEnergy extends TileTransferNode {
         if (tag.contains(ENERGY_STORAGE))
             energyStorage.receiveEnergy(tag.getInt(ENERGY_STORAGE), false);
         if (tag.contains(CONNECTIONS))
-            TPUtils.readPosDirs(tag.getCompound(CONNECTIONS), loadCache::put);
+            TPUtils.readPosDirsMap(tag.getCompound(CONNECTIONS), t -> t.getBoolean(SEARCHED), loadCache::put);
     }
 
     /**
@@ -101,29 +102,12 @@ public class TileTransferNodeEnergy extends TileTransferNode {
 
     @Override
     public void facing(BlockPos pos, Direction dir) {
-        tryEstablishConnection(pos, dir);
+        tryEstablishConnection(pos, dir, true);
     }
 
     @Override
     public void terminal(BlockPos pos, Direction dir) {
-        tryEstablishConnection(pos, dir);
-    }
-
-    public void tryEstablishConnections(BlockPos pos, Set<Direction> dirs) {
-        dirs.forEach(dir -> tryEstablishConnection(pos, dir));
-    }
-
-    public void tryEstablishConnection(BlockPos pos, Direction dir) {
-        var loEnergy = HandlerUtils.getEnergyStorageOptional(level, pos, dir);
-        if (loEnergy != null)
-            loEnergy.ifPresent(energy -> {
-                if (energy.canExtract() && energy.canReceive())
-                    TPUtils.addToMapMap(bothLOs, pos, dir, loEnergy);
-                else if (energy.canExtract())
-                    TPUtils.addToMapMap(extractablesLOs, pos, dir, loEnergy);
-                else if (energy.canReceive())
-                    TPUtils.addToMapMap(receivableLOs, pos, dir, loEnergy);
-            });
+        tryEstablishConnection(pos, dir, true);
     }
 
     @Override
@@ -145,7 +129,7 @@ public class TileTransferNodeEnergy extends TileTransferNode {
     public void tick() {
         //load時にはlevelがnullなため、ここで実際にloをload
         if (!loadCache.isEmpty()) {
-            loadCache.forEach(this::tryEstablishConnections);
+            loadCache.forEach((pos, dirsSearched) -> dirsSearched.forEach((dir, searched) -> tryEstablishConnection(pos, dir, searched)));
             loadCache.clear();
         }
 
@@ -162,29 +146,42 @@ public class TileTransferNodeEnergy extends TileTransferNode {
         insertTo(both);
     }
 
+    public void tryEstablishConnection(BlockPos pos, Direction dir, boolean wasSearched) {
+        var loEnergy = HandlerUtils.getEnergyStorageOptional(level, pos, dir);
+        if (loEnergy != null)
+            loEnergy.ifPresent(energy -> {
+                if (energy.canExtract() && energy.canReceive())
+                    TPUtils.addToMapMap(bothLOs, pos, dir, Pair.of(loEnergy, wasSearched));
+                else if (energy.canExtract())
+                    TPUtils.addToMapMap(extractablesLOs, pos, dir, Pair.of(loEnergy, wasSearched));
+                else if (energy.canReceive())
+                    TPUtils.addToMapMap(receivableLOs, pos, dir, Pair.of(loEnergy, wasSearched));
+            });
+    }
+
     public void refreshConnections() {
         refreshConnection(extractablesLOs, IEnergyStorage::canExtract);
         refreshConnection(receivableLOs, IEnergyStorage::canReceive);
         refreshConnection(bothLOs, e -> e.canReceive() && e.canExtract());
     }
 
-    public void refreshConnection(Map<BlockPos, Map<Direction, LazyOptional<IEnergyStorage>>> map, Predicate<IEnergyStorage> shouldSustain) {
-        var toRemove = new HashMap<BlockPos, Set<Direction>>();
-        map.forEach((pos, value) -> value.forEach((dir, loEnergy) -> {//!isPresentとisEmptyはLazyOptionalにおいては違う
+    public void refreshConnection(Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> map, Predicate<IEnergyStorage> shouldSustain) {
+        TPUtils.removeFromMapMap(map, (pos, dir, pair) -> {
+            var loEnergy = pair.getFirst();//!isPresentとisEmptyはLazyOptionalにおいては違う
             if (loEnergy.filter(shouldSustain::test).isEmpty() || !loEnergy.isPresent())//保持するべきではない or そもそもなくなってる
-                TPUtils.addToSetMap(toRemove, pos, dir);
+                return true;
             else //なんかRFToolsのマルチブロック蓄電器はこれだけじゃ消去されなかったから、実際にやってエラー吐かれることを以て無効化とみなす
                 try {
                     loEnergy.resolve().get().getEnergyStored();
                 } catch (Exception e) {
-                    TPUtils.addToSetMap(toRemove, pos, dir);
+                    return true;
                 }
-        }));
-        toRemove.forEach((pos, value) -> value.forEach(dir -> TPUtils.removeFromMapMap(map, pos, dir)));
+            return false;
+        });
     }
 
-    public List<IEnergyStorage> getEnergyStorages(Map<BlockPos, Map<Direction, LazyOptional<IEnergyStorage>>> map) {
-        return map.values().stream().flatMap(valMap -> valMap.values().stream().map(lo -> lo.resolve().get())).toList();
+    public List<IEnergyStorage> getEnergyStorages(Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> map) {
+        return map.values().stream().flatMap(valMap -> valMap.values().stream().map(pair -> pair.getFirst().resolve().get())).toList();
     }
 
     public void extractFrom(List<IEnergyStorage> extractables) {
@@ -229,5 +226,25 @@ public class TileTransferNodeEnergy extends TileTransferNode {
                 }
             }
         }
+    }
+
+    @Override
+    public void onSearchEnd() {
+        super.onSearchEnd();
+        disconnectUnlessWasSearched(extractablesLOs);
+        disconnectUnlessWasSearched(receivableLOs);
+        disconnectUnlessWasSearched(bothLOs);
+
+        resetSearchedFlags(extractablesLOs);
+        resetSearchedFlags(receivableLOs);
+        resetSearchedFlags(bothLOs);
+    }
+
+    public void disconnectUnlessWasSearched(Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> map) {
+        TPUtils.removeFromMapMap(map, (pos, dir, pair) -> !pair.getSecond());
+    }
+
+    public void resetSearchedFlags(Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> map) {
+        map.forEach((pos, dirsMap) -> dirsMap.forEach((dir, pair) -> dirsMap.put(dir, pair.mapSecond(b -> false))));
     }
 }

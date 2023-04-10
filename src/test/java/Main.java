@@ -3,11 +3,17 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 public class Main {
+
     public static void main(String[] args){
-        System.out.println(1/2F*2);
+        var map = new HashMap<Integer, Integer>();
+        map.put(1,1);
+        map.put(2,2);
+        map.forEach((i1, i2) -> map.put(i1, ++i2));
+        System.out.println(map);
     }
 /*
     var map = new LinkedHashMap<String, Integer>();

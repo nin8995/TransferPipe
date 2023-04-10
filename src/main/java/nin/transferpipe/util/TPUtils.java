@@ -33,6 +33,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -187,6 +188,20 @@ public class TPUtils {
             map.put(key1, new HashMap<>(Map.of(key2, value)));
     }
 
+    public static <A, B, C> void removeFromMapMap(Map<A, Map<B, C>> map, Predicate3<A, B, C> shouldRemove) {
+        var toRemove = new HashMap<A, Set<B>>();
+        map.forEach((a, value) -> value.forEach((b, c) -> {
+            if (shouldRemove.test(a, b, c))
+                addToSetMap(toRemove, a, b);
+        }));
+        toRemove.forEach((a, value) -> value.forEach(b -> TPUtils.removeFromMapMap(map, a, b)));
+    }
+
+    public interface Predicate3<A, B, C> {
+
+        boolean test(A a, B b, C c);
+    }
+
     public static <K1, K2, V> void removeFromMapMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2) {
         map.get(key1).remove(key2);
         if (map.get(key1).isEmpty())
@@ -207,11 +222,11 @@ public class TPUtils {
     }
 
     @SafeVarargs
-    public static <T> CompoundTag writePosDirsMapMap(Map<BlockPos, Map<Direction, T>>... mapMaps) {
+    public static <T> CompoundTag writePosDirsMapMap(BiConsumer<CompoundTag, T> writer, Map<BlockPos, Map<Direction, T>>... mapMaps) {
         var tag = new CompoundTag();
         AtomicInteger i = new AtomicInteger(0);
         for (Map<BlockPos, Map<Direction, T>> mapMap : mapMaps)
-            putPosDirsFromMapMapTo(mapMap, tag, i);
+            putPosDirsFromMapMapTo(mapMap, writer, tag, i);
 
         return tag;
     }
@@ -220,8 +235,19 @@ public class TPUtils {
         setMap.forEach((pos, dirs) -> putPosDirsTo(tag, pos, dirs, i));
     }
 
-    public static <T> void putPosDirsFromMapMapTo(Map<BlockPos, Map<Direction, T>> mapMap, CompoundTag tag, AtomicInteger i) {
-        mapMap.forEach((pos, value) -> putPosDirsTo(tag, pos, value.keySet(), i));
+    public static <T> void putPosDirsFromMapMapTo(Map<BlockPos, Map<Direction, T>> mapMap, BiConsumer<CompoundTag, T> writer, CompoundTag tag, AtomicInteger i) {
+        mapMap.forEach((pos, dirsMap) -> {
+            var subTag = new CompoundTag();
+            subTag.put(POS, NbtUtils.writeBlockPos(pos));
+            dirsMap.forEach((dir, value) -> {
+                var tTag = new CompoundTag();
+                writer.accept(tTag, value);
+                subTag.put(dir.toString(), tTag);
+            });
+
+            tag.put(String.valueOf(i), subTag);
+            i.getAndIncrement();
+        });
     }
 
     public static void putPosDirsTo(CompoundTag tag, BlockPos pos, Set<Direction> dirs, AtomicInteger i) {
@@ -239,6 +265,18 @@ public class TPUtils {
             var pos = NbtUtils.readBlockPos(entryTag.getCompound(POS));
             var dirs = Arrays.stream(entryTag.getIntArray(DIRS)).mapToObj(j -> Direction.values()[j]).collect(Collectors.toSet());
             readFunc.accept(pos, dirs);
+        });
+    }
+
+    public static <T> void readPosDirsMap(CompoundTag tag, Function<CompoundTag, T> translateFunc, BiConsumer<BlockPos, Map<Direction, T>> readFunc) {
+        tag.getAllKeys().forEach(i -> {
+            var entryTag = tag.getCompound(i);
+            var pos = NbtUtils.readBlockPos(entryTag.getCompound(POS));
+            var dirsMap = new HashMap<Direction, T>();
+            Direction.stream().filter(d -> entryTag.contains(d.toString())).forEach(d ->
+                    dirsMap.put(d, translateFunc.apply(entryTag.getCompound(d.toString()))));
+
+            readFunc.accept(pos, dirsMap);
         });
     }
 }

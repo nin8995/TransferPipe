@@ -275,4 +275,7 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
     public boolean canWorkMultipleAtTime() {
         return false;
     }
+
+    public void onSearchEnd() {
+    }
 }
