@@ -26,15 +26,12 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.fluids.FluidStack;
-import nin.transferpipe.TransferPipe;
+import nin.transferpipe.TPMod;
 import nin.transferpipe.mixin.AtlasAccessor;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
+import java.util.function.*;
 import java.util.stream.Collectors;
 
 public class TPUtils {
@@ -163,7 +160,7 @@ public class TPUtils {
     }
 
     public static ResourceLocation modLoc(String id) {
-        return new ResourceLocation(TransferPipe.MODID, id);
+        return new ResourceLocation(TPMod.MODID, id);
     }
 
     public static String toMilliBucket(int amount) {
@@ -206,6 +203,18 @@ public class TPUtils {
         map.get(key1).remove(key2);
         if (map.get(key1).isEmpty())
             map.remove(key1);
+    }
+
+    public static <A, B> void removeFromMap(Map<A, B> map, BiPredicate<A, B> shouldRemove, Consumer<A> terminalFunc) {
+        var toRemove = new HashSet<A>();
+        map.forEach((a, b) -> {
+            if (shouldRemove.test(a, b))
+                toRemove.add(a);
+        });
+        toRemove.forEach(pos -> {
+            terminalFunc.accept(pos);
+            map.remove(pos);
+        });
     }
 
     public static String POS = "Pos";
@@ -270,13 +279,37 @@ public class TPUtils {
 
     public static <T> void readPosDirsMap(CompoundTag tag, Function<CompoundTag, T> translateFunc, BiConsumer<BlockPos, Map<Direction, T>> readFunc) {
         tag.getAllKeys().forEach(i -> {
-            var entryTag = tag.getCompound(i);
-            var pos = NbtUtils.readBlockPos(entryTag.getCompound(POS));
+            var subTag = tag.getCompound(i);
+            var pos = NbtUtils.readBlockPos(subTag.getCompound(POS));
             var dirsMap = new HashMap<Direction, T>();
-            Direction.stream().filter(d -> entryTag.contains(d.toString())).forEach(d ->
-                    dirsMap.put(d, translateFunc.apply(entryTag.getCompound(d.toString()))));
+            Direction.stream().filter(d -> subTag.contains(d.toString())).forEach(d ->
+                    dirsMap.put(d, translateFunc.apply(subTag.getCompound(d.toString()))));
 
             readFunc.accept(pos, dirsMap);
+        });
+    }
+
+    public static <T> CompoundTag writePosMap(Map<BlockPos, T> map, BiConsumer<CompoundTag, T> writer) {
+        var tag = new CompoundTag();
+        AtomicInteger i = new AtomicInteger(0);
+
+        map.forEach((pos, t) -> {
+            var subTag = new CompoundTag();
+            subTag.put(POS, NbtUtils.writeBlockPos(pos));
+            writer.accept(subTag, t);
+            tag.put(i.toString(), subTag);
+            i.getAndIncrement();
+        });
+
+        return tag;
+    }
+
+    public static <T> void readPosMap(CompoundTag tag, Function<CompoundTag, T> translateFunc, BiConsumer<BlockPos, T> readFunc) {
+        tag.getAllKeys().forEach(i -> {
+            var subTag = tag.getCompound(i);
+            var pos = NbtUtils.readBlockPos(subTag.getCompound(POS));
+            var t = translateFunc.apply(subTag);
+            readFunc.accept(pos, t);
         });
     }
 }

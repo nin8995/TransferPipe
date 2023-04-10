@@ -1,4 +1,4 @@
-package nin.transferpipe.block.tile;
+package nin.transferpipe.block.node;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -15,15 +15,14 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import nin.transferpipe.block.TransferNodeBlock;
-import nin.transferpipe.block.status.Search;
+import nin.transferpipe.block.TPBlocks;
+import nin.transferpipe.block.TileNonStaticTicker;
+import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.item.TPItems;
 import nin.transferpipe.item.Upgrade;
 import nin.transferpipe.particle.ColorSquare;
@@ -35,14 +34,14 @@ import org.jetbrains.annotations.Nullable;
 import java.util.stream.IntStream;
 
 //搬送する種類に依らない、「ノード」のタイルエンティティとしての機能
-public abstract class TileTransferNode extends BlockEntity implements TPItems, ICapabilityProvider {
+public abstract class TileBaseTransferNode extends TileNonStaticTicker implements TPItems {
 
     /**
      * 基本情報
      */
 
     //タイルのフィールドは変更を知らせないといけないので普通privateにしてsetterを介す
-    private BlockState pipeState = PipeUtils.defaultState();
+    private BlockState pipeState = TPBlocks.TRANSFER_PIPE.get().defaultBlockState();
     private Search search;
     private int cooltime;
     private boolean firstTick = true;//でもこれは内部的な値なのでsetterなしで済ませてる
@@ -89,10 +88,10 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
         }
     };
 
-    public TileTransferNode(BlockEntityType<? extends TileTransferNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
+    public TileBaseTransferNode(BlockEntityType<? extends TileBaseTransferNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
         super(p_155228_, p_155229_, p_155230_);
         POS = this.worldPosition;
-        if (getBlockState().getBlock() instanceof TransferNodeBlock.FacingNode node)
+        if (getBlockState().getBlock() instanceof BlockTransferNode.FacingNode node)
             FACING = node.facing(getBlockState());
 
         setSearch(new Search(this));
@@ -176,10 +175,11 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
      * 一般の機能
      */
 
+    @Override
     public void tick() {
         //インスタンス生成時はlevelがnullでpipeState分らんからここで
         if (firstTick) {
-            setPipeStateAndUpdate(PipeUtils.calcInitialState(level, worldPosition));
+            setPipeStateAndUpdate(PipeUtils.calcInitialState(level, worldPosition, pipeState));
             firstTick = false;//setChangedは上で呼ばれてる
         }
 
@@ -228,6 +228,8 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
                 depthFirst = true;
             if (upgrade.is(BREADTH_FIRST_SEARCH_UPGRADE.get()))
                 breadthFirst = true;
+            if (upgrade.getItem() instanceof Upgrade.BlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
+                setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
         });
     }
 
@@ -238,7 +240,7 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
     //PipeState(特定のパイプの特定の状況)を表示
     // TODO ノード本体が視界外になるだけでPipeStateが表示されなくなる
     // TODO 重い
-    public static class Renderer implements BlockEntityRenderer<TileTransferNode> {
+    public static class Renderer implements BlockEntityRenderer<TileBaseTransferNode> {
 
         private final BlockRenderDispatcher blockRenderer;
 
@@ -247,7 +249,7 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
         }
 
         @Override
-        public void render(TileTransferNode be, float p_112308_, PoseStack pose, MultiBufferSource mbs, int p_112311_, int overlay) {
+        public void render(TileBaseTransferNode be, float p_112308_, PoseStack pose, MultiBufferSource mbs, int p_112311_, int overlay) {
             var level = be.getLevel();
 
             if (be.shouldRenderPipe() && level != null)//いつlevelがnullになるの
@@ -277,5 +279,8 @@ public abstract class TileTransferNode extends BlockEntity implements TPItems, I
     }
 
     public void onSearchEnd() {
+    }
+
+    public void onProceedPipe(BlockPos pos) {
     }
 }

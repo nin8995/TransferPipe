@@ -1,4 +1,4 @@
-package nin.transferpipe.block;
+package nin.transferpipe.block.node;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -14,10 +14,6 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.EntityBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -29,43 +25,33 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
-import nin.transferpipe.block.tile.TileTransferNode;
-import nin.transferpipe.block.tile.TileTransferNodeEnergy;
-import nin.transferpipe.block.tile.TileTransferNodeItem;
-import nin.transferpipe.block.tile.TileTransferNodeLiquid;
-import nin.transferpipe.block.tile.gui.TransferNodeMenu;
+import nin.transferpipe.block.LightingBlock;
+import nin.transferpipe.block.TPBlocks;
+import nin.transferpipe.block.TickingGUIEntityBlock;
+import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 //搬送する種類に依らない、「ノード」のブロックとしての機能
-public abstract class TransferNodeBlock extends LightingBlock implements EntityBlock {
+public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends LightingBlock implements TickingGUIEntityBlock<T> {
 
     /**
      * 基本情報
      */
 
-    public TransferNodeBlock() {
+    public BlockTransferNode() {
         super(BlockBehaviour.Properties.of(Material.STONE));
     }
 
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return type == getType() ? (Level l, BlockPos p, BlockState bs, T t) -> {
-            if (t instanceof TileTransferNode be)
-                be.tick();
-        } : null;
-    }
-
     //energy nodeかそうじゃないか
-    public abstract static class FacingNode extends TransferNodeBlock {
+    public abstract static class FacingNode<T extends TileBaseTransferNode> extends BlockTransferNode<T> {
 
         public static DirectionProperty FACING = BlockStateProperties.FACING;
 
@@ -98,7 +84,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
             var shape = new AtomicReference<>(shapeCache.get(state));
             blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
                 if (be.shouldRenderPipe())
-                    shape.set(Shapes.or(shape.get(), TransferPipeBlock.getShape(be.getPipeState())));
+                    shape.set(Shapes.or(shape.get(), TransferPipe.getShape(be.getPipeState())));
             });
 
             return shape.get();
@@ -109,7 +95,17 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
         }
 
         public Direction facing(BlockState state) {
-            return state.getValue(TransferNodeBlock.FacingNode.FACING);
+            return state.getValue(BlockTransferNode.FacingNode.FACING);
+        }
+    }
+
+    @Nullable
+    @Override
+    public MenuProvider getMenuProvider(BlockState p_60563_, Level level, BlockPos pos) {
+        try {
+            return menu(level, pos, (T) level.getBlockEntity(pos));
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -119,7 +115,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
 
     @Override
     public void neighborChanged(BlockState p_60509_, Level level, BlockPos pos, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
-        if (level.getBlockEntity(pos) instanceof TileTransferNode be) {
+        if (level.getBlockEntity(pos) instanceof TileBaseTransferNode be) {
             var prevState = be.getPipeState();
             var currentState = PipeUtils.recalcConnections(level, pos);
             if (prevState != currentState)
@@ -131,7 +127,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
-        if (level.getBlockEntity(pos) instanceof TileTransferNode be) {
+        if (level.getBlockEntity(pos) instanceof TileBaseTransferNode be) {
             if (PipeUtils.usingWrench(player, hand)) {
                 be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos));
                 return InteractionResult.SUCCESS;
@@ -150,80 +146,48 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
      * 搬送種毎の情報
      */
 
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos p_153215_, BlockState p_153216_) {
-        return entityCreator().apply(p_153215_, p_153216_);
-    }
-
-    public abstract BlockEntityType<? extends TileTransferNode> getType();
-
-    //いちいち引数書くのめんどいから::だけで実装したい
-    public abstract BiFunction<BlockPos, BlockState, BlockEntity> entityCreator();
-
-    public static class Item extends FacingNode {
+    public static class Item extends FacingNode<TileTransferNodeItem> {
 
         @Override
-        public BlockEntityType<? extends TileTransferNode> getType() {
-            return TPBlocks.TRANSFER_NODE_ITEM.entity();
+        public TPBlocks.RegistryGUIEntityBlock<TileTransferNodeItem> registryWithGUI() {
+            return TPBlocks.TRANSFER_NODE_ITEM;
         }
 
         @Override
-        public BiFunction<BlockPos, BlockState, BlockEntity> entityCreator() {
-            return TileTransferNodeItem::new;
-        }
-
-        @Nullable
-        @Override
-        public MenuProvider getMenuProvider(BlockState p_60563_, Level level, BlockPos pos) {
-            return level.getBlockEntity(pos) instanceof TileTransferNodeItem be ? new SimpleMenuProvider(
-                    (i, inv, pl) -> new TransferNodeMenu.Item(be.getItemSlotHandler(), be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
-                    Component.translatable("menu.title.transferpipe.node_item"))
-                    : null;
+        public MenuProvider menu(Level level, BlockPos pos, TileTransferNodeItem be) {
+            return new SimpleMenuProvider(
+                    (i, inv, pl) -> new MenuTransferNode.Item(be.getItemSlotHandler(), be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
+                    Component.translatable("menu.title.transferpipe.node_item"));
         }
     }
 
-    public static class Liquid extends FacingNode {
+    public static class Liquid extends FacingNode<TileTransferNodeLiquid> {
 
         @Override
-        public BlockEntityType<? extends TileTransferNode> getType() {
-            return TPBlocks.TRANSFER_NODE_LIQUID.entity();
+        public TPBlocks.RegistryGUIEntityBlock<TileTransferNodeLiquid> registryWithGUI() {
+            return TPBlocks.TRANSFER_NODE_LIQUID;
         }
 
         @Override
-        public BiFunction<BlockPos, BlockState, BlockEntity> entityCreator() {
-            return TileTransferNodeLiquid::new;
-        }
-
-        @Nullable
-        @Override
-        public MenuProvider getMenuProvider(BlockState p_60563_, Level level, BlockPos pos) {
-            return level.getBlockEntity(pos) instanceof TileTransferNodeLiquid be ? new SimpleMenuProvider(
-                    (i, inv, pl) -> new TransferNodeMenu.Liquid(be.dummyLiquidItem, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
-                    Component.translatable("menu.title.transferpipe.node_liquid"))
-                    : null;
+        public MenuProvider menu(Level level, BlockPos pos, TileTransferNodeLiquid be) {
+            return new SimpleMenuProvider(
+                    (i, inv, pl) -> new MenuTransferNode.Liquid(be.dummyLiquidItem, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
+                    Component.translatable("menu.title.transferpipe.node_liquid"));
         }
     }
 
-    public static class Energy extends TransferNodeBlock {
+    public static class Energy extends BlockTransferNode<TileTransferNodeEnergy> {
 
         @Override
-        public BlockEntityType<? extends TileTransferNode> getType() {
-            return TPBlocks.TRANSFER_NODE_ENERGY.entity();
+        public TPBlocks.RegistryGUIEntityBlock<TileTransferNodeEnergy> registryWithGUI() {
+            return TPBlocks.TRANSFER_NODE_ENERGY;
         }
 
         @Override
-        public BiFunction<BlockPos, BlockState, BlockEntity> entityCreator() {
-            return TileTransferNodeEnergy::new;
-        }
-
-        @Nullable
-        @Override
-        public MenuProvider getMenuProvider(BlockState p_60563_, Level level, BlockPos pos) {
-            return level.getBlockEntity(pos) instanceof TileTransferNodeEnergy be ? new SimpleMenuProvider(
-                    (i, inv, pl) -> new TransferNodeMenu.Energy(be.energyData, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
-                    Component.translatable("menu.title.transferpipe.node_energy"))
-                    : null;
+        public MenuProvider menu(Level level, BlockPos pos, TileTransferNodeEnergy be) {
+            return new SimpleMenuProvider(
+                    (i, inv, pl) -> new MenuTransferNode.Energy(be.energyData, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
+                    Component.translatable("menu.title.transferpipe.node_energy"));
         }
 
         public static final VoxelShape ENERGY_NODE = Stream.of(
@@ -238,7 +202,7 @@ public abstract class TransferNodeBlock extends LightingBlock implements EntityB
             var shape = new AtomicReference<>(ENERGY_NODE);
             blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
                 if (be.shouldRenderPipe())
-                    shape.set(Shapes.or(shape.get(), TransferPipeBlock.getShape(be.getPipeState())));
+                    shape.set(Shapes.or(shape.get(), TransferPipe.getShape(be.getPipeState())));
             });
 
             return shape.get();

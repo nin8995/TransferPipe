@@ -1,4 +1,4 @@
-package nin.transferpipe.block.tile.gui;
+package nin.transferpipe.block.node;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -8,13 +8,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import nin.transferpipe.util.TPUtils;
 
-public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends AbstractContainerScreen<T> {
+public abstract class ScreenTransferNode<T extends MenuTransferNode> extends AbstractContainerScreen<T> {
 
     private static final ResourceLocation BG = TPUtils.modLoc("textures/gui/container/transfer_node.png");
 
-    private int customLabelY;
+    public int customLabelY;
 
-    public TransferNodeScreen(T p_97741_, Inventory p_97742_, Component p_97743_) {
+    public ScreenTransferNode(T p_97741_, Inventory p_97742_, Component p_97743_) {
         super(p_97741_, p_97742_, p_97743_);
         this.inventoryLabelY = 114514;
         this.titleLabelY = -23;
@@ -59,9 +59,9 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
         customLabelY += 10;
     }
 
-    public static class Item extends TransferNodeScreen<TransferNodeMenu.Item> {
+    public static class Item extends ScreenTransferNode<MenuTransferNode.Item> {
 
-        public Item(TransferNodeMenu.Item p_97741_, Inventory p_97742_, Component p_97743_) {
+        public Item(MenuTransferNode.Item p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
         }
 
@@ -71,9 +71,9 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
         }
     }
 
-    public static class Liquid extends TransferNodeScreen<TransferNodeMenu.Liquid> {
+    public static class Liquid extends ScreenTransferNode<MenuTransferNode.Liquid> {
 
-        public Liquid(TransferNodeMenu.Liquid p_97741_, Inventory p_97742_, Component p_97743_) {
+        public Liquid(MenuTransferNode.Liquid p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
         }
 
@@ -83,7 +83,7 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
             var liquid = menu.getLiquid();
 
             if (!liquid.isEmpty())
-                TPUtils.renderLiquid(liquid, pose, 80, -38 + TransferNodeMenu.upgradesY, 16);
+                TPUtils.renderLiquid(liquid, pose, 80, -38 + MenuTransferNode.upgradesY, 16);
 
         }
 
@@ -102,9 +102,9 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
         }
     }
 
-    public static class Energy extends TransferNodeScreen<TransferNodeMenu.Energy> {
+    public static class Energy extends ScreenTransferNode<MenuTransferNode.Energy> {
 
-        public Energy(TransferNodeMenu.Energy p_97741_, Inventory p_97742_, Component p_97743_) {
+        public Energy(MenuTransferNode.Energy p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
         }
 
@@ -115,9 +115,12 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
 
         @Override
         public void drawCenteredTexts(PoseStack pose) {
+            customLabelY -= 7;
+
             var energy = menu.getEnergy();
             if (energy != 0)
                 drawCentered(pose, Component.translatable("gui.transferpipe.energy_amount", TPUtils.toFE(energy)));
+
             var extractables = menu.getExtractables();
             var receivables = menu.getReceivables();
             var both = menu.getBoth();
@@ -125,6 +128,11 @@ public abstract class TransferNodeScreen<T extends TransferNodeMenu> extends Abs
                 drawCentered(pose, Component.translatable("gui.transferpipe.connection"));
                 drawCentered(pose, Component.translatable("gui.transferpipe.connection_amounts", extractables, receivables, both));
             }
+
+            var energyReceiverPipes = menu.getEnergyReceiverPipes();
+            if (energyReceiverPipes != 0)
+                drawCentered(pose, Component.translatable("gui.transferpipe.energy_receiver_pipe_amount", energyReceiverPipes));
+
             super.drawCenteredTexts(pose);
         }
     }

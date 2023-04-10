@@ -1,8 +1,8 @@
 {
   "credit": "Made with Blockbench",
   "textures": {
-    "1": "transferpipe:block/transfer_pipe_overlay",
-    "particle": "transferpipe:block/transfer_pipe"
+    "1": "transferpipe:block/overlay",
+    "particle": "transferpipe:block/overlay"
   },
   "elements": [
     {

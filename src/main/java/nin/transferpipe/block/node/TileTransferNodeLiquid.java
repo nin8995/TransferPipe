@@ -1,4 +1,4 @@
-package nin.transferpipe.block.tile;
+package nin.transferpipe.block.node;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE;
 
-public class TileTransferNodeLiquid extends TileTransferNode {
+public class TileTransferNodeLiquid extends TileBaseTransferNode {
 
     /**
      * 基本情報
@@ -37,7 +37,7 @@ public class TileTransferNodeLiquid extends TileTransferNode {
     private final int baseSpeed = 200;
 
     public TileTransferNodeLiquid(BlockPos p_155229_, BlockState p_155230_) {
-        super(TPBlocks.TRANSFER_NODE_LIQUID.entity(), p_155229_, p_155230_);
+        super(TPBlocks.TRANSFER_NODE_LIQUID.tile(), p_155229_, p_155230_);
         dummyLiquidItem = new ItemStackHandler();
         liquidSlot = new HandlerUtils.TileLiquid<>(8000, this, dummyLiquidItem);
     }

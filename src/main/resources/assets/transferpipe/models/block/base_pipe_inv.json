@@ -1,10 +1,6 @@
 {
   "credit": "Made with Blockbench",
   "parent": "block/block",
-  "textures": {
-    "0": "transferpipe:block/transfer_pipe",
-    "particle": "transferpipe:block/transfer_pipe"
-  },
   "elements": [
     {
       "from": [

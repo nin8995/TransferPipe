@@ -1,4 +1,4 @@
-package nin.transferpipe.block.tile.gui;
+package nin.transferpipe.block;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.world.entity.player.Inventory;

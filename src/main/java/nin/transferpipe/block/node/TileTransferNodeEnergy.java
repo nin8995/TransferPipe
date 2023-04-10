@@ -1,4 +1,4 @@
-package nin.transferpipe.block.tile;
+package nin.transferpipe.block.node;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
@@ -12,8 +12,10 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.EnergyStorage;
 import net.minecraftforge.energy.IEnergyStorage;
 import nin.transferpipe.block.TPBlocks;
+import nin.transferpipe.block.pipe.EnergyReceiverPipe;
 import nin.transferpipe.particle.ColorSquare;
 import nin.transferpipe.util.HandlerUtils;
+import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,16 +25,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-public class TileTransferNodeEnergy extends TileTransferNode {
+public class TileTransferNodeEnergy extends TileBaseTransferNode {
 
     private final EnergyStorage energyStorage;
     private final Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> extractablesLOs = new HashMap<>();
     private final Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> receivableLOs = new HashMap<>();
     private final Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> bothLOs = new HashMap<>();
+    private final Map<BlockPos, Boolean> energyReceiverPipes = new HashMap<>();
 
-    public static final String ENERGY_STORAGE = "EnergyStorage";
+    public static final String ENERGY = "Energy";
     public static final String CONNECTIONS = "Connections";
     public static final String SEARCHED = "Searched";
+    public static final String ENERGY_RECEIVER_PIPES = "EnergyReceiverPipes";
     private final Map<BlockPos, Map<Direction, Boolean>> loadCache = new HashMap<>();
     public ContainerData energyData = new ContainerData() {
         @Override
@@ -42,6 +46,7 @@ public class TileTransferNodeEnergy extends TileTransferNode {
                 case 1 -> extractablesLOs.size();
                 case 2 -> receivableLOs.size();
                 case 3 -> bothLOs.size();
+                case 4 -> energyReceiverPipes.size();
                 default -> -1;
             };
         }
@@ -54,12 +59,12 @@ public class TileTransferNodeEnergy extends TileTransferNode {
 
         @Override
         public int getCount() {
-            return 4;
+            return 5;
         }
     };
 
     public TileTransferNodeEnergy(BlockPos p_155229_, BlockState p_155230_) {
-        super(TPBlocks.TRANSFER_NODE_ENERGY.entity(), p_155229_, p_155230_);
+        super(TPBlocks.TRANSFER_NODE_ENERGY.tile(), p_155229_, p_155230_);
         this.energyStorage = new EnergyStorage(10000, Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
 
@@ -78,17 +83,20 @@ public class TileTransferNodeEnergy extends TileTransferNode {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.putInt(ENERGY_STORAGE, energyStorage.getEnergyStored());
-        tag.put(CONNECTIONS, TPUtils.writePosDirsMapMap((tTag, pair) -> tTag.putBoolean(SEARCHED, pair.getSecond()), extractablesLOs, receivableLOs, bothLOs));
+        tag.putInt(ENERGY, energyStorage.getEnergyStored());
+        tag.put(CONNECTIONS, TPUtils.writePosDirsMapMap((t, pair) -> t.putBoolean(SEARCHED, pair.getSecond()), extractablesLOs, receivableLOs, bothLOs));
+        tag.put(ENERGY_RECEIVER_PIPES, TPUtils.writePosMap(energyReceiverPipes, (t, b) -> t.putBoolean(SEARCHED, b)));
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        if (tag.contains(ENERGY_STORAGE))
-            energyStorage.receiveEnergy(tag.getInt(ENERGY_STORAGE), false);
+        if (tag.contains(ENERGY))
+            energyStorage.receiveEnergy(tag.getInt(ENERGY), false);
         if (tag.contains(CONNECTIONS))
             TPUtils.readPosDirsMap(tag.getCompound(CONNECTIONS), t -> t.getBoolean(SEARCHED), loadCache::put);
+        if (tag.contains(ENERGY_RECEIVER_PIPES))
+            TPUtils.readPosMap(tag.getCompound(ENERGY_RECEIVER_PIPES), t -> t.getBoolean(SEARCHED), energyReceiverPipes::put);
     }
 
     /**
@@ -102,7 +110,8 @@ public class TileTransferNodeEnergy extends TileTransferNode {
 
     @Override
     public void facing(BlockPos pos, Direction dir) {
-        tryEstablishConnection(pos, dir, true);
+        if (PipeUtils.isWorkPlace(level, pos, dir))
+            tryEstablishConnection(pos, dir, true);
     }
 
     @Override
@@ -234,10 +243,15 @@ public class TileTransferNodeEnergy extends TileTransferNode {
         disconnectUnlessWasSearched(extractablesLOs);
         disconnectUnlessWasSearched(receivableLOs);
         disconnectUnlessWasSearched(bothLOs);
+        TPUtils.removeFromMap(energyReceiverPipes, (pos, b) -> !b, pos -> {
+            if (level.getBlockEntity(pos) instanceof EnergyReceiverPipe.Tile tile)
+                tile.nodeReference = null;
+        });
 
         resetSearchedFlags(extractablesLOs);
         resetSearchedFlags(receivableLOs);
         resetSearchedFlags(bothLOs);
+        energyReceiverPipes.forEach((pos, b) -> energyReceiverPipes.put(pos, false));
     }
 
     public void disconnectUnlessWasSearched(Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> map) {
@@ -246,5 +260,18 @@ public class TileTransferNodeEnergy extends TileTransferNode {
 
     public void resetSearchedFlags(Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> map) {
         map.forEach((pos, dirsMap) -> dirsMap.forEach((dir, pair) -> dirsMap.put(dir, pair.mapSecond(b -> false))));
+    }
+
+    @Override
+    public void onProceedPipe(BlockPos pos) {
+        super.onProceedPipe(pos);
+        if (level.getBlockState(pos).getBlock() instanceof EnergyReceiverPipe && level.getBlockEntity(pos) instanceof EnergyReceiverPipe.Tile recceiver) {
+            recceiver.connect(this);
+            energyReceiverPipes.put(pos, true);
+        }
+    }
+
+    public void removeEnergyReceiverPipe(BlockPos pos) {
+        energyReceiverPipes.remove(pos);
     }
 }

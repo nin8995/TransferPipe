@@ -1,4 +1,4 @@
-package nin.transferpipe.block;
+package nin.transferpipe.block.pipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,16 +18,19 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import nin.transferpipe.block.LightingBlock;
 import nin.transferpipe.block.state.Connection;
 import nin.transferpipe.block.state.Flow;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-public class TransferPipeBlock extends LightingBlock {
+public class TransferPipe extends LightingBlock {
 
     /**
      * 基本情報
@@ -38,7 +41,7 @@ public class TransferPipeBlock extends LightingBlock {
             UnaryOperator.identity(),
             d -> EnumProperty.create(d.getName(), Connection.class)));
 
-    public TransferPipeBlock() {
+    public TransferPipe() {
         super(BlockBehaviour.Properties.of(Material.STONE));
 
         var defaultState = stateDefinition.any();
@@ -55,8 +58,9 @@ public class TransferPipeBlock extends LightingBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext bpc) {
-        return PipeUtils.calcInitialState(bpc.getLevel(), bpc.getClickedPos());
+        return PipeUtils.calcInitialState(bpc.getLevel(), bpc.getClickedPos(), defaultBlockState());
     }
+
 
     /**
      * 当たり判定
@@ -65,28 +69,31 @@ public class TransferPipeBlock extends LightingBlock {
     public static final VoxelShape CENTER = Block.box(6, 6, 6, 10, 10, 10);
     public static final Map<Direction, VoxelShape> LIMBS = TPUtils.getRotatedShapes(Block.box(6, 6, 0, 10, 10, 6));
     public static final Map<Direction, VoxelShape> JOINTS = TPUtils.getRotatedShapes(Block.box(5, 5, -0.001, 11, 11, 2.999));
-    public static Map<BlockState, VoxelShape> shapeCache = null;
+    public static Map<List<Connection>, VoxelShape> shapeCache = calcPossibleConnectionStates().stream().collect(Collectors.toMap(
+            UnaryOperator.identity(), TransferPipe::calcShape));
 
     @Override
     public VoxelShape getShape(BlockState bs, BlockGetter p_60556_, BlockPos p_60557_, CollisionContext p_60558_) {
         return getShape(bs);
     }
 
-    public static VoxelShape getShape(BlockState bs) {
-        if (shapeCache == null)//RegistryObject.getを使うため、staticのとこには置けない。でもここならいいね
-            shapeCache = TPBlocks.TRANSFER_PIPE.get().getStateDefinition().getPossibleStates().stream().collect(Collectors.toMap(
-                    UnaryOperator.identity(),
-                    TransferPipeBlock::calculateShape));
-
-        return shapeCache.get(bs);
+    public static VoxelShape getShape(BlockState state) {
+        return shapeCache.get(Direction.stream().map(d -> state.getValue(CONNECTIONS.get(d))).toList());
     }
 
-    public static VoxelShape calculateShape(BlockState state) {
+    public static List<List<Connection>> calcPossibleConnectionStates() {
+        var connectionStates = new ArrayList<List<Connection>>();
+        Connection.forEach(c0 -> Connection.forEach(c1 -> Connection.forEach(c2 -> Connection.forEach(c3 -> Connection.forEach(c4 -> Connection.forEach(c5 ->
+                connectionStates.add(List.of(c0, c1, c2, c3, c4, c5))))))));
+        return connectionStates;
+    }
+
+    public static VoxelShape calcShape(List<Connection> connections) {
         var shape = CENTER;
         for (Direction d : Direction.values()) {
             var limb = LIMBS.get(d);
             var joint = JOINTS.get(d);
-            switch (state.getValue(CONNECTIONS.get(d))) {
+            switch (connections.get(d.ordinal())) {
                 case PIPE -> shape = Shapes.or(shape, limb);
                 case MACHINE -> shape = Shapes.or(shape, limb, joint);
             }

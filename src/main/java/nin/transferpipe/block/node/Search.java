@@ -1,12 +1,12 @@
-package nin.transferpipe.block.status;
+package nin.transferpipe.block.node;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.level.Level;
+import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.block.state.Connection;
-import nin.transferpipe.block.tile.TileTransferNode;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 import org.antlr.v4.misc.OrderedHashMap;
@@ -30,13 +30,11 @@ public class Search {
     public static String CURRENT_POS = "CurrentPos";
     public static String NEXT_POS = "NextPos";
     public static String QUEUE = "Queue";
-    public static String POS = "Pos";
-    public static String DIRS = "Dirs";
-    public TileTransferNode be;
+    public TileBaseTransferNode be;
     public Level level;//beから取れるけど簡略化
     private boolean initialized;//levelをフィールドに使うということは最初の動作時に初期化しないといけないことを意味する
 
-    public Search(TileTransferNode be) {
+    public Search(TileBaseTransferNode be) {
         this.be = be;
         reset();
     }
@@ -99,6 +97,9 @@ public class Search {
 
         //進
         currentPos = nextPos;
+        var state = level.getBlockState(currentPos);
+        if (state.getBlock() instanceof TransferPipe)
+            be.onProceedPipe(currentPos);
         prevSearchedDirs = queue.get(currentPos);
         if (prevSearchedDirs == null)//ブロック破壊などで検索先がなくなった
             return reset();

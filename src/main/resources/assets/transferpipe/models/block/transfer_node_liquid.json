@@ -1,7 +1,0 @@
-{
-  "parent": "transferpipe:block/transfer_node",
-  "textures": {
-    "0": "transferpipe:block/transfer_node_liquid",
-    "particle": "transferpipe:block/transfer_node_liquid"
-  }
-}

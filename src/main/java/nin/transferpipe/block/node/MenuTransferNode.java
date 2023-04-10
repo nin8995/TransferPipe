@@ -1,4 +1,4 @@
-package nin.transferpipe.block.tile.gui;
+package nin.transferpipe.block.node;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
@@ -15,11 +15,12 @@ import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
+import nin.transferpipe.block.BaseMenu;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.item.Upgrade;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class TransferNodeMenu extends BaseMenu {
+public abstract class MenuTransferNode extends BaseMenu {
 
     public final ContainerData searchData;
 
@@ -27,7 +28,7 @@ public abstract class TransferNodeMenu extends BaseMenu {
     public int upgradesStart = containerStart;
     public int upgradesEnd = upgradesStart + 5;
 
-    public TransferNodeMenu(IItemHandler upgrades, ContainerData searchData, MenuType type, int containerId, Inventory inv, ContainerLevelAccess access) {
+    public MenuTransferNode(IItemHandler upgrades, ContainerData searchData, MenuType type, int containerId, Inventory inv, ContainerLevelAccess access) {
         super(type, containerId, inv, access);
         this.searchData = searchData;
         this.addDataSlots(searchData);
@@ -57,7 +58,7 @@ public abstract class TransferNodeMenu extends BaseMenu {
     }
 
 
-    public static class Item extends TransferNodeMenu {
+    public static class Item extends MenuTransferNode {
 
         //client
         public Item(int containerId, Inventory inv) {
@@ -77,7 +78,7 @@ public abstract class TransferNodeMenu extends BaseMenu {
         }
     }
 
-    public static class Liquid extends TransferNodeMenu {
+    public static class Liquid extends MenuTransferNode {
 
         private final IItemHandler dummyLiquidItem;
 
@@ -121,12 +122,12 @@ public abstract class TransferNodeMenu extends BaseMenu {
         }
     }
 
-    public static class Energy extends TransferNodeMenu {
+    public static class Energy extends MenuTransferNode {
 
         private final ContainerData energyNodeData;
 
         public Energy(int containerId, Inventory inv) {
-            this(new SimpleContainerData(4), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv, ContainerLevelAccess.NULL);
+            this(new SimpleContainerData(5), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv, ContainerLevelAccess.NULL);
         }
 
         public Energy(ContainerData energyNodeData, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv, ContainerLevelAccess access) {
@@ -154,6 +155,10 @@ public abstract class TransferNodeMenu extends BaseMenu {
 
         public int getBoth() {
             return energyNodeData.get(3);
+        }
+
+        public int getEnergyReceiverPipes() {
+            return energyNodeData.get(4);
         }
     }
 }

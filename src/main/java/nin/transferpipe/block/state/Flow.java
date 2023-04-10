@@ -4,7 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.Level;
-import nin.transferpipe.block.TransferNodeBlock;
+import nin.transferpipe.block.node.BlockTransferNode;
 import nin.transferpipe.util.PipeUtils;
 
 import java.util.Arrays;
@@ -48,7 +48,8 @@ public enum Flow implements StringRepresentable {
      * あり得る次Flowの計算
      */
 
-    public static Flow getNext(Level level, BlockPos pos, Flow currentFlow) {
+    public static Flow getNext(Level level, BlockPos pos) {
+        var currentFlow = PipeUtils.currentFlow(level, pos);
         var validFlows = calcValidFlows(level, pos);
 
         //今のflowから巡っていって最初にvalidFlowsにあったものを返す
@@ -65,7 +66,7 @@ public enum Flow implements StringRepresentable {
         var validFlows = nonDirectionalFlows();
 
         //つながる方角を抽出
-        var nodeDir = level.getBlockState(pos).getBlock() instanceof TransferNodeBlock.FacingNode node ? node.facing(level, pos) : null;
+        var nodeDir = level.getBlockState(pos).getBlock() instanceof BlockTransferNode.FacingNode node ? node.facing(level, pos) : null;
         var connectableDirs = Direction.stream()
                 .filter(d -> d != nodeDir)
                 .filter(d -> PipeUtils.isPipe(level, pos, d)).collect(Collectors.toSet());

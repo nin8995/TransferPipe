@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public class LightingBlock extends Block {
 
     public LightingBlock(Properties p_49795_) {
-        super(p_49795_);
+        super(p_49795_.noOcclusion());
     }
 
     @Override
@@ -21,5 +21,4 @@ public class LightingBlock extends Block {
     public boolean propagatesSkylightDown(BlockState p_48740_, BlockGetter p_48741_, BlockPos p_48742_) {
         return true;
     }
-
 }

@@ -3,7 +3,7 @@ package nin.transferpipe.item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import nin.transferpipe.block.tile.TileTransferNode;
+import nin.transferpipe.block.node.TileBaseTransferNode;
 import nin.transferpipe.util.HandlerUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,9 +35,9 @@ public interface Upgrade {
         }
     }
 
-    class Handler extends HandlerUtils.TileItem<TileTransferNode> {
+    class Handler extends HandlerUtils.TileItem<TileBaseTransferNode> {
 
-        public Handler(int size, TileTransferNode be) {
+        public Handler(int size, TileBaseTransferNode be) {
             super(size, be);
         }
 

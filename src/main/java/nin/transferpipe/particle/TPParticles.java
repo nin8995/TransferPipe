@@ -14,7 +14,7 @@ import net.minecraftforge.registries.RegistryObject;
 
 import java.util.function.IntConsumer;
 
-import static nin.transferpipe.TransferPipe.MODID;
+import static nin.transferpipe.TPMod.MODID;
 
 public interface TPParticles {
 

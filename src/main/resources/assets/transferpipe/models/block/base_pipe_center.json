@@ -1,21 +1,26 @@
 {
   "credit": "Made with Blockbench",
-  "textures": {
-    "0": "transferpipe:block/transfer_pipe",
-    "particle": "transferpipe:block/transfer_pipe"
-  },
   "elements": [
     {
       "from": [
         6,
         6,
-        0
+        6
       ],
       "to": [
         10,
         10,
-        6
+        10
       ],
+      "rotation": {
+        "angle": 0,
+        "axis": "y",
+        "origin": [
+          8,
+          8,
+          8
+        ]
+      },
       "faces": {
         "north": {
           "uv": [
@@ -28,9 +33,9 @@
         },
         "east": {
           "uv": [
-            4,
             0,
-            10,
+            0,
+            4,
             4
           ],
           "texture": "#0"
@@ -46,7 +51,7 @@
         },
         "west": {
           "uv": [
-            10,
+            0,
             0,
             4,
             4
@@ -56,7 +61,7 @@
         "up": {
           "uv": [
             0,
-            10,
+            0,
             4,
             4
           ],
@@ -65,9 +70,9 @@
         "down": {
           "uv": [
             0,
+            0,
             4,
-            4,
-            10
+            4
           ],
           "texture": "#0"
         }

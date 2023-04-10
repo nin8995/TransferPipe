@@ -1,4 +1,4 @@
-package nin.transferpipe.block.tile;
+package nin.transferpipe.block.node;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 
-public class TileTransferNodeItem extends TileTransferNode {
+public class TileTransferNodeItem extends TileBaseTransferNode {
 
     /**
      * 基本情報
@@ -34,7 +34,7 @@ public class TileTransferNodeItem extends TileTransferNode {
     public static final String ITEM_SLOT = "ItemSlot";
 
     public TileTransferNodeItem(BlockPos p_155229_, BlockState p_155230_) {
-        super(TPBlocks.TRANSFER_NODE_ITEM.entity(), p_155229_, p_155230_);
+        super(TPBlocks.TRANSFER_NODE_ITEM.tile(), p_155229_, p_155230_);
         itemSlot = new HandlerUtils.TileItem<>(1, this);
     }
 

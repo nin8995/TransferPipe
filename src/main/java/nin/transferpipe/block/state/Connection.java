@@ -4,8 +4,9 @@ package nin.transferpipe.block.state;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.state.BlockState;
-import nin.transferpipe.block.TransferPipeBlock;
+import nin.transferpipe.block.pipe.TransferPipe;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public enum Connection implements StringRepresentable {
@@ -20,8 +21,13 @@ public enum Connection implements StringRepresentable {
 
     public static BlockState map(BlockState state, Function<Direction, Connection> dirToConnection) {
         for (Direction d : Direction.values())
-            state = state.setValue(TransferPipeBlock.CONNECTIONS.get(d), dirToConnection.apply(d));
+            state = state.setValue(TransferPipe.CONNECTIONS.get(d), dirToConnection.apply(d));
 
         return state;
+    }
+
+    public static void forEach(Consumer<Connection> func) {
+        for (Connection c : values())
+            func.accept(c);
     }
 }
