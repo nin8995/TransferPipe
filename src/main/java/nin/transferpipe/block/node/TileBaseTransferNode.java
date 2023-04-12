@@ -15,13 +15,11 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import nin.transferpipe.block.NonStaticTickerEntity;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.pipe.TransferPipe;
@@ -59,11 +57,6 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     public Direction FACING;
     public boolean initialized;
     public boolean isSearching;
-    public int coolRate;
-    public boolean stackMode;
-    public boolean pseudoRoundRobin;
-    public boolean depthFirst;
-    public boolean breadthFirst;
     public ContainerData searchData = new ContainerData() {
         public int get(int p_58431_) {
             return switch (p_58431_) {
@@ -196,7 +189,9 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
         cooltime -= coolRate;
 
         while (cooltime <= 0) {
-            if (FACING != null)//if(canWork(POS, FACED))あってもいいけどなくてもいい
+            cooltime += 20;
+
+            if (FACING != null)//if(canWork(POS, FACED))あってもいいけどなくてもいい←world interaction考えるとない方が楽
                 facing(POS.relative(FACING), FACING.getOpposite());
             else
                 Direction.stream().forEach(d -> facing(POS.relative(d), d.getOpposite()));
@@ -204,15 +199,14 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
             isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
             if (isSearching)
                 setSearch(search.proceed());
-            cooltime += 20;
         }
     }
 
-    public abstract boolean shouldSearch();
-
-    public abstract void facing(BlockPos pos, Direction dir);
-
-    public abstract void terminal(BlockPos pos, Direction dir);
+    public float coolRate;
+    public boolean stackMode;
+    public boolean pseudoRoundRobin;
+    public boolean depthFirst;
+    public boolean breadthFirst;
 
     public void calcUpgrades() {
         coolRate = 2;
@@ -225,6 +219,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
             var upgrade = upgrades.getStackInSlot(slot);
             if (upgrade.is(SPEED_UPGRADE.get()))
                 coolRate += upgrade.getCount();
+            else if (upgrade.is(AMPLIFIED_SPEED_UPGRADE.get()))
+                coolRate *= Math.pow(1.01, upgrade.getCount());
             else if (upgrade.is(STACK_UPGRADE.get()))
                 stackMode = true;
             else if (upgrade.is(PSEUDO_ROUND_ROBIN_UPGRADE.get()))
@@ -239,6 +235,12 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
             }
         });
     }
+
+    public abstract boolean shouldSearch();
+
+    public abstract void facing(BlockPos pos, Direction dir);
+
+    public abstract void terminal(BlockPos pos, Direction dir);
 
     public boolean isNormalSearch() {
         return !(breadthFirst || depthFirst);

@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "transferpipe.refmap.json",
   "mixins": [
+    "HoldTileDataBeyondBlockState",
     "HopperBlockEntityInvoker"
   ],
   "client": [

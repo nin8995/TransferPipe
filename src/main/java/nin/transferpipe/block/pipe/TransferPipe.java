@@ -8,6 +8,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -114,6 +115,11 @@ public class TransferPipe extends LightingBlock {
             l.setBlockAndUpdate(bp, currentState);
 
         super.neighborChanged(bs, l, bp, p_60512_, p_60513_, p_60514_);
+    }
+
+    @Override
+    public void onBlockStateChange(LevelReader level, BlockPos pos, BlockState oldState, BlockState newState) {
+        super.onBlockStateChange(level, pos, oldState, newState);
     }
 
     @Override

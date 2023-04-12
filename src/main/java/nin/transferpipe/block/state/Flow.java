@@ -40,12 +40,12 @@ public enum Flow implements StringRepresentable {
         return Direction.stream().filter(d -> d.name().equals(this.name())).findFirst().orElse(null);
     }
 
-    public Flow front(){
-        return this.ordinal() == values().length -1 ? values()[0] : values()[this.ordinal() + 1];
+    public Flow front() {
+        return this.ordinal() == values().length - 1 ? values()[0] : values()[this.ordinal() + 1];
     }
 
-    public Flow back(){
-        return this.ordinal() == 0 ? values()[values().length -1] : values()[this.ordinal() - 1];
+    public Flow back() {
+        return this.ordinal() == 0 ? values()[values().length - 1] : values()[this.ordinal() - 1];
     }
 
     /**

@@ -123,8 +123,7 @@ public class HandlerUtils {
         public final T be;
 
 
-        public TileEnergy(int capacity, int maxReceive, int maxExtract, T be)
-        {
+        public TileEnergy(int capacity, int maxReceive, int maxExtract, T be) {
             super(capacity, maxReceive, maxExtract, 0);
             this.be = be;
         }

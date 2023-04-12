@@ -50,14 +50,22 @@ public class PipeUtils {
 
     @Nullable
     public static Flow currentFlow(Level l, BlockPos bp) {
-        var bs = currentState(l, bp);
-        return bs != null ? bs.getValue(FLOW) : null;
+        var state = currentState(l, bp);
+        return state != null ? currentFlow(state) : null;
+    }
+
+    public static Flow currentFlow(BlockState state) {
+        return state.getValue(FLOW);
     }
 
     @Nullable
     public static Connection currentConnection(Level l, BlockPos bp, Direction d) {
-        var bs = currentState(l, bp);
-        return bs != null ? bs.getValue(TransferPipe.CONNECTIONS.get(d)) : null;
+        var state = currentState(l, bp);
+        return state != null ? currentConnection(state, d) : null;
+    }
+
+    public static Connection currentConnection(BlockState state, Direction d) {
+        return state.getValue(TransferPipe.CONNECTIONS.get(d));
     }
 
     /**

@@ -5,7 +5,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.level.Level;
-import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.block.state.Connection;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
@@ -99,7 +98,7 @@ public class Search {
         currentPos = nextPos;
         if (PipeUtils.currentPipeBlock(level, currentPos) != null)
             be.onProceedPipe(currentPos);
-        if(!queue.containsKey(currentPos))//何らかの原因でqueueにないものがnextPosになってたらリセット。ロード前にnbt直接編集かアドオンのコード？
+        if (!queue.containsKey(currentPos))//何らかの原因でqueueにないものがnextPosになってたらリセット。ロード前にnbt直接編集かアドオンのコード？
             return reset();
         prevSearchedDirs = queue.get(currentPos);
         queue.remove(currentPos);

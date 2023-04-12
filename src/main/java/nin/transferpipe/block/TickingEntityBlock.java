@@ -14,7 +14,7 @@ public interface TickingEntityBlock<BE extends BlockEntity> extends EntityBlock 
     @Override
     default <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return type == getType() ? (Level l, BlockPos p, BlockState bs, T t) -> {
-            if (!level.isClientSide && t instanceof NonStaticTickerEntity be)
+            if (!level.isClientSide && t instanceof NonStaticTickingEntity be)
                 be.tick();
         } : null;
     }

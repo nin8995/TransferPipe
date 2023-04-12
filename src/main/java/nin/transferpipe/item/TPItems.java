@@ -14,6 +14,7 @@ public interface TPItems {
     DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
 
     RegistryObject<Item> SPEED_UPGRADE = registerUpgrade("speed_upgrade");
+    RegistryObject<Item> AMPLIFIED_SPEED_UPGRADE = registerUpgrade("amplified_speed_upgrade");
     RegistryObject<Item> STACK_UPGRADE = registerUpgrade("stack_upgrade", p -> p.stacksTo(1));
     RegistryObject<Item> PSEUDO_ROUND_ROBIN_UPGRADE = registerUpgrade("pseudo_round_robin_upgrade", p -> p.stacksTo(1));
     RegistryObject<Item> DEPTH_FIRST_SEARCH_UPGRADE = registerUpgrade("depth_first_search_upgrade", p -> p.stacksTo(1));

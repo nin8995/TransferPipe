@@ -19,10 +19,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class TileHolderEntity extends NonStaticTickerEntity {
+public abstract class TileHolderEntity extends NonStaticTickingEntity {
 
     @Nullable
-    public NonStaticTickerEntity holdingTile = null;
+    public NonStaticTickingEntity holdingTile = null;
 
     public static String TYPE = "TileType";
     public static String POS = "TilePos";
@@ -52,7 +52,7 @@ public abstract class TileHolderEntity extends NonStaticTickerEntity {
             var type = BuiltInRegistries.BLOCK_ENTITY_TYPE.get(new ResourceLocation(tag.getString(TYPE)));
             var pos = NbtUtils.readBlockPos(tag.getCompound(POS));
             var state = NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), tag.getCompound(STATE));
-            holdingTile = (NonStaticTickerEntity) type.create(pos, state);
+            holdingTile = (NonStaticTickingEntity) type.create(pos, state);
             holdingTile.load(tag.getCompound(DATA));
         }
     }
@@ -76,7 +76,7 @@ public abstract class TileHolderEntity extends NonStaticTickerEntity {
     }
 
     public void checkTile(Block block) {
-        if (block instanceof EntityBlock entityBlock && entityBlock.newBlockEntity(worldPosition, block.defaultBlockState()) instanceof NonStaticTickerEntity tile
+        if (block instanceof EntityBlock entityBlock && entityBlock.newBlockEntity(worldPosition, block.defaultBlockState()) instanceof NonStaticTickingEntity tile
                 && !(holdingTile != null && holdingTile.getClass().equals(tile.getClass()))) {
             holdingTile = tile;
             setChanged();
@@ -86,6 +86,6 @@ public abstract class TileHolderEntity extends NonStaticTickerEntity {
     @Override
     public void onRemove() {
         super.onRemove();
-        TPUtils.forNullable(holdingTile, NonStaticTickerEntity::onRemove);
+        TPUtils.forNullable(holdingTile, NonStaticTickingEntity::onRemove);
     }
 }

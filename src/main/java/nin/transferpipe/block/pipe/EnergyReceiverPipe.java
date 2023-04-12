@@ -10,10 +10,12 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
+import nin.transferpipe.block.NonStaticTickingEntity;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TickingEntityBlock;
-import nin.transferpipe.block.NonStaticTickerEntity;
 import nin.transferpipe.block.node.TileTransferNodeEnergy;
+import nin.transferpipe.block.state.Connection;
+import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +34,7 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
         super.onRemove(p_60515_, p_60516_, p_60517_, p_60518_, p_60519_);
     }
 
-    public static class Tile extends NonStaticTickerEntity {
+    public static class Tile extends NonStaticTickingEntity {
 
         @Nullable
         public TileTransferNodeEnergy nodeReference = null;
@@ -82,12 +84,11 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
 
         @Override
         public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-            if (cap == ForgeCapabilities.ENERGY && nodeReference != null) {
+            if (cap == ForgeCapabilities.ENERGY && nodeReference != null
+                    && side != null && PipeUtils.currentConnection(getBlockState(), side) == Connection.MACHINE) {
                 var nodeCap = nodeReference.getCapability(cap, side);
-                if(nodeCap.isPresent()) {
-                    lo = LazyOptional.of(() -> new ReferenceEnergyStorage(((IEnergyStorage) nodeCap.resolve().get())));
-                    return lo.cast();
-                }
+                if (nodeCap.isPresent())
+                    return LazyOptional.of(() -> new ReferenceEnergyStorage(((IEnergyStorage) nodeCap.resolve().get()))).cast();
             }
             return LazyOptional.empty();
         }

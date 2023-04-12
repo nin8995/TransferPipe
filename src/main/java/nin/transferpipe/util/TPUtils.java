@@ -315,16 +315,16 @@ public class TPUtils {
         });
     }
 
-    public static BlockEntity getTile(Level level, BlockPos pos){
+    public static BlockEntity getTile(Level level, BlockPos pos) {
         return level.getBlockEntity(pos) instanceof TileHolderEntity tileHolder ? tileHolder.holdingTile : level.getBlockEntity(pos);
     }
 
-    public static <T> void forNullable(T t, Consumer<T> func){
-        if(t != null)
+    public static <T> void forNullable(T t, Consumer<T> func) {
+        if (t != null)
             func.accept(t);
     }
 
-    public static <T, A> A fromNullable(T t, Function<T, A> func){
+    public static <T, A> A fromNullable(T t, Function<T, A> func) {
         return t != null ? func.apply(t) : null;
     }
 }
