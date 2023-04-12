@@ -95,7 +95,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
         }
 
         public Direction facing(BlockState state) {
-            return state.getValue(BlockTransferNode.FacingNode.FACING);
+            return state.getValue(FACING);
         }
     }
 
@@ -129,7 +129,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
         if (level.getBlockEntity(pos) instanceof TileBaseTransferNode be) {
             if (PipeUtils.usingWrench(player, hand)) {
-                be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos));
+                be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos, player.isShiftKeyDown()));
                 return InteractionResult.SUCCESS;
             }
 

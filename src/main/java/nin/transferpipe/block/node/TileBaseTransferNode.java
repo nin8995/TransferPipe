@@ -15,13 +15,15 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
+import nin.transferpipe.block.NonStaticTickerEntity;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.block.TileNonStaticTicker;
+import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.item.TPItems;
 import nin.transferpipe.item.Upgrade;
@@ -34,7 +36,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.stream.IntStream;
 
 //搬送する種類に依らない、「ノード」のタイルエンティティとしての機能
-public abstract class TileBaseTransferNode extends TileNonStaticTicker implements TPItems {
+public abstract class TileBaseTransferNode extends TileHolderEntity implements TPItems {
 
     /**
      * 基本情報
@@ -91,8 +93,10 @@ public abstract class TileBaseTransferNode extends TileNonStaticTicker implement
     public TileBaseTransferNode(BlockEntityType<? extends TileBaseTransferNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
         super(p_155228_, p_155229_, p_155230_);
         POS = this.worldPosition;
-        if (getBlockState().getBlock() instanceof BlockTransferNode.FacingNode node)
+        if (getBlockState().getBlock() instanceof BlockTransferNode.FacingNode node) {
             FACING = node.facing(getBlockState());
+            nonValidDirections.add(FACING);
+        }
 
         setSearch(new Search(this));
         upgrades = new Upgrade.Handler(6, this);
@@ -188,6 +192,7 @@ public abstract class TileBaseTransferNode extends TileNonStaticTicker implement
             initialized = true;
         }
 
+        super.tick();
         cooltime -= coolRate;
 
         while (cooltime <= 0) {
@@ -220,16 +225,18 @@ public abstract class TileBaseTransferNode extends TileNonStaticTicker implement
             var upgrade = upgrades.getStackInSlot(slot);
             if (upgrade.is(SPEED_UPGRADE.get()))
                 coolRate += upgrade.getCount();
-            if (upgrade.is(STACK_UPGRADE.get()))
+            else if (upgrade.is(STACK_UPGRADE.get()))
                 stackMode = true;
-            if (upgrade.is(PSEUDO_ROUND_ROBIN_UPGRADE.get()))
+            else if (upgrade.is(PSEUDO_ROUND_ROBIN_UPGRADE.get()))
                 pseudoRoundRobin = true;
-            if (upgrade.is(DEPTH_FIRST_SEARCH_UPGRADE.get()))
+            else if (upgrade.is(DEPTH_FIRST_SEARCH_UPGRADE.get()))
                 depthFirst = true;
-            if (upgrade.is(BREADTH_FIRST_SEARCH_UPGRADE.get()))
+            else if (upgrade.is(BREADTH_FIRST_SEARCH_UPGRADE.get()))
                 breadthFirst = true;
-            if (upgrade.getItem() instanceof Upgrade.BlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
+            else if (upgrade.getItem() instanceof Upgrade.BlockItem bi && bi.getBlock() instanceof TransferPipe pipe) {
+                checkTile(pipe);
                 setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
+            }
         });
     }
 

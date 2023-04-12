@@ -18,6 +18,7 @@ import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -27,6 +28,7 @@ import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.fluids.FluidStack;
 import nin.transferpipe.TPMod;
+import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.mixin.AtlasAccessor;
 
 import java.util.*;
@@ -311,5 +313,18 @@ public class TPUtils {
             var t = translateFunc.apply(subTag);
             readFunc.accept(pos, t);
         });
+    }
+
+    public static BlockEntity getTile(Level level, BlockPos pos){
+        return level.getBlockEntity(pos) instanceof TileHolderEntity tileHolder ? tileHolder.holdingTile : level.getBlockEntity(pos);
+    }
+
+    public static <T> void forNullable(T t, Consumer<T> func){
+        if(t != null)
+            func.accept(t);
+    }
+
+    public static <T, A> A fromNullable(T t, Function<T, A> func){
+        return t != null ? func.apply(t) : null;
     }
 }

@@ -97,12 +97,11 @@ public class Search {
 
         //進
         currentPos = nextPos;
-        var state = level.getBlockState(currentPos);
-        if (state.getBlock() instanceof TransferPipe)
+        if (PipeUtils.currentPipeBlock(level, currentPos) != null)
             be.onProceedPipe(currentPos);
-        prevSearchedDirs = queue.get(currentPos);
-        if (prevSearchedDirs == null)//ブロック破壊などで検索先がなくなった
+        if(!queue.containsKey(currentPos))//何らかの原因でqueueにないものがnextPosになってたらリセット。ロード前にnbt直接編集かアドオンのコード？
             return reset();
+        prevSearchedDirs = queue.get(currentPos);
         queue.remove(currentPos);
 
         //分かりやすさのための検索状況パーティクル
@@ -134,7 +133,7 @@ public class Search {
             if (be.isNormalSearch())
                 addQueue(randomProceedablePos, randomProceedableDir.getOpposite());
             else
-                getPipeDirsToSearch().forEach(d -> addQueue(currentPos.relative(d), d.getOpposite()));
+                proceedables.forEach(d -> addQueue(currentPos.relative(d), d.getOpposite()));
 
             nextPos = be.breadthFirst ? queue.getKey(0) : randomProceedablePos;
         }
@@ -145,13 +144,7 @@ public class Search {
     public Set<Direction> getProceedablePipeDirs() {
         return Direction.stream()
                 .filter(d -> !prevSearchedDirs.contains(d))
-                .filter(d -> PipeUtils.canProceedPipe(level, currentPos, d)).collect(Collectors.toSet());
-    }
-
-    public Set<Direction> getPipeDirsToSearch() {
-        return Direction.stream()
-                .filter(d -> !prevSearchedDirs.contains(d))
-                .filter(d -> PipeUtils.isPipe(level, currentPos, d)).collect(Collectors.toSet());
+                .filter(d -> PipeUtils.canProceedPipe(level, currentPos, d, be)).collect(Collectors.toSet());
     }
 
     public Set<Direction> getWorkableDirs() {

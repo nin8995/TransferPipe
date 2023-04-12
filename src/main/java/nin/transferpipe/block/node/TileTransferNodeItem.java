@@ -53,7 +53,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        return ForgeCapabilities.ITEM_HANDLER.orEmpty(cap, LazyOptional.of(() -> itemSlot));
+        return cap == ForgeCapabilities.ITEM_HANDLER ? LazyOptional.of(() -> itemSlot).cast() : super.getCapability(cap, side);
     }
 
     @Override

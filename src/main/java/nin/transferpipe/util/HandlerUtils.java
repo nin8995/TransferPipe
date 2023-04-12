@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.common.util.NonNullConsumer;
+import net.minecraftforge.energy.EnergyStorage;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -115,5 +116,29 @@ public class HandlerUtils {
     public static LazyOptional<IEnergyStorage> getEnergyStorageOptional(Level level, BlockPos pos, Direction dir) {
         var be = level.getBlockEntity(pos);
         return be != null ? be.getCapability(ForgeCapabilities.ENERGY, dir) : null;
+    }
+
+    public static class TileEnergy<T extends BlockEntity> extends EnergyStorage {
+
+        public final T be;
+
+
+        public TileEnergy(int capacity, int maxReceive, int maxExtract, T be)
+        {
+            super(capacity, maxReceive, maxExtract, 0);
+            this.be = be;
+        }
+
+        @Override
+        public int receiveEnergy(int maxReceive, boolean simulate) {
+            be.setChanged();
+            return super.receiveEnergy(maxReceive, simulate);
+        }
+
+        @Override
+        public int extractEnergy(int maxExtract, boolean simulate) {
+            be.setChanged();
+            return super.extractEnergy(maxExtract, simulate);
+        }
     }
 }

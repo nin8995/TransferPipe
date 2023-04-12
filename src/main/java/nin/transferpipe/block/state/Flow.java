@@ -40,24 +40,28 @@ public enum Flow implements StringRepresentable {
         return Direction.stream().filter(d -> d.name().equals(this.name())).findFirst().orElse(null);
     }
 
-    public Flow nextOrdinal() {
-        return Flow.stream().filter(fs -> fs.ordinal() == this.ordinal() + 1).findFirst().orElse(ALL);
+    public Flow front(){
+        return this.ordinal() == values().length -1 ? values()[0] : values()[this.ordinal() + 1];
+    }
+
+    public Flow back(){
+        return this.ordinal() == 0 ? values()[values().length -1] : values()[this.ordinal() - 1];
     }
 
     /**
      * あり得る次Flowの計算
      */
 
-    public static Flow getNext(Level level, BlockPos pos) {
+    public static Flow getNext(Level level, BlockPos pos, boolean reverse) {
         var currentFlow = PipeUtils.currentFlow(level, pos);
         var validFlows = calcValidFlows(level, pos);
 
         //今のflowから巡っていって最初にvalidFlowsにあったものを返す
-        var searching = currentFlow.nextOrdinal();
+        var searching = reverse ? currentFlow.back() : currentFlow.front();
         while (true) {
             if (validFlows.contains(searching))
                 return searching;
-            searching = searching.nextOrdinal();
+            searching = reverse ? currentFlow.back() : searching.front();
         }
     }
 

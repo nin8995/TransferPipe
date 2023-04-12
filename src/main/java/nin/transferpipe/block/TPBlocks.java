@@ -22,6 +22,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.node.*;
+import nin.transferpipe.block.pipe.EnergyPipe;
 import nin.transferpipe.block.pipe.EnergyReceiverPipe;
 import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.block.state.Flow;
@@ -51,6 +52,7 @@ public interface TPBlocks {
 
     //Pipes
     RegistryObject<Block> TRANSFER_PIPE = registerPipe("transfer_pipe", TransferPipe::new);
+    RegistryObject<Block> ENERGY_PIPE = registerPipe("energy_pipe", EnergyPipe::new);
     RegistryEntityBlock<EnergyReceiverPipe.Tile> ENERGY_RECEIVER_PIPE = registerPipe("energy_receiver_pipe",
             EnergyReceiverPipe::new, EnergyReceiverPipe.Tile::new);
 

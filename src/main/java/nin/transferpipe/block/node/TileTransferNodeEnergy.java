@@ -65,7 +65,7 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
 
     public TileTransferNodeEnergy(BlockPos p_155229_, BlockState p_155230_) {
         super(TPBlocks.TRANSFER_NODE_ENERGY.tile(), p_155229_, p_155230_);
-        this.energyStorage = new EnergyStorage(10000, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        this.energyStorage = new HandlerUtils.TileEnergy<>(10000, Integer.MAX_VALUE, Integer.MAX_VALUE, this);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        return ForgeCapabilities.ENERGY.orEmpty(cap, LazyOptional.of(() -> energyStorage));
+        return cap == ForgeCapabilities.ENERGY ? LazyOptional.of(() -> energyStorage).cast() : super.getCapability(cap, side);
     }
 
     @Override
@@ -198,11 +198,12 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
 
         if (extractables.size() != 0) {
             var energyPerExtractables = (energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored()) / extractables.size();
+            //sizeで割られるのがsizeより小さいと0になって、微妙に満杯までいかなかったり微妙に０までいかなかったりする
             if (energyPerExtractables != 0)
                 extractables.forEach(e -> energyStorage.receiveEnergy(e.extractEnergy(energyPerExtractables, false), false));
-            else { //sizeで割られるのがsizeより小さいと0になって、微妙に満杯までいかなかったり微妙に０までいかなかったりする
+            else {//そういうやつらのために端数を取る特別処理
                 var i = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
-                for (IEnergyStorage e : extractables) {//のでその微妙な値を分配する特殊処理が必要
+                for (IEnergyStorage e : extractables) {
                     if (i == 0)
                         return;
 
@@ -244,7 +245,7 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
         disconnectUnlessWasSearched(receivableLOs);
         disconnectUnlessWasSearched(bothLOs);
         TPUtils.removeFromMap(energyReceiverPipes, (pos, b) -> !b, pos -> {
-            if (level.getBlockEntity(pos) instanceof EnergyReceiverPipe.Tile tile)
+            if (TPUtils.getTile(level, pos) instanceof EnergyReceiverPipe.Tile tile)
                 tile.nodeReference = null;
         });
 
@@ -252,6 +253,7 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
         resetSearchedFlags(receivableLOs);
         resetSearchedFlags(bothLOs);
         energyReceiverPipes.forEach((pos, b) -> energyReceiverPipes.put(pos, false));
+        setChanged();
     }
 
     public void disconnectUnlessWasSearched(Map<BlockPos, Map<Direction, Pair<LazyOptional<IEnergyStorage>, Boolean>>> map) {
@@ -265,13 +267,15 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     @Override
     public void onProceedPipe(BlockPos pos) {
         super.onProceedPipe(pos);
-        if (level.getBlockState(pos).getBlock() instanceof EnergyReceiverPipe && level.getBlockEntity(pos) instanceof EnergyReceiverPipe.Tile recceiver) {
-            recceiver.connect(this);
+        if (TPUtils.getTile(level, pos) instanceof EnergyReceiverPipe.Tile receiver) {
+            receiver.connect(this);
             energyReceiverPipes.put(pos, true);
+            setChanged();
         }
     }
 
     public void removeEnergyReceiverPipe(BlockPos pos) {
         energyReceiverPipes.remove(pos);
+        setChanged();
     }
 }

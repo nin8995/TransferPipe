@@ -19,6 +19,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import nin.transferpipe.block.LightingBlock;
+import nin.transferpipe.block.node.TileBaseTransferNode;
 import nin.transferpipe.block.state.Connection;
 import nin.transferpipe.block.state.Flow;
 import nin.transferpipe.util.PipeUtils;
@@ -118,10 +119,14 @@ public class TransferPipe extends LightingBlock {
     @Override
     public InteractionResult use(BlockState p_60503_, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
         if (PipeUtils.usingWrench(player, hand)) {
-            level.setBlockAndUpdate(pos, PipeUtils.cycleFlowAndRecalc(level, pos));
+            level.setBlockAndUpdate(pos, PipeUtils.cycleFlowAndRecalc(level, pos, player.isShiftKeyDown()));
             return InteractionResult.SUCCESS;
         }
 
         return InteractionResult.PASS;
+    }
+
+    public boolean isValidSearcher(TileBaseTransferNode node) {
+        return true;
     }
 }
