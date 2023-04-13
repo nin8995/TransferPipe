@@ -30,6 +30,7 @@ import nin.transferpipe.item.Upgrade;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static nin.transferpipe.TPMod.MODID;
@@ -152,36 +153,35 @@ public interface TPBlocks {
 
         private void pipe(RegistryObject<Block> ro) {
             var block = ro.get();
-            var center = genModel("block/base_pipe_center", "_center", ro);
-            var limb = genModel("block/base_pipe_limb", "_limb", ro);
-            var joint = genModel("block/base_pipe_joint", "_joint", ro);
-            var overlayIgnoreCenter = new ModelFile.ExistingModelFile(modLoc("block/overlay_ignore_center"), ex);
-            var overlayIgnoreLimb = new ModelFile.ExistingModelFile(modLoc("block/overlay_ignore_limb"), ex);
-            var overlayOneway = new ModelFile.ExistingModelFile(modLoc("block/overlay_oneway"), ex);
             var mb = getMultipartBuilder(block);
 
-            mb.part().modelFile(center).addModel().end();//中心
-            mb.part().modelFile(overlayIgnoreCenter).addModel()//無視時中心オーバーレイ
-                    .condition(FLOW, IGNORE).end();
+            //中心モデル
+            var center = genPipeModel("block/pipe_center", ro);
+            var overlayIgnoreCenter = genPipeModel("block/pipe_overlay_ignore_center", ro);
+            forModel(mb, center, p -> p);//中心を無条件で
+            forModel(mb, overlayIgnoreCenter, p -> p.condition(FLOW, IGNORE));//無視用を無視時に
 
+            //管モデル
+            var limb = genPipeModel("block/pipe_limb", ro);
+            var machine = genPipeModel("block/pipe_machine", ro);
+            var overlayIgnoreLimb = genPipeModel("block/pipe_overlay_ignore_limb", ro);
+            var overlayOneway = genPipeModel("block/pipe_overlay_oneway", ro);
             Direction.stream().forEach(dir -> {
-                rotate(mb.part().modelFile(limb), dir).addModel()//管
-                        .condition(CONNECTIONS.get(dir), PIPE, MACHINE).end();//パイプと機械に向けて
+                forRotatedModel(mb, dir, limb, p -> p.condition(CONNECTIONS.get(dir), PIPE));//管をパイプに向けて
 
-                rotate(mb.part().modelFile(joint), dir).addModel()//接合部
-                        .condition(CONNECTIONS.get(dir), MACHINE).end();//機械に向けて
+                forRotatedModel(mb, dir, machine, p -> p.condition(CONNECTIONS.get(dir), MACHINE));//機械用管を機械に向けて
 
-                rotate(mb.part().modelFile(overlayIgnoreLimb), dir).addModel()//無視時管オーバーレイ
-                        .condition(FLOW, IGNORE)//無視したいとき
-                        .condition(CONNECTIONS.get(dir), PIPE).end();//パイプに向けて
+                forRotatedModel(mb, dir, overlayIgnoreLimb, p -> p//無視用を
+                        .condition(FLOW, IGNORE)//無視の時
+                        .condition(CONNECTIONS.get(dir), PIPE));//パイプに
 
-                var oneWayStates = Flow.stream().filter(f -> (f.toDir() != null && f.toDir() != dir) || f == Flow.BLOCK);
-                rotate(mb.part().modelFile(overlayOneway), dir).addModel()//一方通行オーバーレイ
-                        .condition(FLOW, oneWayStates.toArray(Flow[]::new))//Flowが今やってる方向以外または塞ぎ込んでるとき
-                        .condition(CONNECTIONS.get(dir), PIPE).end();//パイプに向けて
+                forRotatedModel(mb, dir, overlayOneway, p -> p//一方通行を
+                        .condition(FLOW, Flow.stream().filter(f -> !f.openToPipe(dir)).toArray(Flow[]::new))//一方通行の時
+                        .condition(CONNECTIONS.get(dir), PIPE));//パイプに
             });
 
-            var inv = genModel("block/base_pipe_inv", "_inv", ro);
+            //インベントリモデル
+            var inv = genPipeModel("block/pipe_inv", ro);
             simpleBlockItem(block, inv);
         }
 
@@ -189,17 +189,24 @@ public interface TPBlocks {
             var block = ro.get();
 
             if (block instanceof BlockTransferNode.FacingNode) {
-                var model = genModel("block/transfer_node", "", ro);
                 var mb = getMultipartBuilder(block);
-                Direction.stream().forEach(dir ->
-                        rotate(mb.part().modelFile(model), dir).addModel()
-                                .condition(BlockTransferNode.FacingNode.FACING, dir).end());
 
-                var inv = genModel("block/transfer_node_inv", "_inv", ro);
+                var node = genNodeModel("block/transfer_node", ro);
+                Direction.stream().forEach(dir ->
+                        forRotatedModel(mb, dir, node, p -> p.condition(BlockTransferNode.FacingNode.FACING, dir)));
+
+                var inv = genNodeModel("block/transfer_node_inv", ro);
                 simpleBlockItem(block, inv);
-            } else {
+            } else
                 simpleBlockWithItem(block, new ModelFile.ExistingModelFile(ro.getId().withPath("block/" + ro.getId().getPath()), ex));
-            }
+        }
+
+        public ModelFile genPipeModel(String parent, RegistryObject<Block> child){
+            return genModel(parent, parent.replace("block/pipe", ""), child);
+        }
+
+        public ModelFile genNodeModel(String parent, RegistryObject<Block> child){
+            return genModel(parent, parent.replace("block/transfer_node", ""), child);
         }
 
         public ModelFile genModel(String parent, String suffix, RegistryObject<Block> child) {
@@ -207,8 +214,16 @@ public interface TPBlocks {
             var texture = loc.withPath("block/" + loc.getPath());
             return models().getBuilder(loc.getPath() + suffix)
                     .parent(new ModelFile.ExistingModelFile(modLoc(parent), ex))
-                    .texture("0", texture)
+                    .texture("texture", texture)
                     .texture("particle", texture);
+        }
+
+        public static void forModel(MultiPartBlockStateBuilder mb, ModelFile model, Function<MultiPartBlockStateBuilder.PartBuilder, MultiPartBlockStateBuilder.PartBuilder> func){
+            func.apply(mb.part().modelFile(model).addModel()).end();
+        }
+
+        public static void forRotatedModel(MultiPartBlockStateBuilder mb, Direction dir, ModelFile model, Function<MultiPartBlockStateBuilder.PartBuilder, MultiPartBlockStateBuilder.PartBuilder> func){
+            func.apply(rotate(mb.part().modelFile(model), dir).addModel()).end();
         }
 
         public static ConfiguredModel.Builder<MultiPartBlockStateBuilder.PartBuilder> rotate(ConfiguredModel.Builder<MultiPartBlockStateBuilder.PartBuilder> m, Direction d) {

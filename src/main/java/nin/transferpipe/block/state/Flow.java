@@ -95,4 +95,8 @@ public enum Flow implements StringRepresentable {
     public static Set<Flow> directionalFlows() {
         return Direction.stream().map(Flow::fromDir).collect(Collectors.toSet());
     }
+
+    public boolean openToPipe(Direction dir){
+        return this == Flow.fromDir(dir) || this == Flow.ALL || this == Flow.IGNORE;
+    }
 }

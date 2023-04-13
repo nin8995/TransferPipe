@@ -133,7 +133,7 @@ public class PipeUtils {
 
     //自分と相手との間をどちらか一方でも実際に進めるか
     public static boolean canFlow(Flow myFlow, Flow yourFlow, Direction d) {
-        return isFlowOpenToPipe(myFlow, d) || isFlowOpenToPipe(yourFlow, d.getOpposite());
+        return myFlow.openToPipe(d) || yourFlow.openToPipe(d.getOpposite());
     }
 
     //このflowはd方向に開いているか
