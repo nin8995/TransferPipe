@@ -201,11 +201,11 @@ public interface TPBlocks {
                 simpleBlockWithItem(block, new ModelFile.ExistingModelFile(ro.getId().withPath("block/" + ro.getId().getPath()), ex));
         }
 
-        public ModelFile genPipeModel(String parent, RegistryObject<Block> child){
+        public ModelFile genPipeModel(String parent, RegistryObject<Block> child) {
             return genModel(parent, parent.replace("block/pipe", ""), child);
         }
 
-        public ModelFile genNodeModel(String parent, RegistryObject<Block> child){
+        public ModelFile genNodeModel(String parent, RegistryObject<Block> child) {
             return genModel(parent, parent.replace("block/transfer_node", ""), child);
         }
 
@@ -218,11 +218,11 @@ public interface TPBlocks {
                     .texture("particle", texture);
         }
 
-        public static void forModel(MultiPartBlockStateBuilder mb, ModelFile model, Function<MultiPartBlockStateBuilder.PartBuilder, MultiPartBlockStateBuilder.PartBuilder> func){
+        public static void forModel(MultiPartBlockStateBuilder mb, ModelFile model, Function<MultiPartBlockStateBuilder.PartBuilder, MultiPartBlockStateBuilder.PartBuilder> func) {
             func.apply(mb.part().modelFile(model).addModel()).end();
         }
 
-        public static void forRotatedModel(MultiPartBlockStateBuilder mb, Direction dir, ModelFile model, Function<MultiPartBlockStateBuilder.PartBuilder, MultiPartBlockStateBuilder.PartBuilder> func){
+        public static void forRotatedModel(MultiPartBlockStateBuilder mb, Direction dir, ModelFile model, Function<MultiPartBlockStateBuilder.PartBuilder, MultiPartBlockStateBuilder.PartBuilder> func) {
             func.apply(rotate(mb.part().modelFile(model), dir).addModel()).end();
         }
 

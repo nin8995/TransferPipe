@@ -22,16 +22,11 @@ public interface TickingEntityBlock<BE extends BlockEntity> extends EntityBlock 
     @Nullable
     @Override
     default BlockEntity newBlockEntity(BlockPos p_153215_, BlockState p_153216_) {
-        return entityCreator().create(p_153215_, p_153216_);
+        return registry().tileSupplier().create(p_153215_, p_153216_);
     }
 
     default BlockEntityType<BE> getType() {
         return registry().tile();
-    }
-
-    //いちいち引数書くのめんどいから::だけで実装したい
-    default BlockEntityType.BlockEntitySupplier<BE> entityCreator() {
-        return registry().tileSupplier();
     }
 
     TPBlocks.RegistryEntityBlock<BE> registry();

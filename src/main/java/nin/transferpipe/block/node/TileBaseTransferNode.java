@@ -86,10 +86,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     public TileBaseTransferNode(BlockEntityType<? extends TileBaseTransferNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
         super(p_155228_, p_155229_, p_155230_);
         POS = this.worldPosition;
-        if (getBlockState().getBlock() instanceof BlockTransferNode.FacingNode node) {
+        if (getBlockState().getBlock() instanceof BlockTransferNode.FacingNode<?> node)
             FACING = node.facing(getBlockState());
-            nonValidDirections.add(FACING);
-        }
 
         setSearch(new Search(this));
         upgrades = new Upgrade.Handler(6, this);
@@ -102,6 +100,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     public void setPipeStateAndUpdate(BlockState state) {
         if (pipeState != state) {
             pipeState = state;
+            updateTile(state);
             setChanged();//タイルエンティティ更新時の処理
             level.markAndNotifyBlock(getBlockPos(), level.getChunkAt(getBlockPos()), getBlockState(), getBlockState(), 3, 512);//ブロック更新時の処理
         }
@@ -229,10 +228,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
                 depthFirst = true;
             else if (upgrade.is(BREADTH_FIRST_SEARCH_UPGRADE.get()))
                 breadthFirst = true;
-            else if (upgrade.getItem() instanceof Upgrade.BlockItem bi && bi.getBlock() instanceof TransferPipe pipe) {
-                checkTile(pipe);
+            else if (upgrade.getItem() instanceof Upgrade.BlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
                 setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
-            }
         });
     }
 

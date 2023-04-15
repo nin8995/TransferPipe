@@ -108,13 +108,13 @@ public class TransferPipe extends LightingBlock {
      */
 
     @Override
-    public void neighborChanged(BlockState bs, Level l, BlockPos bp, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
-        var prevState = l.getBlockState(bp);
-        var currentState = PipeUtils.recalcConnections(l, bp);
-        if (currentState != prevState)
-            l.setBlockAndUpdate(bp, currentState);
+    public void neighborChanged(BlockState bs, Level l, BlockPos pos, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
+        var currentState = l.getBlockState(pos);
+        var newState = PipeUtils.recalcConnections(l, pos);
+        if (newState != currentState)
+            l.setBlockAndUpdate(pos, newState);
 
-        super.neighborChanged(bs, l, bp, p_60512_, p_60513_, p_60514_);
+        super.neighborChanged(bs, l, pos, p_60512_, p_60513_, p_60514_);
     }
 
     @Override
@@ -125,8 +125,9 @@ public class TransferPipe extends LightingBlock {
     @Override
     public InteractionResult use(BlockState p_60503_, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
         if (PipeUtils.usingWrench(player, hand)) {
-            level.setBlockAndUpdate(pos, PipeUtils.cycleFlowAndRecalc(level, pos, player.isShiftKeyDown()));
-            return InteractionResult.SUCCESS;
+            if (!level.isClientSide)
+                level.setBlockAndUpdate(pos, PipeUtils.cycleFlowAndRecalc(level, pos));
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
         return InteractionResult.PASS;

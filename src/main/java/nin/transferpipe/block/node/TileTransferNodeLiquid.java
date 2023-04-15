@@ -44,7 +44,7 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        return cap == ForgeCapabilities.FLUID_HANDLER ? LazyOptional.of(() -> liquidSlot).cast() : super.getCapability(cap, side);
+        return orSuper(ForgeCapabilities.FLUID_HANDLER, liquidSlot, cap, side);
     }
 
     @Override

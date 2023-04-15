@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -25,13 +24,6 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
     @Override
     public TPBlocks.RegistryEntityBlock<Tile> registry() {
         return TPBlocks.ENERGY_RECEIVER_PIPE;
-    }
-
-    @Override
-    public void onRemove(BlockState p_60515_, Level p_60516_, BlockPos p_60517_, BlockState p_60518_, boolean p_60519_) {
-        if (p_60516_.getBlockEntity(p_60517_) instanceof Tile tile)
-            tile.onRemove();
-        super.onRemove(p_60515_, p_60516_, p_60517_, p_60518_, p_60519_);
     }
 
     public static class Tile extends NonStaticTickingEntity {
@@ -86,9 +78,11 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
         public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
             if (cap == ForgeCapabilities.ENERGY && nodeReference != null
                     && side != null && PipeUtils.currentConnection(getBlockState(), side) == Connection.MACHINE) {
-                var nodeCap = nodeReference.getCapability(cap, side);
-                if (nodeCap.isPresent())
-                    return LazyOptional.of(() -> new ReferenceEnergyStorage(((IEnergyStorage) nodeCap.resolve().get()))).cast();
+                var nodeCap = nodeReference.getCapability(ForgeCapabilities.ENERGY, side);
+                if (nodeCap.isPresent()) {
+                    var wrappedCap = new ReferenceEnergyStorage((nodeCap.resolve().get()));
+                    return LazyOptional.of(() -> wrappedCap).cast();
+                }
             }
             return LazyOptional.empty();
         }

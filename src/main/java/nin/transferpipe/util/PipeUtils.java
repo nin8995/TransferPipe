@@ -83,8 +83,8 @@ public class PipeUtils {
     }
 
     //回したFlowで再計算
-    public static BlockState cycleFlowAndRecalc(Level l, BlockPos bp, boolean reverse) {
-        return calcConnections(l, bp, currentState(l, bp).setValue(FLOW, Flow.getNext(l, bp, reverse)));
+    public static BlockState cycleFlowAndRecalc(Level l, BlockPos bp) {
+        return calcConnections(l, bp, currentState(l, bp).setValue(FLOW, Flow.getNext(l, bp)));
     }
 
     public static BlockState calcConnections(Level l, BlockPos bp, BlockState state) {

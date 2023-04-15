@@ -52,16 +52,16 @@ public enum Flow implements StringRepresentable {
      * あり得る次Flowの計算
      */
 
-    public static Flow getNext(Level level, BlockPos pos, boolean reverse) {
+    public static Flow getNext(Level level, BlockPos pos) {
         var currentFlow = PipeUtils.currentFlow(level, pos);
         var validFlows = calcValidFlows(level, pos);
 
         //今のflowから巡っていって最初にvalidFlowsにあったものを返す
-        var searching = reverse ? currentFlow.back() : currentFlow.front();
+        var searching = currentFlow.front();
         while (true) {
             if (validFlows.contains(searching))
                 return searching;
-            searching = reverse ? currentFlow.back() : searching.front();
+            searching = searching.front();
         }
     }
 
@@ -96,7 +96,7 @@ public enum Flow implements StringRepresentable {
         return Direction.stream().map(Flow::fromDir).collect(Collectors.toSet());
     }
 
-    public boolean openToPipe(Direction dir){
+    public boolean openToPipe(Direction dir) {
         return this == Flow.fromDir(dir) || this == Flow.ALL || this == Flow.IGNORE;
     }
 }

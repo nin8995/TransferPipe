@@ -77,7 +77,7 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        return cap == ForgeCapabilities.ENERGY ? LazyOptional.of(() -> energyStorage).cast() : super.getCapability(cap, side);
+        return orSuper(ForgeCapabilities.ENERGY, energyStorage, cap, side);
     }
 
     @Override

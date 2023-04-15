@@ -114,7 +114,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
      */
 
     @Override
-    public void neighborChanged(BlockState p_60509_, Level level, BlockPos pos, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean p_60514_) {
         if (level.getBlockEntity(pos) instanceof TileBaseTransferNode be) {
             var prevState = be.getPipeState();
             var currentState = PipeUtils.recalcConnections(level, pos);
@@ -122,15 +122,16 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
                 be.setPipeStateAndUpdate(currentState);
         }
 
-        super.neighborChanged(p_60509_, level, pos, p_60512_, p_60513_, p_60514_);
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, p_60514_);
     }
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
         if (level.getBlockEntity(pos) instanceof TileBaseTransferNode be) {
-            if (PipeUtils.usingWrench(player, hand)) {
-                be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos, player.isShiftKeyDown()));
-                return InteractionResult.SUCCESS;
+            if (PipeUtils.usingWrench(player, hand) && be.shouldRenderPipe()) {
+                if (!level.isClientSide)
+                    be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos/*, player.isShiftKeyDown() shift右クリックはブロックからは検知できない*/));
+                return InteractionResult.sidedSuccess(level.isClientSide);
             }
 
             if (!level.isClientSide && player instanceof ServerPlayer serverPlayer)
