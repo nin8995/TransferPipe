@@ -81,20 +81,33 @@ public interface TPBlocks {
         return registry;
     }
 
-    static <T extends TileBaseTransferNode, M extends MenuTransferNode, U extends Screen & MenuAccess<M>>
-    RegistryGUIEntityBlock<T> registerNode(String id,
-                                           Supplier<Block> block,
-                                           BlockEntityType.BlockEntitySupplier<T> tile,
-                                           MenuType.MenuSupplier<M> menu,
-                                           MenuScreens.ScreenConstructor<M, U> screen) {
+    static <T extends BlockEntity, M extends BaseMenu, U extends Screen & MenuAccess<M>>
+    RegistryGUIEntityBlock<T> registerPipe(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
+                                           MenuType.MenuSupplier<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
+        var registry = registerGUIEntityBlock(id, block, tile, menu, screen);
+        PIPES.add(registry.roBlock);
+        return registry;
+    }
+
+    static <T extends TileBaseTransferNode, M extends BaseMenu, U extends Screen & MenuAccess<M>>
+    RegistryGUIEntityBlock<T> registerNode(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
+                                           MenuType.MenuSupplier<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
+        var registry = registerGUIEntityBlock(id, block, tile, menu, screen);
+        NODES.add(registry);
+        return registry;
+    }
+
+    static <T extends BlockEntity, M extends BaseMenu, U extends Screen & MenuAccess<M>>
+    RegistryGUIEntityBlock<T> registerGUIEntityBlock(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
+                                                     MenuType.MenuSupplier<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
         var roBlock = BLOCKS.register(id, block);
         var roEntity = TILES.register(id, () -> BlockEntityType.Builder.of(tile, roBlock.get()).build(null));
         var roMenu = MENUS.register(id, () -> new MenuType<>(menu, FeatureFlags.DEFAULT_FLAGS));
         var registry = new RegistryGUIEntityBlock<>(roBlock, roEntity, tile, (RegistryObject<MenuType<?>>) (Object) roMenu, screen);
         ITEMS.register(id, () -> new BlockItem(registry.block(), new Item.Properties()));
-        NODES.add(registry);
         return registry;
     }
+
 
     static void init(IEventBus bus) {
         BLOCKS.register(bus);
@@ -107,7 +120,7 @@ public interface TPBlocks {
     record RegistryGUIEntityBlock<T extends BlockEntity>
             (RegistryObject<Block> roBlock,
              RegistryObject<BlockEntityType<T>> roTile, BlockEntityType.BlockEntitySupplier<T> tileSupplier,
-             RegistryObject<MenuType<?>> roMenu, MenuScreens.ScreenConstructor<?, ?> screenConstructor) {
+             RegistryObject<MenuType<?>> roMenu, MenuScreens.ScreenConstructor<?, ?> screen) {
 
         public Block block() {
             return roBlock.get();

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 
@@ -125,7 +126,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
         if (toBeAdded.isEmpty())
             return true;
 
-        return ItemStack.isSameItemSameTags(toBeAdded, toAdd) && toAdd.getCount() + toBeAdded.getCount() <= toBeAdded.getMaxStackSize();
+        return ItemStack.isSameItemSameTags(toBeAdded, toAdd);
     }
 
     public int getPullAmount(ItemStack in) {
@@ -159,11 +160,20 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     public ItemStack insert(IItemHandler handler, boolean simulate) {
-        var remainder = getItemSlot();
+        var remainder = getRationableItem(handler);
+        var ration = remainder.getCount();
+
         for (int slot = 0; slot < handler.getSlots() && !remainder.isEmpty(); slot++)
             remainder = handler.insertItem(slot, remainder, simulate);
 
-        return remainder;
+        if (remainder.getCount() == ration)
+            return getItemSlot();
+        else {
+            var notRationedItem = getItemSlot().copy();
+            var notRationedAmount = getItemSlot().getCount() - ration;
+            notRationedItem.setCount(remainder.getCount() + notRationedAmount);
+            return notRationedItem;
+        }
     }
 
     public void tryPush(Container container, Direction dir) {
@@ -176,7 +186,8 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     public ItemStack insert(Container container, Direction dir, boolean simulate) {
-        var remainder = getItemSlot().copy();
+        var remainder = getRationableItem(container);
+        var ration = remainder.getCount();
 
         for (int slot : getSlots(container, dir)
                 .filter(slot -> container.canPlaceItem(slot, remainder)
@@ -207,7 +218,41 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
         }
 
         //同じならcopy前のインスタンスを返す（IItemHandler.insertItemと同じ仕様。ItemStack.equalsが多田野参照評価なため、同値性を求める文脈で渡しておいて同一性と同値性を一致させておくが吉）
-        return remainder.getCount() == getItemSlot().getCount() ? getItemSlot() : remainder;
+        if (remainder.getCount() == ration)
+            return getItemSlot();
+        else {
+            var notRationedItem = getItemSlot().copy();
+            var notRationedAmount = getItemSlot().getCount() - ration;
+            notRationedItem.setCount(remainder.getCount() + notRationedAmount);
+            return notRationedItem;
+        }
+    }
+
+    public ItemStack getRationableItem(IItemHandler handler) {
+        return getRationableItem(handler.getSlots(), handler::getStackInSlot);
+    }
+
+    public ItemStack getRationableItem(Container container) {
+        return getRationableItem(container.getContainerSize(), container::getItem);
+    }
+
+    public ItemStack getRationableItem(int slots, Function<Integer, ItemStack> slotToItem) {
+        if (!getItemSlot().isEmpty()) {
+            var item = getItemSlot();
+            var itemAmount = IntStream.range(0, slots)
+                    .filter(slot -> ItemStack.isSameItemSameTags(slotToItem.apply(slot), item))
+                    .map(slot -> slotToItem.apply(slot).getCount())
+                    .reduce(Integer::sum);
+
+            var maxRation = itemRation - (itemAmount.isPresent() ? itemAmount.getAsInt() : 0);
+            if (maxRation > 0) {
+                var rationable = item.copy();
+                rationable.setCount(Math.min(maxRation, rationable.getCount()));
+                return rationable;
+            }
+        }
+
+        return ItemStack.EMPTY;
     }
 
     @Override

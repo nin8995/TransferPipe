@@ -11,7 +11,8 @@ public abstract class NonStaticTickingEntity extends BlockEntity implements Tile
         super(p_155228_, p_155229_, p_155230_);
     }
 
-    public abstract void tick();
+    public void tick() {
+    }
 
     public void onRemove() {
     }

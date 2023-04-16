@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.ItemStackHandler;
@@ -34,12 +35,12 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
     public final ItemStackHandler dummyLiquidItem;
 
     public static final String LIQUID_SLOT = "LiquidSlot";
-    private final int baseSpeed = 200;
+    private final int baseSpeed = 250;
 
     public TileTransferNodeLiquid(BlockPos p_155229_, BlockState p_155230_) {
         super(TPBlocks.TRANSFER_NODE_LIQUID.tile(), p_155229_, p_155230_);
         dummyLiquidItem = new ItemStackHandler();
-        liquidSlot = new HandlerUtils.TileLiquid<>(8000, this, dummyLiquidItem);
+        liquidSlot = new HandlerUtils.TileLiquid<>(16000, this, dummyLiquidItem);
     }
 
     @Override
@@ -115,19 +116,40 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
     }
 
     public boolean insert(IFluidHandler handler, IFluidHandler.FluidAction action) {
-        var originalFluid = liquidSlot.getFluid().copy();
+        var remainder = new FluidTank(Integer.MAX_VALUE);
+        remainder.setFluid(getRationableFluid(handler));
         var insertedAmount = new AtomicInteger(0);
         IntStream.range(0, handler.getTanks())
-                .filter(slot -> handler.isFluidValid(slot, liquidSlot.getFluid()))
-                .takeWhile(slot -> !liquidSlot.isEmpty())
-                .forEach(slot -> insertedAmount.addAndGet(liquidSlot.drain(handler.fill(liquidSlot.getFluid(), action), EXECUTE).getAmount()));
+                .filter(slot -> handler.isFluidValid(slot, remainder.getFluid()))
+                .takeWhile(slot -> !remainder.isEmpty())
+                .forEach(slot -> insertedAmount.addAndGet(remainder.drain(handler.fill(remainder.getFluid(), action), EXECUTE).getAmount()));
 
-        if (action == SIMULATE) {
-            originalFluid.setAmount(insertedAmount.get());
-            liquidSlot.fill(originalFluid, EXECUTE);
+        if (action != SIMULATE) {
+            var insertedFluid = remainder.getFluid();
+            insertedFluid.setAmount(insertedAmount.get());
+            liquidSlot.drain(insertedFluid, EXECUTE);
         }
 
         return insertedAmount.get() != 0;
+    }
+
+    public FluidStack getRationableFluid(IFluidHandler handler) {
+        if (!liquidSlot.isEmpty()) {
+            var fluid = liquidSlot.getFluid();
+            var liquidAmount = IntStream.range(0, handler.getTanks())
+                    .filter(tank -> handler.getFluidInTank(tank).isFluidEqual(fluid))
+                    .map(tank -> handler.getFluidInTank(tank).getAmount())
+                    .reduce(Integer::sum);
+
+            var maxRation = liquidRation - (liquidAmount.isPresent() ? liquidAmount.getAsInt() : 0);
+            if (maxRation > 0) {
+                var rationable = fluid.copy();
+                rationable.setAmount(Math.min(maxRation, rationable.getAmount()));
+                return rationable;
+            }
+        }
+
+        return FluidStack.EMPTY;
     }
 
     @Override

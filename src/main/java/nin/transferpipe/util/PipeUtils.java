@@ -11,9 +11,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.TPBlocks;
+import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.node.BlockTransferNode;
 import nin.transferpipe.block.node.TileBaseTransferNode;
 import nin.transferpipe.block.pipe.TransferPipe;
@@ -183,5 +185,10 @@ public class PipeUtils {
     public static boolean usingWrench(Player pl, InteractionHand hand) {
         var item = pl.getItemInHand(hand);
         return item.is(Items.STICK) || item.is(WRENCH_TAG);
+    }
+
+    public static BlockEntity getTile(Level level, BlockPos pos) {
+        var tile = level.getBlockEntity(pos);
+        return tile instanceof TileHolderEntity holder ? holder.holdingTile : tile;
     }
 }

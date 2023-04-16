@@ -6,10 +6,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Block;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.items.IItemHandler;
@@ -24,12 +22,12 @@ public abstract class MenuTransferNode extends BaseMenu {
 
     public final ContainerData searchData;
 
-    public static final int upgradesY = 92;
+    public static final int upgradesY = 91 + 30;
     public int upgradesStart = containerStart;
     public int upgradesEnd = upgradesStart + 5;
 
-    public MenuTransferNode(IItemHandler upgrades, ContainerData searchData, MenuType type, int containerId, Inventory inv, ContainerLevelAccess access) {
-        super(type, containerId, inv, access);
+    public MenuTransferNode(IItemHandler upgrades, ContainerData searchData, TPBlocks.RegistryGUIEntityBlock registry, int containerId, Inventory inv, ContainerLevelAccess access) {
+        super(registry, containerId, inv, access, false);
         this.searchData = searchData;
         this.addDataSlots(searchData);
 
@@ -67,14 +65,9 @@ public abstract class MenuTransferNode extends BaseMenu {
 
         //server
         public Item(IItemHandler slot, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv, ContainerLevelAccess access) {
-            super(upgrades, data, TPBlocks.TRANSFER_NODE_ITEM.menu(), containerId, inv, access);
+            super(upgrades, data, TPBlocks.TRANSFER_NODE_ITEM, containerId, inv, access);
             this.addSlot(new SlotItemHandler(slot, 0, 80, -38 + upgradesY));
             containerEnd++;
-        }
-
-        @Override
-        public Block getBlock() {
-            return TPBlocks.TRANSFER_NODE_ITEM.block();
         }
     }
 
@@ -89,7 +82,7 @@ public abstract class MenuTransferNode extends BaseMenu {
 
         //server
         public Liquid(IItemHandler dummyLiquidItem, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv, ContainerLevelAccess access) {
-            super(upgrades, searchData, TPBlocks.TRANSFER_NODE_LIQUID.menu(), containerId, inv, access);
+            super(upgrades, searchData, TPBlocks.TRANSFER_NODE_LIQUID, containerId, inv, access);
             this.dummyLiquidItem = dummyLiquidItem;
             addSlot(new DummyItemSlot(dummyLiquidItem, 0, 114514, 0));
         }
@@ -115,11 +108,6 @@ public abstract class MenuTransferNode extends BaseMenu {
             var a = dummyLiquidItem.getStackInSlot(0);
             return new FluidHandlerItemStack(a, Integer.MAX_VALUE).getFluid();
         }
-
-        @Override
-        public Block getBlock() {
-            return TPBlocks.TRANSFER_NODE_LIQUID.block();
-        }
     }
 
     public static class Energy extends MenuTransferNode {
@@ -131,14 +119,9 @@ public abstract class MenuTransferNode extends BaseMenu {
         }
 
         public Energy(ContainerData energyNodeData, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv, ContainerLevelAccess access) {
-            super(upgrades, data, TPBlocks.TRANSFER_NODE_ENERGY.menu(), containerId, inv, access);
+            super(upgrades, data, TPBlocks.TRANSFER_NODE_ENERGY, containerId, inv, access);
             this.energyNodeData = energyNodeData;
             addDataSlots(energyNodeData);
-        }
-
-        @Override
-        public Block getBlock() {
-            return TPBlocks.TRANSFER_NODE_ENERGY.block();
         }
 
         public int getEnergy() {

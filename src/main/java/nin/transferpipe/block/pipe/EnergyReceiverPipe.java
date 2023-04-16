@@ -15,7 +15,6 @@ import nin.transferpipe.block.TickingEntityBlock;
 import nin.transferpipe.block.node.TileTransferNodeEnergy;
 import nin.transferpipe.block.state.Connection;
 import nin.transferpipe.util.PipeUtils;
-import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,7 +43,8 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
         protected void saveAdditional(CompoundTag tag) {
             super.saveAdditional(tag);
 
-            TPUtils.forNullable(nodeReference, t -> tag.put(NODE_POS, NbtUtils.writeBlockPos(t.POS)));
+            if (nodeReference != null)
+                tag.put(NODE_POS, NbtUtils.writeBlockPos(nodeReference.POS));
         }
 
         @Override
@@ -70,7 +70,8 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
                 nodeReference.removeEnergyReceiverPipe(worldPosition);
                 nodeReference = null;
                 setChanged();
-                TPUtils.forNullable(lo, LazyOptional::invalidate);
+                if (lo != null)
+                    lo.invalidate();
             }
         }
 
@@ -94,11 +95,8 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
                 initPos = null;
             }
 
-            if (nodeReference != null && !nodeReference.getCapability(ForgeCapabilities.ENERGY).isPresent()) {
-                nodeReference = null;
-                setChanged();
-                TPUtils.forNullable(lo, LazyOptional::invalidate);
-            }
+            if (nodeReference != null && !nodeReference.getCapability(ForgeCapabilities.ENERGY).isPresent())
+                disConnect();
         }
 
         public static class ReferenceEnergyStorage implements IEnergyStorage {

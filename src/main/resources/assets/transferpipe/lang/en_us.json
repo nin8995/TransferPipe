@@ -3,6 +3,7 @@
   "menu.title.transferpipe.node_item": "Transfer Node (Item)",
   "menu.title.transferpipe.node_liquid": "Transfer Node (Liquid)",
   "menu.title.transferpipe.node_energy": "Transfer Node (Energy)",
+  "menu.title.transferpipe.regulatable": "Regulatable Rationing Pipe",
   "gui.transferpipe.searching_item": "Searching for inventories at",
   "gui.transferpipe.searching_liquid": "Searching for tanks at",
   "gui.transferpipe.searching_energy": "Searching for machines at",

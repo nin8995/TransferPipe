@@ -23,6 +23,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.pipe.TransferPipe;
+import nin.transferpipe.item.RationingUpgradeItem;
 import nin.transferpipe.item.TPItems;
 import nin.transferpipe.item.Upgrade;
 import nin.transferpipe.particle.ColorSquare;
@@ -206,6 +207,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     public boolean pseudoRoundRobin;
     public boolean depthFirst;
     public boolean breadthFirst;
+    public int itemRation;
+    public int liquidRation;
 
     public void calcUpgrades() {
         coolRate = 2;
@@ -213,6 +216,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
         pseudoRoundRobin = false;
         depthFirst = false;
         breadthFirst = false;
+        itemRation = Integer.MAX_VALUE;
+        liquidRation = Integer.MAX_VALUE;
 
         IntStream.range(0, upgrades.getSlots()).forEach(slot -> {
             var upgrade = upgrades.getStackInSlot(slot);
@@ -230,6 +235,10 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
                 breadthFirst = true;
             else if (upgrade.getItem() instanceof Upgrade.BlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
                 setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
+            else if (upgrade.getItem() instanceof RationingUpgradeItem rationing) {
+                itemRation = rationing.getItemRation(upgrade);
+                liquidRation = rationing.getLiquidRation(upgrade);
+            }
         });
     }
 

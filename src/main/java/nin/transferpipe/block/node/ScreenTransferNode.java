@@ -1,42 +1,25 @@
 package nin.transferpipe.block.node;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import nin.transferpipe.block.BaseScreen;
 import nin.transferpipe.util.TPUtils;
 
-public abstract class ScreenTransferNode<T extends MenuTransferNode> extends AbstractContainerScreen<T> {
-
-    private static final ResourceLocation BG = TPUtils.modLoc("textures/gui/container/transfer_node.png");
+public abstract class ScreenTransferNode<T extends MenuTransferNode> extends BaseScreen<T> {
 
     public int customLabelY;
 
     public ScreenTransferNode(T p_97741_, Inventory p_97742_, Component p_97743_) {
-        super(p_97741_, p_97742_, p_97743_);
+        super(p_97741_, "transfer_node", p_97742_, p_97743_);
         this.inventoryLabelY = 114514;
-        this.titleLabelY = -23;
-    }
-
-    @Override
-    public void render(PoseStack p_97795_, int p_97796_, int p_97797_, float p_97798_) {
-        renderBackground(p_97795_);
-        super.render(p_97795_, p_97796_, p_97797_, p_97798_);
-        renderTooltip(p_97795_, p_97796_, p_97797_);
-    }
-
-    @Override
-    protected void renderBg(PoseStack pose, float p_97788_, int p_97789_, int p_97790_) {
-        RenderSystem.setShaderTexture(0, BG);
-        blit(pose, this.leftPos, (this.height - 224) / 2, 0, 0, 176, 225);
+        this.titleLabelY = 7;
     }
 
     @Override
     protected void renderLabels(PoseStack pose, int p_97809_, int p_97810_) {
         super.renderLabels(pose, p_97809_, p_97810_);
-        customLabelY = -3;
+        customLabelY = 27;
         drawCenteredTexts(pose);
     }
 
@@ -84,7 +67,6 @@ public abstract class ScreenTransferNode<T extends MenuTransferNode> extends Abs
 
             if (!liquid.isEmpty())
                 TPUtils.renderLiquid(liquid, pose, 80, -38 + MenuTransferNode.upgradesY, 16);
-
         }
 
         @Override

@@ -23,6 +23,13 @@ public interface Upgrade {
         }
     }
 
+    class Function extends Item {
+
+        public Function(Properties p_41383_) {
+            super(p_41383_);
+        }
+    }
+
     class Slot extends SlotItemHandler {
 
         public Slot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {

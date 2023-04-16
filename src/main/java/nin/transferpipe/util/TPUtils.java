@@ -14,6 +14,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
@@ -31,6 +32,10 @@ import nin.transferpipe.TPMod;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.mixin.AtlasAccessor;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;
@@ -319,12 +324,31 @@ public class TPUtils {
         return level.getBlockEntity(pos) instanceof TileHolderEntity tileHolder ? tileHolder.holdingTile : level.getBlockEntity(pos);
     }
 
-    public static <T> void forNullable(T t, Consumer<T> func) {
-        if (t != null)
-            func.accept(t);
+    public static BufferedImage getImage(ResourceLocation loc) {
+        return getImage(Minecraft.getInstance().getResourceManager().getResource(loc).get());
     }
 
-    public static <T, A> A fromNullable(T t, Function<T, A> func) {
-        return t != null ? func.apply(t) : null;
+    public static BufferedImage getImage(Resource resource) {
+        try {
+            return ImageIO.read(new ByteArrayInputStream(resource.open().readAllBytes()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static int computeInt(CompoundTag tag, String key, int initialValue) {
+        return compute(tag, key, CompoundTag::getInt, CompoundTag::putInt, initialValue);
+    }
+
+    public static <T> T compute(CompoundTag tag, String key, BiFunction<CompoundTag, String, T> getter, Consumer3<CompoundTag, String, T> putter, T initialValue) {
+        if (!tag.contains(key))
+            putter.accept(tag, key, initialValue);
+
+        return getter.apply(tag, key);
+    }
+
+    public interface Consumer3<A, B, C> {
+
+        void accept(A a, B b, C c);
     }
 }

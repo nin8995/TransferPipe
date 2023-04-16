@@ -18,6 +18,7 @@ import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.node.TileBaseTransferNode;
 import nin.transferpipe.item.TPItems;
+import nin.transferpipe.network.TPPackets;
 import nin.transferpipe.particle.TPParticles;
 import org.slf4j.Logger;
 
@@ -34,6 +35,7 @@ public class TPMod {
         TPBlocks.init(bus);
         TPItems.init(bus);
         TPParticles.init(bus);
+        TPPackets.init();
 
         //クリエタブ登録
         bus.addListener((CreativeModeTabEvent.Register e) -> e.registerCreativeModeTab(new ResourceLocation(MODID, MODID), b -> b
@@ -55,8 +57,10 @@ public class TPMod {
 
     @SubscribeEvent
     public static void clientInit(FMLClientSetupEvent e) {
-        e.enqueueWork(() ->
-                TPBlocks.NODES.forEach(node -> bindMenuAndScreen(node.menu(), node.screenConstructor())));
+        e.enqueueWork(() -> {
+            TPBlocks.NODES.forEach(node -> bindMenuAndScreen(node.menu(), node.screen()));
+            TPItems.MENU_SCREENS.forEach(ms -> bindMenuAndScreen(ms.menu(), ms.screen()));
+        });
     }
 
     public static void bindMenuAndScreen(MenuType menu, MenuScreens.ScreenConstructor screen) {

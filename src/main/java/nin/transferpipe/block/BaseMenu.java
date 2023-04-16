@@ -5,17 +5,15 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Block;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import org.jetbrains.annotations.Nullable;
 
 public abstract class BaseMenu extends AbstractContainerMenu {
 
     private final ContainerLevelAccess access;
+    private final TPBlocks.RegistryGUIEntityBlock registry;
 
     public int inventoryStart = 0;
     public int inventoryEnd = inventoryStart + 26;
@@ -24,18 +22,20 @@ public abstract class BaseMenu extends AbstractContainerMenu {
     public int containerStart = hotbarEnd + 1;
     public int containerEnd;
 
-    protected BaseMenu(@Nullable MenuType<?> p_38851_, int p_38852_, Inventory inv, ContainerLevelAccess access) {
-        super(p_38851_, p_38852_);
+    protected BaseMenu(TPBlocks.RegistryGUIEntityBlock registry, int p_38852_, Inventory inv, ContainerLevelAccess access, boolean noItemSlots) {
+        super(registry.menu(), p_38852_);
         this.access = access;
-
-        for (int l = 0; l < 3; ++l) {
-            for (int k = 0; k < 9; ++k) {
-                this.addSlot(new Slot(inv, k + l * 9 + 9, 8 + k * 18, l * 18 + 22 + getOffsetY()));
+        this.registry = registry;
+        if (!noItemSlots) {
+            for (int l = 0; l < 3; ++l) {
+                for (int k = 0; k < 9; ++k) {
+                    this.addSlot(new Slot(inv, k + l * 9 + 9, 8 + k * 18, l * 18 + 22 + getOffsetY()));
+                }
             }
-        }
 
-        for (int i1 = 0; i1 < 9; ++i1) {
-            this.addSlot(new Slot(inv, i1, 8 + i1 * 18, 80 + getOffsetY()));
+            for (int i1 = 0; i1 < 9; ++i1) {
+                this.addSlot(new Slot(inv, i1, 8 + i1 * 18, 80 + getOffsetY()));
+            }
         }
     }
 
@@ -87,13 +87,12 @@ public abstract class BaseMenu extends AbstractContainerMenu {
         return moveItemStackTo(item, minSlot, maxSlot + 1, fillMaxToMin);
     }
 
-    public abstract Pair<Integer, Integer> getHighPriorityContainerSlots(ItemStack item);
+    public Pair<Integer, Integer> getHighPriorityContainerSlots(ItemStack item) {
+        return null;
+    }
 
     @Override
     public boolean stillValid(Player player) {
-        return AbstractContainerMenu.stillValid(this.access, player, getBlock());
+        return AbstractContainerMenu.stillValid(this.access, player, registry.block());
     }
-
-    public abstract Block getBlock();
-
 }
