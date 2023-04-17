@@ -16,6 +16,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -176,8 +177,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
      * 一般の機能
      */
 
-    @Override
-    public void tick() {
+    public void beforeTick() {
         //インスタンス生成時はlevelがnullでpipeState分らんからここで
         if (firstTick) {
             setPipeStateAndUpdate(PipeUtils.calcInitialState(level, worldPosition, pipeState));
@@ -188,12 +188,21 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
             calcUpgrades();
             initialized = true;
         }
+    }
+
+    @Override
+    public final void tick() {
+        beforeTick();
+
+        if (redstoneBehavior == RedstoneBehavior.NEVER
+                || (redstoneBehavior == RedstoneBehavior.ACTIVE_HIGH && level.getBestNeighborSignal(POS) == 0)
+                || (redstoneBehavior == RedstoneBehavior.ACTIVE_LOW && level.getBestNeighborSignal(POS) > 0))
+            return;
 
         super.tick();
-        cooltime -= coolRate;
 
-        while (cooltime <= 0) {
-            cooltime += 20;
+        cooltime -= coolRate;
+        for (; cooltime <= 0; cooltime += 20) {
 
             if (FACING != null)//if(canWork(POS, FACED))あってもいいけどなくてもいい←world interaction考えるとない方が楽
                 facing(POS.relative(FACING), FACING.getOpposite());
@@ -204,6 +213,11 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
             if (isSearching)
                 setSearch(search.proceed());
         }
+
+        afterTick();
+    }
+
+    public void afterTick() {
     }
 
     public float coolRate;
@@ -211,6 +225,9 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     public boolean pseudoRoundRobin;
     public boolean depthFirst;
     public boolean breadthFirst;
+
+    public boolean addParticle;
+    public RedstoneBehavior redstoneBehavior;
 
     public int itemRation;
     public int liquidRation;
@@ -222,6 +239,9 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
         pseudoRoundRobin = false;
         depthFirst = false;
         breadthFirst = false;
+
+        addParticle = false;
+        redstoneBehavior = RedstoneBehavior.ACTIVE_LOW;
 
         itemRation = Integer.MAX_VALUE;
         liquidRation = Integer.MAX_VALUE;
@@ -242,6 +262,15 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
             else if (upgrade.is(BREADTH_FIRST_SEARCH_UPGRADE.get()))
                 breadthFirst = true;
 
+            else if (upgrade.is(Items.GLOWSTONE_DUST))
+                addParticle = true;
+            else if (upgrade.is(Items.REDSTONE))
+                redstoneBehavior = RedstoneBehavior.ALWAYS;
+            else if (upgrade.is(Items.REDSTONE_TORCH))
+                redstoneBehavior = RedstoneBehavior.ACTIVE_HIGH;
+            else if (upgrade.is(Items.GUNPOWDER))
+                redstoneBehavior = RedstoneBehavior.NEVER;
+
             else if (upgrade.getItem() instanceof RationingUpgradeItem rationing) {
                 itemRation = rationing.getItemRation(upgrade);
                 liquidRation = rationing.getLiquidRation(upgrade);
@@ -251,6 +280,13 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
             else if (upgrade.getItem() instanceof Upgrade.BlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
                 setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
         });
+    }
+
+    public enum RedstoneBehavior {
+        ACTIVE_LOW,
+        ACTIVE_HIGH,
+        ALWAYS,
+        NEVER
     }
 
     public abstract boolean shouldSearch();
@@ -289,11 +325,13 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     }
 
     public void addSearchParticle(Vec3 pos) {
-        TPParticles.addSearch(level, pos, getParticleOption());
+        if (addParticle)
+            TPParticles.addSearch(level, pos, getParticleOption());
     }
 
     public void addTerminalParticle(Vec3 pos) {
-        TPParticles.addTerminal(level, pos, getParticleOption());
+        if (addParticle)
+            TPParticles.addTerminal(level, pos, getParticleOption());
     }
 
     public abstract ColorSquare.Option getParticleOption();

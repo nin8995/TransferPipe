@@ -21,6 +21,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -360,5 +361,9 @@ public class TPUtils {
             if (tab.getDisplayItems().stream().anyMatch(itemStack -> itemStack.is(checked)))
                 return tab;
         return null;
+    }
+
+    public static boolean isAnyOf(ItemStack item, Item... items) {
+        return Arrays.stream(items).anyMatch(item::is);
     }
 }

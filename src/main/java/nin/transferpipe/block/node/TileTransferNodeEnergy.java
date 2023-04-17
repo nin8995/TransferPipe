@@ -135,14 +135,19 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     @Override
-    public void tick() {
+    public void beforeTick() {
+        super.beforeTick();
         //load時にはlevelがnullなため、ここで実際にloをload
         if (!loadCache.isEmpty()) {
             loadCache.forEach((pos, dirsSearched) -> dirsSearched.forEach((dir, searched) -> tryEstablishConnection(pos, dir, searched)));
             loadCache.clear();
         }
+    }
 
-        super.tick();
+    @Override
+    public void afterTick() {
+        super.afterTick();
+
         refreshConnections();
 
         var extractables = getEnergyStorages(extractablesLOs);

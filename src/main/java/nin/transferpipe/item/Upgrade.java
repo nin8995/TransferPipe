@@ -2,10 +2,12 @@ package nin.transferpipe.item;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import nin.transferpipe.block.node.TileBaseTransferNode;
 import nin.transferpipe.util.HandlerUtils;
+import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.NotNull;
 
 public interface Upgrade {
@@ -39,7 +41,7 @@ public interface Upgrade {
 
         @Override
         public boolean mayPlace(@NotNull ItemStack stack) {
-            return stack.getItem() instanceof Upgrade && super.mayPlace(stack);
+            return (stack.getItem() instanceof Upgrade || TPUtils.isAnyOf(stack, Items.GLOWSTONE_DUST, Items.REDSTONE, Items.REDSTONE_TORCH, Items.GUNPOWDER)) && super.mayPlace(stack);
         }
     }
 
