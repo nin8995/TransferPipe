@@ -1,5 +1,6 @@
 package nin.transferpipe.item;
 
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
@@ -16,14 +17,14 @@ public interface Upgrade {
         }
     }
 
-    class Item extends net.minecraft.world.item.Item implements Upgrade {
+    class UItem extends Item implements Upgrade {
 
-        public Item(Properties p_41383_) {
+        public UItem(Properties p_41383_) {
             super(p_41383_);
         }
     }
 
-    class Function extends Item {
+    class Function extends UItem {
 
         public Function(Properties p_41383_) {
             super(p_41383_);

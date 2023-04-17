@@ -14,6 +14,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -24,6 +25,7 @@ import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.item.RationingUpgradeItem;
+import nin.transferpipe.item.SortingUpgrade;
 import nin.transferpipe.item.TPItems;
 import nin.transferpipe.item.Upgrade;
 import nin.transferpipe.particle.ColorSquare;
@@ -32,6 +34,8 @@ import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 
 //搬送する種類に依らない、「ノード」のタイルエンティティとしての機能
@@ -207,8 +211,10 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     public boolean pseudoRoundRobin;
     public boolean depthFirst;
     public boolean breadthFirst;
+
     public int itemRation;
     public int liquidRation;
+    public BiPredicate<List<Item>, Item> sortingFunction;
 
     public void calcUpgrades() {
         coolRate = 2;
@@ -216,8 +222,10 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
         pseudoRoundRobin = false;
         depthFirst = false;
         breadthFirst = false;
+
         itemRation = Integer.MAX_VALUE;
         liquidRation = Integer.MAX_VALUE;
+        sortingFunction = (l, i) -> true;
 
         IntStream.range(0, upgrades.getSlots()).forEach(slot -> {
             var upgrade = upgrades.getStackInSlot(slot);
@@ -233,12 +241,15 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
                 depthFirst = true;
             else if (upgrade.is(BREADTH_FIRST_SEARCH_UPGRADE.get()))
                 breadthFirst = true;
-            else if (upgrade.getItem() instanceof Upgrade.BlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
-                setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
+
             else if (upgrade.getItem() instanceof RationingUpgradeItem rationing) {
                 itemRation = rationing.getItemRation(upgrade);
                 liquidRation = rationing.getLiquidRation(upgrade);
-            }
+            } else if (upgrade.getItem() instanceof SortingUpgrade sorter)
+                sortingFunction = sorter.filter;
+
+            else if (upgrade.getItem() instanceof Upgrade.BlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
+                setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
         });
     }
 

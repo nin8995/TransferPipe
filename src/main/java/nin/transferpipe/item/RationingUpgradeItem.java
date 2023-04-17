@@ -109,7 +109,7 @@ public class RationingUpgradeItem extends Upgrade.Function {
             var upgrade = menu.upgradeInInventory.getItem();
             if (upgrade.getItem() instanceof RationingUpgradeItem rationing) {
 
-                itemRation = newEditBox(75, 10, -35 - 25);
+                itemRation = newEditBox(70, 10, -35 - 20);
                 itemRation.setFilter(this::checkStr);
                 itemRation.setValue(String.valueOf(rationing.getItemRation(upgrade)));//もしタグがない場合、クライアントでtag作ってるだけ、サーバーはまだタグ無し
                 addRenderableWidget(itemRation);
@@ -129,8 +129,8 @@ public class RationingUpgradeItem extends Upgrade.Function {
         protected void renderLabels(PoseStack pose, int p_97809_, int p_97810_) {
             super.renderLabels(pose, p_97809_, p_97810_);
 
-            draw(pose, "items", -23);
-            draw(pose, "mb", 70 + 7);
+            draw(pose, "items", -20 + 2);
+            draw(pose, "mb", 70 + 5 + 2);
         }
 
         public void draw(PoseStack pose, String str, int xOffset) {

@@ -18,6 +18,9 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -350,5 +353,12 @@ public class TPUtils {
     public interface Consumer3<A, B, C> {
 
         void accept(A a, B b, C c);
+    }
+
+    public static CreativeModeTab getFirstlyContainedTab(Item checked) {
+        for (CreativeModeTab tab : CreativeModeTabs.allTabs())
+            if (tab.getDisplayItems().stream().anyMatch(itemStack -> itemStack.is(checked)))
+                return tab;
+        return null;
     }
 }

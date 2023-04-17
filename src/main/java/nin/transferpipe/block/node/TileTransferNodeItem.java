@@ -160,7 +160,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     public ItemStack insert(IItemHandler handler, boolean simulate) {
-        var remainder = getRationableItem(handler);
+        var remainder = getPushableItem(handler);
         var ration = remainder.getCount();
 
         for (int slot = 0; slot < handler.getSlots() && !remainder.isEmpty(); slot++)
@@ -186,7 +186,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     public ItemStack insert(Container container, Direction dir, boolean simulate) {
-        var remainder = getRationableItem(container);
+        var remainder = getPushableItem(container);
         var ration = remainder.getCount();
 
         for (int slot : getSlots(container, dir)
@@ -228,15 +228,18 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
         }
     }
 
-    public ItemStack getRationableItem(IItemHandler handler) {
-        return getRationableItem(handler.getSlots(), handler::getStackInSlot);
+    public ItemStack getPushableItem(IItemHandler handler) {
+        return getPushableItem(handler.getSlots(), handler::getStackInSlot);
     }
 
-    public ItemStack getRationableItem(Container container) {
-        return getRationableItem(container.getContainerSize(), container::getItem);
+    public ItemStack getPushableItem(Container container) {
+        return getPushableItem(container.getContainerSize(), container::getItem);
     }
 
-    public ItemStack getRationableItem(int slots, Function<Integer, ItemStack> slotToItem) {
+    public ItemStack getPushableItem(int slots, Function<Integer, ItemStack> slotToItem) {
+        if (!sortingFunction.test(IntStream.range(0, slots).mapToObj(slotToItem::apply).map(ItemStack::getItem).toList(), getItemSlot().getItem()))
+            return ItemStack.EMPTY;
+
         if (!getItemSlot().isEmpty()) {
             var item = getItemSlot();
             var itemAmount = IntStream.range(0, slots)

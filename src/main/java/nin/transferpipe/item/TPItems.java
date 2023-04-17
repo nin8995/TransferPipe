@@ -25,23 +25,29 @@ public interface TPItems {
 
     List<RegistryGUIItem> MENU_SCREENS = new ArrayList<>();
 
+    //Normal Upgrades
     RegistryObject<Item> SPEED_UPGRADE = registerUpgrade("speed_upgrade");
     RegistryObject<Item> AMPLIFIED_SPEED_UPGRADE = registerUpgrade("amplified_speed_upgrade");
     RegistryObject<Item> STACK_UPGRADE = registerUpgrade("stack_upgrade", p -> p.stacksTo(1));
     RegistryObject<Item> PSEUDO_ROUND_ROBIN_UPGRADE = registerUpgrade("pseudo_round_robin_upgrade", p -> p.stacksTo(1));
     RegistryObject<Item> DEPTH_FIRST_SEARCH_UPGRADE = registerUpgrade("depth_first_search_upgrade", p -> p.stacksTo(1));
     RegistryObject<Item> BREADTH_FIRST_SEARCH_UPGRADE = registerUpgrade("breadth_first_search_upgrade", p -> p.stacksTo(1));
+
+    //Function Upgrades
     RegistryObject<Item> RATIONING_UPGRADE = register("rationing_upgrade", p -> new RationingUpgradeItem(64, p.stacksTo(1)));
     RegistryObject<Item> MINIMAL_RATIONING_UPGRADE = register("minimal_rationing_upgrade", p -> new RationingUpgradeItem(1, p.stacksTo(1)));
     RegistryGUIItem REGULATABLE_RATIONING_UPGRADE = registerGUIItem("regulatable_rationing_upgrade",
             p -> new RationingUpgradeItem.Regulatable(p.stacksTo(1)), RationingUpgradeItem.Regulatable.Menu::new, RationingUpgradeItem.Regulatable.Screen::new);
+    RegistryObject<Item> ITEM_SORTING_UPGRADE = register("item_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.ITEM_SORTING_FUNCTION, p));
+    RegistryObject<Item> MOD_SORTING_UPGRADE = register("mod_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.MOD_SORTING_FUNCTION, p));
+    RegistryObject<Item> TAB_SORTING_UPGRADE = register("tab_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.TAB_SORTING_FUNCTION, p));
 
     static RegistryObject<Item> registerUpgrade(String name) {
         return registerUpgrade(name, p -> p);
     }
 
     static RegistryObject<Item> registerUpgrade(String name, Function<Item.Properties, Item.Properties> pModifier) {
-        return register(name, p -> new Upgrade.Item(pModifier.apply(p)));
+        return register(name, p -> new Upgrade.UItem(pModifier.apply(p)));
     }
 
     static RegistryObject<Item> registerFunctionUpgrade(String name) {
