@@ -1,6 +1,5 @@
 package nin.transferpipe.util;
 
-import nin.transferpipe.item.SortingUpgrade;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;

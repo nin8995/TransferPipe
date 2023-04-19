@@ -20,11 +20,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import nin.transferpipe.block.BaseBlockMenu;
+import nin.transferpipe.block.GUIEntityBlock;
 import nin.transferpipe.block.LightingBlock;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.block.TickingGUIBlock;
 import nin.transferpipe.block.pipe.TransferPipe;
+import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 //搬送する種類に依らない、「ノード」のブロックとしての機能
-public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends LightingBlock implements TickingGUIBlock<T> {
+public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends LightingBlock implements GUIEntityBlock<T> {
 
     /**
      * 基本情報

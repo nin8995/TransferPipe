@@ -6,10 +6,12 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkHooks;
+import nin.transferpipe.gui.BaseBlockMenu;
 
-public interface TickingGUIBlock<T extends NonStaticTickingEntity> extends TickingEntityBlock<T> {
+public interface GUIEntityBlock<T extends NonStaticTickingEntity> extends TickingEntityBlock<T> {
 
     @Override
     default TPBlocks.RegistryEntityBlock<T> registry() {
@@ -22,10 +24,9 @@ public interface TickingGUIBlock<T extends NonStaticTickingEntity> extends Ticki
 
     default InteractionResult openMenu(Level level, BlockPos pos, Player player) {
         try {
-            var be = (T) level.getBlockEntity(pos);
             if (!level.isClientSide && player instanceof ServerPlayer serverPlayer)
                 NetworkHooks.openScreen(serverPlayer, new SimpleMenuProvider(
-                        (i, inv, pl) -> menu(be, i, inv).setAccess(be),
+                        (i, inv, pl) -> menu((T) level.getBlockEntity(pos), i, inv).setAccess(ContainerLevelAccess.create(level, pos)),
                         level.getBlockState(pos).getBlock().getName()));
 
             return InteractionResult.sidedSuccess(level.isClientSide);

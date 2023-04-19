@@ -20,7 +20,7 @@ public class SortingUpgrade extends FunctionUpgrade {
     }
 
     public static final BiPredicate<List<Item>, Item> ITEM_SORT = exceptForAirs((items, toPush) -> items.stream()
-                    .anyMatch(i -> i == toPush));
+            .anyMatch(i -> i == toPush));
     public static final BiPredicate<List<Item>, Item> MOD_SORT = exceptForAirs(((items, toPush) -> {
         var modid = BuiltInRegistries.ITEM.getKey(toPush).getNamespace();
         return items.stream().anyMatch(i -> BuiltInRegistries.ITEM.getKey(i).getNamespace().equals(modid));
@@ -30,14 +30,14 @@ public class SortingUpgrade extends FunctionUpgrade {
         return items.stream().anyMatch(i -> TPUtils.getFirstlyContainedTab(i) == tab);
     });
     public static final BiPredicate<List<Item>, Item> TAG_SORT = exceptForAirs((items, toPush) -> items.stream()
-                    .flatMap(i -> i.builtInRegistryHolder().tags()).collect(Collectors.toSet()).stream()
-                    .anyMatch(tag -> toPush.builtInRegistryHolder().is(tag)));
+            .flatMap(i -> i.builtInRegistryHolder().tags()).collect(Collectors.toSet()).stream()
+            .anyMatch(tag -> toPush.builtInRegistryHolder().is(tag)));
     public static final BiPredicate<List<Item>, Item> COMMON_TAG_SORT = exceptForAirs((items, toPush) -> {
         var commonTag = TPUtils.getCommonTag(items);
         return commonTag != null && toPush.builtInRegistryHolder().is(commonTag);
     });
     public static final BiPredicate<List<Item>, Item> CLASS_SORT = exceptForAirs((items, toPush) -> items.stream()
-                    .anyMatch(i -> i.getClass().isAssignableFrom(toPush.getClass())));
+            .anyMatch(i -> i.getClass().isAssignableFrom(toPush.getClass())));
     public static final BiPredicate<List<Item>, Item> COMMON_CLASS_SORT = exceptForAirs((items, toPush) -> {
         var objects = items.stream().map(SortingUpgrade::blockWhenBlockItem).toList();
         var commonSuper = JavaUtils.getCommonSuper(objects);

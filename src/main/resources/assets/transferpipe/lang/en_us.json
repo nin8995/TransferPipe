@@ -1,7 +1,7 @@
 {
   "_comment": "Block",
   "block.transferpipe.transfer_pipe": "Transfer Pipe",
-  "block.transferpipe.energy_pipe": "Energy PIpe",
+  "block.transferpipe.energy_pipe": "Energy Pipe",
   "block.transferpipe.energy_receiver_pipe": "Energy Receiver Pipe",
   "block.transferpipe.transfer_node_item": "Transfer Node (Item)",
   "block.transferpipe.transfer_node_liquid": "Transfer Node (Liquid)",

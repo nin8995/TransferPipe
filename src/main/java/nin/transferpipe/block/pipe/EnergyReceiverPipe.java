@@ -13,7 +13,6 @@ import nin.transferpipe.block.NonStaticTickingEntity;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TickingEntityBlock;
 import nin.transferpipe.block.node.TileTransferNodeEnergy;
-import nin.transferpipe.block.state.Connection;
 import nin.transferpipe.util.PipeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

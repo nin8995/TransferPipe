@@ -1,4 +1,4 @@
-package nin.transferpipe.block.state;
+package nin.transferpipe.block.pipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

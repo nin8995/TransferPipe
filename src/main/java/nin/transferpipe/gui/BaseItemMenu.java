@@ -1,13 +1,13 @@
-package nin.transferpipe.item;
+package nin.transferpipe.gui;
 
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import nin.transferpipe.BaseMenu;
+import nin.transferpipe.item.TPItems;
 
 public abstract class BaseItemMenu extends BaseMenu {
 
-    protected BaseItemMenu(TPItems.RegistryGUIItem registry, int p_38852_, Inventory inv, String bg, boolean noItemSlots) {
-        super(registry.gui(), p_38852_, inv, bg, noItemSlots);
+    public BaseItemMenu(TPItems.RegistryGUIItem registry, int p_38852_, Inventory inv, String bg) {
+        super(registry.gui(), p_38852_, inv, bg);
     }
 
     @Override

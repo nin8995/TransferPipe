@@ -1,7 +1,6 @@
 package nin.transferpipe.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -11,7 +10,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import nin.transferpipe.block.BaseScreen;
+import nin.transferpipe.gui.BaseItemMenu;
+import nin.transferpipe.gui.BaseScreen;
 import nin.transferpipe.network.TPPackets;
 import nin.transferpipe.util.TPUtils;
 
@@ -63,7 +63,7 @@ public class RationingUpgradeItem extends FunctionUpgrade {
 
         @Override
         public BaseItemMenu menu(ItemStack item, Player player, int id, Inventory inv) {
-            return new Menu(id, inv, player);
+            return new Menu(id, inv);
         }
     }
 
@@ -71,17 +71,17 @@ public class RationingUpgradeItem extends FunctionUpgrade {
 
         private final Slot upgradeInInventory;
 
-        protected Menu(int p_38852_, Inventory inv) {
-            this(p_38852_, inv, Minecraft.getInstance().player);
-        }
-
-        protected Menu(int p_38852_, Inventory inv, Player pl) {
-            super(TPItems.REGULATABLE_RATIONING_UPGRADE, p_38852_, inv, "regulatable", true);
+        public Menu(int p_38852_, Inventory inv) {
+            super(TPItems.REGULATABLE_RATIONING_UPGRADE, p_38852_, inv, "regulatable");
             noDefaultTexts();
 
-            this.upgradeInInventory = new Slot(inv, pl.getInventory().selected, 114514, 1919810);
+            this.upgradeInInventory = new Slot(inv, inv.selected, 114514, 1919810);
             addSlot(upgradeInInventory);
+        }
 
+        @Override
+        public boolean noInventory() {
+            return true;
         }
     }
 

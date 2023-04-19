@@ -1,4 +1,4 @@
-package nin.transferpipe;
+package nin.transferpipe.gui;
 
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.world.inventory.MenuType;

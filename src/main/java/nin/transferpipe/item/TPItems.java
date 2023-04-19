@@ -11,7 +11,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import nin.transferpipe.RegistryGUI;
+import nin.transferpipe.gui.RegistryGUI;
 
 import java.util.ArrayList;
 import java.util.List;

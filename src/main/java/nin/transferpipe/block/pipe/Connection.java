@@ -1,10 +1,9 @@
-package nin.transferpipe.block.state;
+package nin.transferpipe.block.pipe;
 
 
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.state.BlockState;
-import nin.transferpipe.block.pipe.TransferPipe;
 
 import java.util.function.Consumer;
 import java.util.function.Function;

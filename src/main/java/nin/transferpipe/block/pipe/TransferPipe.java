@@ -21,8 +21,6 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import nin.transferpipe.block.LightingBlock;
 import nin.transferpipe.block.node.TileBaseTransferNode;
-import nin.transferpipe.block.state.Connection;
-import nin.transferpipe.block.state.Flow;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 

@@ -11,7 +11,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
@@ -402,13 +401,13 @@ public class TPUtils {
         return ItemStack.isSameItemSameTags(noDamageItem, noDamageFilteringItem);
     }
 
-    public static void removeTag(ItemStack item, String key){
-        if(item.hasTag() && item.getTag().contains(key))
+    public static void removeTag(ItemStack item, String key) {
+        if (item.hasTag() && item.getTag().contains(key))
             item.getTag().remove(key);
     }
 
     @Nullable
-    public static TagKey<Item> getCommonTag(List<Item> item){
+    public static TagKey<Item> getCommonTag(List<Item> item) {
         return item.stream()
                 .map(i -> i.builtInRegistryHolder().tags()).map(Stream::toList)
                 .min(Comparator.comparingLong(List::size)).get().stream()
@@ -416,11 +415,11 @@ public class TPUtils {
                 .findFirst().orElse(null);
     }
 
-    public static List<Item> reduceAir(List<Item> items){
+    public static List<Item> reduceAir(List<Item> items) {
         return items.stream().filter(i -> i != Items.AIR).toList();
     }
 
-    public static Set<TagKey<Item>> getAvailableTags(List<Item> items){
+    public static Set<TagKey<Item>> getAvailableTags(List<Item> items) {
         return items.stream()
                 .flatMap(i -> i.builtInRegistryHolder().tags())
                 .collect(Collectors.toSet());

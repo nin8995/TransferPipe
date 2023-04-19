@@ -12,8 +12,8 @@ import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import nin.transferpipe.block.BaseBlockMenu;
 import nin.transferpipe.block.TPBlocks;
+import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.item.Upgrade;
 import nin.transferpipe.item.UpgradeSlot;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +27,7 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
     public int upgradesEnd = upgradesStart + 5;
 
     public MenuTransferNode(IItemHandler upgrades, ContainerData searchData, TPBlocks.RegistryGUIEntityBlock registry, int containerId, Inventory inv) {
-        super(registry, containerId, inv, "transfer_node", false);
+        super(registry, containerId, inv, "transfer_node");
         noInventoryText();
         this.searchData = searchData;
         this.addDataSlots(searchData);

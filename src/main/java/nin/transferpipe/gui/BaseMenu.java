@@ -1,4 +1,4 @@
-package nin.transferpipe;
+package nin.transferpipe.gui;
 
 import com.mojang.datafixers.util.Function4;
 import com.mojang.datafixers.util.Pair;
@@ -30,42 +30,15 @@ public abstract class BaseMenu extends AbstractContainerMenu {
     public boolean disableTitleText;
     public boolean disableInventoryText;
 
-    protected BaseMenu(RegistryGUI registry, int p_38852_, Inventory inv, String bg, boolean noInventory) {
+    public BaseMenu(RegistryGUI registry, int p_38852_, Inventory inv, String bg) {
         super(registry.menu(), p_38852_);
         this.bg = bg;
-        if (!noInventory)
+        if (!noInventory())
             addInventory(inv);
     }
 
-    public void addInventory(Inventory inv) {
-        //inventory
-        IntStream.rangeClosed(0, 2).forEach(i ->
-                addInventorySlots(9 * (i + 1), inv, Slot::new, i * 18));
-        //hotbar
-        addInventorySlots(0, inv, Slot::new, 58);
-    }
-
-    public <T extends Container> void addInventorySlots(int start, T container, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
-        addCenteredSlots(start, start + 8, (index, x) -> slotConstructor.apply(container, index, x, y + getOffsetY()), false);
-    }
-
-    public <T extends IItemHandler> void addItemHandlerSlots(T handler, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
-        addCenteredSlots(0, handler.getSlots() - 1, (index, x) -> slotConstructor.apply(handler, index, x, y), true);
-    }
-
-    public <T extends Container> void addContainerSlots(T container, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
-        addCenteredSlots(0, container.getContainerSize() - 1, (index, x) -> slotConstructor.apply(container, index, x, y), true);
-    }
-
-    public void addCenteredSlots(int start, int end, BiFunction<Integer, Integer, Slot> slotConstructor, boolean countAsContainer) {
-        var slotAmount = end - start + 1;
-        var slotSize = 18;
-        var startX = 8 + slotSize * (9 - slotAmount) / 2 + getOffsetX();
-        IntStream.range(0, slotAmount).forEach(i ->
-                addSlot(slotConstructor.apply(start + i, startX + slotSize * i)));
-
-        if (countAsContainer)
-            containerEnd = containerEnd != 0 ? containerEnd + slotAmount - 1 : containerStart + slotAmount - 1;
+    public boolean noInventory() {
+        return false;
     }
 
     public void noInventoryText() {
@@ -77,12 +50,55 @@ public abstract class BaseMenu extends AbstractContainerMenu {
         disableInventoryText = true;
     }
 
+    public void addInventory(Inventory inv) {
+        //inventory
+        IntStream.rangeClosed(0, 2).forEach(i ->
+                addInventorySlots(9 * (i + 1), inv, Slot::new, i * 18));
+        //hotbar
+        addInventorySlots(0, inv, Slot::new, 58);
+    }
+
+    public <T extends Container> void addInventorySlots(int start, T inv, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
+        addCenteredSlots(start, start + 8, (index, x) -> slotConstructor.apply(inv, index, x, y + getOffsetY()));
+    }
+
+    public <T extends IItemHandler> void addItemHandlerSlots(T handler, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
+        addCenteredSlots(0, handler.getSlots() - 1, (index, x) -> slotConstructor.apply(handler, index, x, y));
+    }
+
+    public <T extends Container> void addContainerSlots(T container, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
+        addCenteredSlots(0, container.getContainerSize() - 1, (index, x) -> slotConstructor.apply(container, index, x, y));
+    }
+
+    public void addCenteredSlots(int start, int end, BiFunction<Integer, Integer, Slot> slotConstructor) {
+        var slotInfo = slotConstructor.apply(0, 0);
+
+        var slotAmount = end - start + 1;
+        var slotSize = 18;
+        var startX = 8 + slotSize * (9 - slotAmount) / 2 + getOffsetX();
+
+        IntStream.range(0, slotAmount).forEach(i -> {
+            var index = i + start;
+            var x = startX + slotSize * i;
+            var slot = slotConstructor.apply(index, x);
+
+            addSlot(shouldLock(slotInfo, index) ? new LockedSlot(slot) : slot);
+        });
+
+        if (!(slotInfo.container instanceof Inventory))
+            containerEnd = containerEnd != 0 ? containerEnd + slotAmount : containerStart + slotAmount - 1;
+    }
+
     public int getOffsetX() {
         return 0;
     }
 
     public int getOffsetY() {//TODO このオフセットはインベントリの始点を表す。インベントリの始点なんて画像の下から数えれば固定だから、自動化死体
         return 0;
+    }
+
+    public boolean shouldLock(Slot info, int index) {
+        return false;
     }
 
     //返り値がEmptyかスロットのものと違う種類になるまで呼ばれ続ける

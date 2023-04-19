@@ -5,7 +5,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.level.Level;
-import nin.transferpipe.block.state.Connection;
+import nin.transferpipe.block.pipe.Connection;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 import org.antlr.v4.misc.OrderedHashMap;

@@ -18,17 +18,17 @@ import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.node.BlockTransferNode;
 import nin.transferpipe.block.node.TileBaseTransferNode;
+import nin.transferpipe.block.pipe.Connection;
+import nin.transferpipe.block.pipe.Flow;
 import nin.transferpipe.block.pipe.TransferPipe;
-import nin.transferpipe.block.state.Connection;
-import nin.transferpipe.block.state.Flow;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static nin.transferpipe.block.node.BlockTransferNode.FacingNode.FACING;
+import static nin.transferpipe.block.pipe.Connection.MACHINE;
 import static nin.transferpipe.block.pipe.TransferPipe.FLOW;
-import static nin.transferpipe.block.state.Connection.MACHINE;
 
 //外部からパイプの各パラメーターを弄る
 public class PipeUtils {

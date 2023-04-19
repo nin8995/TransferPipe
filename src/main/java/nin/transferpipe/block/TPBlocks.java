@@ -21,12 +21,13 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import nin.transferpipe.RegistryGUI;
 import nin.transferpipe.block.node.*;
 import nin.transferpipe.block.pipe.EnergyPipe;
 import nin.transferpipe.block.pipe.EnergyReceiverPipe;
+import nin.transferpipe.block.pipe.Flow;
 import nin.transferpipe.block.pipe.TransferPipe;
-import nin.transferpipe.block.state.Flow;
+import nin.transferpipe.gui.BaseBlockMenu;
+import nin.transferpipe.gui.RegistryGUI;
 import nin.transferpipe.item.UpgradeBlockItem;
 
 import java.util.HashSet;
@@ -35,11 +36,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static nin.transferpipe.TPMod.MODID;
+import static nin.transferpipe.block.pipe.Connection.MACHINE;
+import static nin.transferpipe.block.pipe.Connection.PIPE;
+import static nin.transferpipe.block.pipe.Flow.IGNORE;
 import static nin.transferpipe.block.pipe.TransferPipe.CONNECTIONS;
 import static nin.transferpipe.block.pipe.TransferPipe.FLOW;
-import static nin.transferpipe.block.state.Connection.MACHINE;
-import static nin.transferpipe.block.state.Connection.PIPE;
-import static nin.transferpipe.block.state.Flow.IGNORE;
 
 //public static finalの省略＆staticインポートの明示として実装
 public interface TPBlocks {

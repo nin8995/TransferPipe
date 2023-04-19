@@ -1,4 +1,4 @@
-package nin.transferpipe.block;
+package nin.transferpipe.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -6,7 +6,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import nin.transferpipe.BaseMenu;
 import nin.transferpipe.util.TPUtils;
 
 public class BaseScreen<T extends BaseMenu> extends AbstractContainerScreen<T> {
