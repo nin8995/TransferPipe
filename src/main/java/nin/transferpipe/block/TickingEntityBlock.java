@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-public interface TickingEntityBlock<BE extends BlockEntity> extends EntityBlock {
+public interface TickingEntityBlock<BE extends NonStaticTickingEntity> extends EntityBlock {
 
     @Override
     default <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {

@@ -21,12 +21,13 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import nin.transferpipe.RegistryGUI;
 import nin.transferpipe.block.node.*;
 import nin.transferpipe.block.pipe.EnergyPipe;
 import nin.transferpipe.block.pipe.EnergyReceiverPipe;
 import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.block.state.Flow;
-import nin.transferpipe.item.Upgrade;
+import nin.transferpipe.item.UpgradeBlockItem;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -67,7 +68,7 @@ public interface TPBlocks {
 
     static RegistryObject<Block> registerPipe(String id, Supplier<Block> block) {
         var ro = BLOCKS.register(id, block);
-        ITEMS.register(id, () -> new Upgrade.BlockItem(ro.get(), new Item.Properties()));
+        ITEMS.register(id, () -> new UpgradeBlockItem(ro.get(), new Item.Properties()));
         PIPES.add(ro);
         return ro;
     }
@@ -76,12 +77,12 @@ public interface TPBlocks {
         var roBlock = BLOCKS.register(id, block);
         var roEntity = TILES.register(id, () -> BlockEntityType.Builder.of(tile, roBlock.get()).build(null));
         var registry = new RegistryEntityBlock<>(roBlock, roEntity, tile);
-        ITEMS.register(id, () -> new Upgrade.BlockItem(registry.block(), new Item.Properties()));
+        ITEMS.register(id, () -> new UpgradeBlockItem(registry.block(), new Item.Properties()));
         PIPES.add(roBlock);
         return registry;
     }
 
-    static <T extends BlockEntity, M extends BaseMenu, U extends Screen & MenuAccess<M>>
+    static <T extends BlockEntity, M extends BaseBlockMenu, U extends Screen & MenuAccess<M>>
     RegistryGUIEntityBlock<T> registerPipe(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
                                            MenuType.MenuSupplier<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
         var registry = registerGUIEntityBlock(id, block, tile, menu, screen);
@@ -89,7 +90,7 @@ public interface TPBlocks {
         return registry;
     }
 
-    static <T extends TileBaseTransferNode, M extends BaseMenu, U extends Screen & MenuAccess<M>>
+    static <T extends TileBaseTransferNode, M extends BaseBlockMenu, U extends Screen & MenuAccess<M>>
     RegistryGUIEntityBlock<T> registerNode(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
                                            MenuType.MenuSupplier<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
         var registry = registerGUIEntityBlock(id, block, tile, menu, screen);
@@ -97,7 +98,7 @@ public interface TPBlocks {
         return registry;
     }
 
-    static <T extends BlockEntity, M extends BaseMenu, U extends Screen & MenuAccess<M>>
+    static <T extends BlockEntity, M extends BaseBlockMenu, U extends Screen & MenuAccess<M>>
     RegistryGUIEntityBlock<T> registerGUIEntityBlock(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
                                                      MenuType.MenuSupplier<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
         var roBlock = BLOCKS.register(id, block);
@@ -132,6 +133,10 @@ public interface TPBlocks {
 
         public MenuType<?> menu() {
             return roMenu.get();
+        }
+
+        public RegistryGUI gui() {
+            return new RegistryGUI(roMenu, screen);
         }
     }
 

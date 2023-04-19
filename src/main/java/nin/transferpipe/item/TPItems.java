@@ -11,6 +11,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import nin.transferpipe.RegistryGUI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,16 +39,23 @@ public interface TPItems {
     RegistryObject<Item> MINIMAL_RATIONING_UPGRADE = register("minimal_rationing_upgrade", p -> new RationingUpgradeItem(1, p.stacksTo(1)));
     RegistryGUIItem REGULATABLE_RATIONING_UPGRADE = registerGUIItem("regulatable_rationing_upgrade",
             p -> new RationingUpgradeItem.Regulatable(p.stacksTo(1)), RationingUpgradeItem.Regulatable.Menu::new, RationingUpgradeItem.Regulatable.Screen::new);
-    RegistryObject<Item> ITEM_SORTING_UPGRADE = register("item_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.ITEM_SORTING_FUNCTION, p));
-    RegistryObject<Item> MOD_SORTING_UPGRADE = register("mod_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.MOD_SORTING_FUNCTION, p));
-    RegistryObject<Item> TAB_SORTING_UPGRADE = register("tab_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.TAB_SORTING_FUNCTION, p));
+    RegistryObject<Item> ITEM_SORTING_UPGRADE = register("item_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.ITEM_SORT, p));
+    RegistryObject<Item> MOD_SORTING_UPGRADE = register("mod_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.MOD_SORT, p));
+    RegistryObject<Item> CREATIVE_TAB_SORTING_UPGRADE = register("creative_tab_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.CREATIVE_TAB_SORT, p));
+    RegistryObject<Item> TAG_SORTING_UPGRADE = register("tag_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.TAG_SORT, p));
+    RegistryObject<Item> COMMON_TAG_SORTING_UPGRADE = register("common_tag_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.COMMON_TAG_SORT, p));
+    RegistryObject<Item> CLASS_SORTING_UPGRADE = register("class_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.CLASS_SORT, p));
+    RegistryObject<Item> COMMON_CLASS_SORTING_UPGRADE = register("common_class_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.COMMON_CLASS_SORT, p));
+
+    RegistryGUIItem ITEM_FILTER = registerGUIItem("item_filter",
+            FilterItem::new, FilterItem.Menu::new, FilterItem.Screen::new);
 
     static RegistryObject<Item> registerUpgrade(String name) {
         return registerUpgrade(name, p -> p);
     }
 
     static RegistryObject<Item> registerUpgrade(String name, Function<Item.Properties, Item.Properties> pModifier) {
-        return register(name, p -> new Upgrade.UItem(pModifier.apply(p)));
+        return register(name, p -> new UpgradeItem(pModifier.apply(p)));
     }
 
     static RegistryObject<Item> registerFunctionUpgrade(String name) {
@@ -55,7 +63,7 @@ public interface TPItems {
     }
 
     static RegistryObject<Item> registerFunctionUpgrade(String name, Function<Item.Properties, Item.Properties> pModifier) {
-        return register(name, p -> new Upgrade.Function(pModifier.apply(p)));
+        return register(name, p -> new FunctionUpgrade(pModifier.apply(p)));
     }
 
     static RegistryObject<Item> register(String name, Function<Item.Properties, Item> item) {
@@ -80,6 +88,10 @@ public interface TPItems {
 
         public MenuType<?> menu() {
             return roMenu.get();
+        }
+
+        public RegistryGUI gui() {
+            return new RegistryGUI(roMenu, screen);
         }
     }
 }

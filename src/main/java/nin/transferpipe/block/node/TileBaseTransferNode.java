@@ -25,10 +25,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.pipe.TransferPipe;
-import nin.transferpipe.item.RationingUpgradeItem;
-import nin.transferpipe.item.SortingUpgrade;
-import nin.transferpipe.item.TPItems;
-import nin.transferpipe.item.Upgrade;
+import nin.transferpipe.item.*;
 import nin.transferpipe.particle.ColorSquare;
 import nin.transferpipe.particle.TPParticles;
 import nin.transferpipe.util.PipeUtils;
@@ -37,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 //搬送する種類に依らない、「ノード」のタイルエンティティとしての機能
@@ -96,7 +94,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
             FACING = node.facing(getBlockState());
 
         setSearch(new Search(this));
-        upgrades = new Upgrade.Handler(6, this);
+        upgrades = new UpgradeHandler(6, this);
     }
 
     public BlockState getPipeState() {
@@ -203,15 +201,15 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
 
         cooltime -= coolRate;
         for (; cooltime <= 0; cooltime += 20) {
+            isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
+            if (isSearching)
+                setSearch(search.proceed());
 
             if (FACING != null)//if(canWork(POS, FACED))あってもいいけどなくてもいい←world interaction考えるとない方が楽
                 facing(POS.relative(FACING), FACING.getOpposite());
             else
                 Direction.stream().forEach(d -> facing(POS.relative(d), d.getOpposite()));
 
-            isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
-            if (isSearching)
-                setSearch(search.proceed());
         }
 
         afterTick();
@@ -231,7 +229,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
 
     public int itemRation;
     public int liquidRation;
-    public BiPredicate<List<Item>, Item> sortingFunction;
+    public BiPredicate<List<Item>, Item> sortingFunc;
+    public Predicate<ItemStack> filteringFunc;
 
     public void calcUpgrades() {
         coolRate = 2;
@@ -245,7 +244,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
 
         itemRation = Integer.MAX_VALUE;
         liquidRation = Integer.MAX_VALUE;
-        sortingFunction = (l, i) -> true;
+        sortingFunc = (l, i) -> true;
+        filteringFunc = i -> true;
 
         IntStream.range(0, upgrades.getSlots()).forEach(slot -> {
             var upgrade = upgrades.getStackInSlot(slot);
@@ -275,9 +275,11 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
                 itemRation = rationing.getItemRation(upgrade);
                 liquidRation = rationing.getLiquidRation(upgrade);
             } else if (upgrade.getItem() instanceof SortingUpgrade sorter)
-                sortingFunction = sorter.filter;
+                sortingFunc = sorter.filter;
+            else if (upgrade.getItem() instanceof FilterItem filter)
+                filteringFunc = filter.getFilter(upgrade);
 
-            else if (upgrade.getItem() instanceof Upgrade.BlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
+            else if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
                 setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
         });
     }

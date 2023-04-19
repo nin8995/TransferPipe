@@ -78,7 +78,7 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
         @Override
         public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
             if (cap == ForgeCapabilities.ENERGY && nodeReference != null
-                    && side != null && PipeUtils.currentConnection(getBlockState(), side) == Connection.MACHINE) {
+                    && (side == null || PipeUtils.currentConnection(getBlockState(), side) == Connection.MACHINE)) {
                 var nodeCap = nodeReference.getCapability(ForgeCapabilities.ENERGY, side);
                 if (nodeCap.isPresent()) {
                     var wrappedCap = new ReferenceEnergyStorage((nodeCap.resolve().get()));

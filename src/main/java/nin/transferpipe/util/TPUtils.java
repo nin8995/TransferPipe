@@ -11,17 +11,17 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.FastColor.ARGB32;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -31,10 +31,12 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.common.CreativeModeTabRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import nin.transferpipe.TPMod;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.mixin.AtlasAccessor;
+import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -44,6 +46,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TPUtils {
 
@@ -340,8 +343,16 @@ public class TPUtils {
         }
     }
 
-    public static int computeInt(CompoundTag tag, String key, int initialValue) {
-        return compute(tag, key, CompoundTag::getInt, CompoundTag::putInt, initialValue);
+    public static int computeInt(ItemStack item, String key, int initialValue) {
+        return compute(item.getOrCreateTag(), key, CompoundTag::getInt, CompoundTag::putInt, initialValue);
+    }
+
+    public static boolean computeBoolean(ItemStack item, String key) {
+        return compute(item.getOrCreateTag(), key, CompoundTag::getBoolean, CompoundTag::putBoolean, false);
+    }
+
+    public static CompoundTag computeTag(ItemStack item, String key) {
+        return compute(item.getOrCreateTag(), key, CompoundTag::getCompound, CompoundTag::put, new CompoundTag());
     }
 
     public static <T> T compute(CompoundTag tag, String key, BiFunction<CompoundTag, String, T> getter, Consumer3<CompoundTag, String, T> putter, T initialValue) {
@@ -356,8 +367,23 @@ public class TPUtils {
         void accept(A a, B b, C c);
     }
 
+    @Nullable
     public static CreativeModeTab getFirstlyContainedTab(Item checked) {
-        for (CreativeModeTab tab : CreativeModeTabs.allTabs())
+        //modタブがあればそこだけ重点的に検索
+        var modid = BuiltInRegistries.ITEM.getKey(checked).getNamespace();
+        var modTab = getFirstlyContainedTab(checked, CreativeModeTabs.allTabs().stream()
+                .filter(tab -> CreativeModeTabRegistry.getName(tab).getNamespace().equals(modid))
+                .toList());
+        if (modTab != null)
+            return modTab;
+
+        //無ければ全タブ検索
+        return getFirstlyContainedTab(checked, CreativeModeTabs.allTabs());
+    }
+
+    @Nullable
+    public static CreativeModeTab getFirstlyContainedTab(Item checked, List<CreativeModeTab> tabs) {
+        for (CreativeModeTab tab : tabs)
             if (tab.getDisplayItems().stream().anyMatch(itemStack -> itemStack.is(checked)))
                 return tab;
         return null;
@@ -365,5 +391,38 @@ public class TPUtils {
 
     public static boolean isAnyOf(ItemStack item, Item... items) {
         return Arrays.stream(items).anyMatch(item::is);
+    }
+
+    public static boolean sameItemSameTagExcept(ItemStack item, ItemStack filteringItem, String tagKey) {
+        var noDamageItem = item.copy();
+        removeTag(noDamageItem, tagKey);
+        var noDamageFilteringItem = filteringItem.copy();
+        removeTag(noDamageFilteringItem, tagKey);
+
+        return ItemStack.isSameItemSameTags(noDamageItem, noDamageFilteringItem);
+    }
+
+    public static void removeTag(ItemStack item, String key){
+        if(item.hasTag() && item.getTag().contains(key))
+            item.getTag().remove(key);
+    }
+
+    @Nullable
+    public static TagKey<Item> getCommonTag(List<Item> item){
+        return item.stream()
+                .map(i -> i.builtInRegistryHolder().tags()).map(Stream::toList)
+                .min(Comparator.comparingLong(List::size)).get().stream()
+                .filter(tag -> item.stream().allMatch(i -> i.builtInRegistryHolder().is(tag)))
+                .findFirst().orElse(null);
+    }
+
+    public static List<Item> reduceAir(List<Item> items){
+        return items.stream().filter(i -> i != Items.AIR).toList();
+    }
+
+    public static Set<TagKey<Item>> getAvailableTags(List<Item> items){
+        return items.stream()
+                .flatMap(i -> i.builtInRegistryHolder().tags())
+                .collect(Collectors.toSet());
     }
 }

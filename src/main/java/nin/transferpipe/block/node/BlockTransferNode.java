@@ -2,14 +2,10 @@ package nin.transferpipe.block.node;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
-import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -24,14 +20,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+import nin.transferpipe.block.BaseBlockMenu;
 import nin.transferpipe.block.LightingBlock;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.block.TickingGUIEntityBlock;
+import nin.transferpipe.block.TickingGUIBlock;
 import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -40,7 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 //搬送する種類に依らない、「ノード」のブロックとしての機能
-public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends LightingBlock implements TickingGUIEntityBlock<T> {
+public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends LightingBlock implements TickingGUIBlock<T> {
 
     /**
      * 基本情報
@@ -99,16 +94,6 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
         }
     }
 
-    @Nullable
-    @Override
-    public MenuProvider getMenuProvider(BlockState p_60563_, Level level, BlockPos pos) {
-        try {
-            return menu(level, pos, (T) level.getBlockEntity(pos));
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     /**
      * 一般の機能
      */
@@ -127,20 +112,14 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
-        if (level.getBlockEntity(pos) instanceof TileBaseTransferNode be) {
-            if (PipeUtils.usingWrench(player, hand) && be.shouldRenderPipe()) {
-                if (!level.isClientSide)
-                    be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos/*, player.isShiftKeyDown() shift右クリックはブロックからは検知できない*/));
-                return InteractionResult.sidedSuccess(level.isClientSide);
-            }
-
-            if (!level.isClientSide && player instanceof ServerPlayer serverPlayer)
-                NetworkHooks.openScreen(serverPlayer, this.getMenuProvider(state, level, pos));
-
+        var be = (T) level.getBlockEntity(pos);
+        if (PipeUtils.usingWrench(player, hand) && be.shouldRenderPipe()) {
+            if (!level.isClientSide)
+                be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos/*, player.isShiftKeyDown() shift右クリックはブロックからは検知できない*/));
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
-        return InteractionResult.PASS;
+        return openMenu(level, pos, player);
     }
 
     /**
@@ -155,10 +134,8 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
         }
 
         @Override
-        public MenuProvider menu(Level level, BlockPos pos, TileTransferNodeItem be) {
-            return new SimpleMenuProvider(
-                    (i, inv, pl) -> new MenuTransferNode.Item(be.getItemSlotHandler(), be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
-                    Component.translatable("menu.title.transferpipe.node_item"));
+        public BaseBlockMenu menu(TileTransferNodeItem be, int id, Inventory inv) {
+            return new MenuTransferNode.Item(be.getItemSlotHandler(), be.getUpgrades(), be.searchData, id, inv);
         }
     }
 
@@ -170,10 +147,8 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
         }
 
         @Override
-        public MenuProvider menu(Level level, BlockPos pos, TileTransferNodeLiquid be) {
-            return new SimpleMenuProvider(
-                    (i, inv, pl) -> new MenuTransferNode.Liquid(be.dummyLiquidItem, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
-                    Component.translatable("menu.title.transferpipe.node_liquid"));
+        public BaseBlockMenu menu(TileTransferNodeLiquid be, int id, Inventory inv) {
+            return new MenuTransferNode.Liquid(be.dummyLiquidItem, be.getUpgrades(), be.searchData, id, inv);
         }
     }
 
@@ -185,10 +160,8 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
         }
 
         @Override
-        public MenuProvider menu(Level level, BlockPos pos, TileTransferNodeEnergy be) {
-            return new SimpleMenuProvider(
-                    (i, inv, pl) -> new MenuTransferNode.Energy(be.energyData, be.getUpgrades(), be.searchData, i, inv, ContainerLevelAccess.create(level, pos)),
-                    Component.translatable("menu.title.transferpipe.node_energy"));
+        public BaseBlockMenu menu(TileTransferNodeEnergy be, int id, Inventory inv) {
+            return new MenuTransferNode.Energy(be.energyData, be.getUpgrades(), be.searchData, id, inv);
         }
 
         public static final VoxelShape ENERGY_NODE = Stream.of(

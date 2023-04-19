@@ -1,20 +1,23 @@
-package nin.transferpipe.block;
+package nin.transferpipe;
 
+import com.mojang.datafixers.util.Function4;
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
+import java.util.function.BiFunction;
+import java.util.stream.IntStream;
+
 public abstract class BaseMenu extends AbstractContainerMenu {
 
-    private final ContainerLevelAccess access;
-    private final TPBlocks.RegistryGUIEntityBlock registry;
-
+    //slot info
     public int inventoryStart = 0;
     public int inventoryEnd = inventoryStart + 26;
     public int hotbarStart = inventoryEnd + 1;
@@ -22,24 +25,65 @@ public abstract class BaseMenu extends AbstractContainerMenu {
     public int containerStart = hotbarEnd + 1;
     public int containerEnd;
 
-    protected BaseMenu(TPBlocks.RegistryGUIEntityBlock registry, int p_38852_, Inventory inv, ContainerLevelAccess access, boolean noItemSlots) {
-        super(registry.menu(), p_38852_);
-        this.access = access;
-        this.registry = registry;
-        if (!noItemSlots) {
-            for (int l = 0; l < 3; ++l) {
-                for (int k = 0; k < 9; ++k) {
-                    this.addSlot(new Slot(inv, k + l * 9 + 9, 8 + k * 18, l * 18 + 22 + getOffsetY()));
-                }
-            }
+    //screen info
+    public String bg;
+    public boolean disableTitleText;
+    public boolean disableInventoryText;
 
-            for (int i1 = 0; i1 < 9; ++i1) {
-                this.addSlot(new Slot(inv, i1, 8 + i1 * 18, 80 + getOffsetY()));
-            }
-        }
+    protected BaseMenu(RegistryGUI registry, int p_38852_, Inventory inv, String bg, boolean noInventory) {
+        super(registry.menu(), p_38852_);
+        this.bg = bg;
+        if (!noInventory)
+            addInventory(inv);
     }
 
-    public abstract int getOffsetY();
+    public void addInventory(Inventory inv) {
+        //inventory
+        IntStream.rangeClosed(0, 2).forEach(i ->
+                addInventorySlots(9 * (i + 1), inv, Slot::new, i * 18));
+        //hotbar
+        addInventorySlots(0, inv, Slot::new, 58);
+    }
+
+    public <T extends Container> void addInventorySlots(int start, T container, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
+        addCenteredSlots(start, start + 8, (index, x) -> slotConstructor.apply(container, index, x, y + getOffsetY()), false);
+    }
+
+    public <T extends IItemHandler> void addItemHandlerSlots(T handler, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
+        addCenteredSlots(0, handler.getSlots() - 1, (index, x) -> slotConstructor.apply(handler, index, x, y), true);
+    }
+
+    public <T extends Container> void addContainerSlots(T container, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
+        addCenteredSlots(0, container.getContainerSize() - 1, (index, x) -> slotConstructor.apply(container, index, x, y), true);
+    }
+
+    public void addCenteredSlots(int start, int end, BiFunction<Integer, Integer, Slot> slotConstructor, boolean countAsContainer) {
+        var slotAmount = end - start + 1;
+        var slotSize = 18;
+        var startX = 8 + slotSize * (9 - slotAmount) / 2 + getOffsetX();
+        IntStream.range(0, slotAmount).forEach(i ->
+                addSlot(slotConstructor.apply(start + i, startX + slotSize * i)));
+
+        if (countAsContainer)
+            containerEnd = containerEnd != 0 ? containerEnd + slotAmount - 1 : containerStart + slotAmount - 1;
+    }
+
+    public void noInventoryText() {
+        disableInventoryText = true;
+    }
+
+    public void noDefaultTexts() {
+        disableTitleText = true;
+        disableInventoryText = true;
+    }
+
+    public int getOffsetX() {
+        return 0;
+    }
+
+    public int getOffsetY() {//TODO このオフセットはインベントリの始点を表す。インベントリの始点なんて画像の下から数えれば固定だから、自動化死体
+        return 0;
+    }
 
     //返り値がEmptyかスロットのものと違う種類になるまで呼ばれ続ける
     @Override
@@ -90,9 +134,5 @@ public abstract class BaseMenu extends AbstractContainerMenu {
     public Pair<Integer, Integer> getHighPriorityContainerSlots(ItemStack item) {
         return null;
     }
-
-    @Override
-    public boolean stillValid(Player player) {
-        return AbstractContainerMenu.stillValid(this.access, player, registry.block());
-    }
 }
+

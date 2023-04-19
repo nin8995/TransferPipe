@@ -4,21 +4,18 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.NetworkHooks;
 import nin.transferpipe.block.BaseScreen;
 import nin.transferpipe.network.TPPackets;
 import nin.transferpipe.util.TPUtils;
 
-public class RationingUpgradeItem extends Upgrade.Function {
+public class RationingUpgradeItem extends FunctionUpgrade {
 
     private final int ration;
 
@@ -38,7 +35,7 @@ public class RationingUpgradeItem extends Upgrade.Function {
         return ration * 250;
     }
 
-    public static class Regulatable extends RationingUpgradeItem {
+    public static class Regulatable extends RationingUpgradeItem implements GUIItem {
 
         public Regulatable(Properties p_41383_) {
             super(-1, p_41383_);
@@ -46,12 +43,12 @@ public class RationingUpgradeItem extends Upgrade.Function {
 
         @Override
         public int getItemRation(ItemStack item) {
-            return TPUtils.computeInt(item.getOrCreateTag(), ITEM, 64);
+            return TPUtils.computeInt(item, ITEM, 64);
         }
 
         @Override
         public int getLiquidRation(ItemStack item) {
-            return TPUtils.computeInt(item.getOrCreateTag(), LIQUID, 16000);
+            return TPUtils.computeInt(item, LIQUID, 16000);
         }
 
         public void setRations(ItemStack upgrade, int item, int liquid) {
@@ -61,35 +58,30 @@ public class RationingUpgradeItem extends Upgrade.Function {
 
         @Override
         public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-            if (!level.isClientSide && player instanceof ServerPlayer serverPlayer)
-                NetworkHooks.openScreen(serverPlayer, new SimpleMenuProvider((Menu::new), Component.empty()));
+            return openMenu(level, player, hand);
+        }
 
-            return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide);
+        @Override
+        public BaseItemMenu menu(ItemStack item, Player player, int id, Inventory inv) {
+            return new Menu(id, inv, player);
         }
     }
 
-    public static class Menu extends AbstractContainerMenu {
+    public static class Menu extends BaseItemMenu {
 
-        private final net.minecraft.world.inventory.Slot upgradeInInventory;
+        private final Slot upgradeInInventory;
 
         protected Menu(int p_38852_, Inventory inv) {
             this(p_38852_, inv, Minecraft.getInstance().player);
         }
 
         protected Menu(int p_38852_, Inventory inv, Player pl) {
-            super(TPItems.REGULATABLE_RATIONING_UPGRADE.menu(), p_38852_);
-            this.upgradeInInventory = new net.minecraft.world.inventory.Slot(inv, pl.getInventory().selected, 114514, 1919810);
+            super(TPItems.REGULATABLE_RATIONING_UPGRADE, p_38852_, inv, "regulatable", true);
+            noDefaultTexts();
+
+            this.upgradeInInventory = new Slot(inv, pl.getInventory().selected, 114514, 1919810);
             addSlot(upgradeInInventory);
-        }
 
-        @Override
-        public ItemStack quickMoveStack(Player p_38941_, int p_38942_) {
-            return null;
-        }
-
-        @Override
-        public boolean stillValid(Player p_38874_) {
-            return true;
         }
     }
 
@@ -99,13 +91,12 @@ public class RationingUpgradeItem extends Upgrade.Function {
         private EditBox liquidRation;
 
         public Screen(Menu p_97741_, Inventory p_97742_, Component p_97743_) {
-            super(p_97741_, "regulatable", p_97742_, p_97743_);
+            super(p_97741_, p_97742_, p_97743_);
         }
 
         @Override
         protected void init() {
             super.init();
-            this.inventoryLabelY = 114514;
             var upgrade = menu.upgradeInInventory.getItem();
             if (upgrade.getItem() instanceof RationingUpgradeItem rationing) {
 

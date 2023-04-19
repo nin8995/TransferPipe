@@ -117,7 +117,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     public boolean shouldPull(ItemStack item) {
-        return shouldAdd(item, getItemSlot());
+        return filteringFunc.test(item) && shouldAdd(item, getItemSlot());
     }
 
     public static boolean shouldAdd(ItemStack toAdd, ItemStack toBeAdded) {
@@ -237,7 +237,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     public ItemStack getPushableItem(int slots, Function<Integer, ItemStack> slotToItem) {
-        if (!sortingFunction.test(IntStream.range(0, slots).mapToObj(slotToItem::apply).map(ItemStack::getItem).toList(), getItemSlot().getItem()))
+        if (!sortingFunc.test(IntStream.range(0, slots).mapToObj(slotToItem::apply).map(ItemStack::getItem).toList(), getItemSlot().getItem()))
             return ItemStack.EMPTY;
 
         if (!getItemSlot().isEmpty()) {

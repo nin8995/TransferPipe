@@ -1,6 +1,7 @@
 package nin.transferpipe.block;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -21,5 +22,9 @@ public abstract class NonStaticTickingEntity extends BlockEntity implements Tile
     public void setRemoved() {
         onRemove();
         super.setRemoved();
+    }
+
+    public ContainerLevelAccess containerAccess() {
+        return ContainerLevelAccess.create(level, worldPosition);
     }
 }
