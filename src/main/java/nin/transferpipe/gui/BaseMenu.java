@@ -13,7 +13,9 @@ import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public abstract class BaseMenu extends AbstractContainerMenu {
 
@@ -27,8 +29,6 @@ public abstract class BaseMenu extends AbstractContainerMenu {
 
     //screen info
     public String bg;
-    public boolean disableTitleText;
-    public boolean disableInventoryText;
 
     public BaseMenu(RegistryGUI registry, int p_38852_, Inventory inv, String bg) {
         super(registry.menu(), p_38852_);
@@ -41,13 +41,12 @@ public abstract class BaseMenu extends AbstractContainerMenu {
         return false;
     }
 
-    public void noInventoryText() {
-        disableInventoryText = true;
+    public boolean noInventoryText() {
+        return noInventory();
     }
 
-    public void noDefaultTexts() {
-        disableTitleText = true;
-        disableInventoryText = true;
+    public boolean noTitleText() {
+        return false;
     }
 
     public void addInventory(Inventory inv) {
@@ -109,10 +108,10 @@ public abstract class BaseMenu extends AbstractContainerMenu {
             var item = quickMovedSlot.getItem();
 
             if (containerStart <= quickMovedSlotIndex && quickMovedSlotIndex <= containerEnd) {//コンテナスロットなら
-                if (!moveItemTo(item/*SlotItemHandlerから取られたアイテムは本来加工してはいけないが*/, inventoryStart, hotbarEnd, true))//インベントリに差して
+                if (!moveItemTo(item, inventoryStart, hotbarEnd, true))//インベントリに差して
                     return ItemStack.EMPTY;//差せなければ終わり
-                else if (quickMovedSlot instanceof SlotItemHandler handlerSlot && handlerSlot.getItemHandler() instanceof ItemStackHandler handler)
-                    handler.setStackInSlot(0, handler.getStackInSlot(0));//適当に何もしない更新をかけることで、このmodにおいては大丈夫
+                else
+                    sendContentsChanged(Stream.of(quickMovedSlot));//差せたら更新
             } else if (inventoryStart <= quickMovedSlotIndex && quickMovedSlotIndex <= hotbarEnd) {//インベントリスロットなら
                 //まず優先度の高いコンテナスロットに差してから
                 var highPriorities = getHighPriorityContainerSlots(item);
@@ -144,7 +143,25 @@ public abstract class BaseMenu extends AbstractContainerMenu {
 
     //少しでも挿入できたか
     public boolean moveItemTo(ItemStack item, int minSlot, int maxSlot, boolean fillMaxToMin) {
-        return moveItemStackTo(item, minSlot, maxSlot + 1, fillMaxToMin);
+        var slotsChanged = moveItemStackTo(item, minSlot, maxSlot + 1, fillMaxToMin);/*SlotItemHandlerから取られたアイテムは本来加工してはいけないが*/
+
+        if (slotsChanged)
+            sendContentsChanged(IntStream.rangeClosed(minSlot, maxSlot).mapToObj(slots::get));
+
+        return slotsChanged;
+    }
+
+    public void sendContentsChanged(Stream<Slot> slot) {
+        slot
+                .flatMap(filterType(SlotItemHandler.class))
+                .map(SlotItemHandler::getItemHandler)
+                .flatMap(filterType(ItemStackHandler.class))
+                .findFirst().ifPresent(inventory ->
+                        inventory.setStackInSlot(0, inventory.getStackInSlot(0)));//適当に何もしない更新をかけることで、このmodにおいては大丈夫
+    }
+
+    public static <Super, Sub extends Super> Function<Super, Stream<Sub>> filterType(Class<Sub> clz) {
+        return obj -> clz.isInstance(obj) ? Stream.of(clz.cast(obj)) : Stream.empty();
     }
 
     public Pair<Integer, Integer> getHighPriorityContainerSlots(ItemStack item) {

@@ -424,4 +424,18 @@ public class TPUtils {
                 .flatMap(i -> i.builtInRegistryHolder().tags())
                 .collect(Collectors.toSet());
     }
+
+    public static ItemStack copyWithScale(ItemStack item, int scale) {
+        return item.copyWithCount(item.getCount() * scale);
+    }
+
+    public static FluidStack copyWithAddition(FluidStack fluid, int addition) {
+        return copyWithAmount(fluid, fluid.getAmount() + addition);
+    }
+
+    public static FluidStack copyWithAmount(FluidStack fluid, int amount) {
+        var copy = fluid.copy();
+        copy.setAmount(amount);
+        return copy;
+    }
 }

@@ -1,20 +1,23 @@
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
+import nin.transferpipe.block.node.TileTransferNodeItem;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 
 public class Main {
 
-    public static void main(String[] args){
-        var map = new HashMap<Integer, Integer>();
+    public static void main(String[] args) {
+        System.out.println(TileTransferNodeItem.relativeInventoryPositions.get(Direction.UP));
+    }
+
+/*
+    var map = new HashMap<Integer, Integer>();
         map.put(1,1);
         map.put(2,2);
         map.forEach((i1, i2) -> map.put(i1, ++i2));
-        System.out.println(map);
-    }
+        System.out.println(map);*/
 /*
     var map = new LinkedHashMap<String, Integer>();
         map.put("ha", 1);
@@ -47,7 +50,7 @@ public class Main {
         while(!item.isEmpty() && ItemStack.isSame(slot.getItem(), item))
             item = this.quickMoveStack(player, slotIndex);*/
 
-    public static int bitCount(int i){
+    public static int bitCount(int i) {
         i = i - ((i >> 1) & 0x55555555);
         i = i - 3 * ((i >> 2) & 0x33333333);
         i = ((i >> 4) + i) & 0x0f0f0f0f;

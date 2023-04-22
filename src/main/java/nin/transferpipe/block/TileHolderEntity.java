@@ -62,13 +62,14 @@ public abstract class TileHolderEntity extends NonStaticTickingEntity {
     }
 
     public void updateTile(BlockState state) {
-        if (holdingTile != null && holdingTile.getBlockState().getBlock() == state.getBlock()) {
+        if (holdingTile != null && holdingTile.getBlockState().getBlock() == state.getBlock())
             holdingTile.setBlockState(state);
-            setChanged();
-        } else if (state.getBlock() instanceof EntityBlock entityBlock && entityBlock.newBlockEntity(worldPosition, state) instanceof NonStaticTickingEntity tile) {
+        else if (state.getBlock() instanceof EntityBlock entityBlock && entityBlock.newBlockEntity(worldPosition, state) instanceof NonStaticTickingEntity tile)
             holdingTile = tile;
-            setChanged();
-        }
+        else
+            holdingTile = null;
+
+        setChanged();
     }
 
     @Override

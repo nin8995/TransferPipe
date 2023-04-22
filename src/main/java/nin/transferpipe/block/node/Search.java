@@ -104,7 +104,8 @@ public class Search {
         queue.remove(currentPos);
 
         //分かりやすさのための検索状況パーティクル
-        be.addSearchParticle(currentPos.getCenter());
+        if (be.addParticle)
+            be.addPipeParticle(currentPos.getCenter());
 
         //仕事先があれば即出勤
         var workableDirs = getWorkableDirs();
@@ -167,6 +168,7 @@ public class Search {
 
     public void onTerminal(Direction dir) {
         be.terminal(currentPos.relative(dir), dir.getOpposite());
-        be.addTerminalParticle(currentPos.relative(dir).getCenter());
+        if (be.addParticle)
+            be.addBlockParticle(currentPos.relative(dir).getCenter());
     }
 }

@@ -13,12 +13,12 @@ import net.minecraftforge.energy.EnergyStorage;
 import net.minecraftforge.energy.IEnergyStorage;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.pipe.EnergyReceiverPipe;
-import nin.transferpipe.particle.ColorSquare;
 import nin.transferpipe.util.HandlerUtils;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.List;
@@ -130,8 +130,8 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     @Override
-    public ColorSquare.Option getParticleOption() {
-        return new ColorSquare.Option(1, 1, 0, 1);
+    public Vector3f getColor() {
+        return new Vector3f(1, 1, 0);
     }
 
     @Override
@@ -145,8 +145,8 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     @Override
-    public void afterTick() {
-        super.afterTick();
+    public void bodyTick() {
+        super.bodyTick();
 
         refreshConnections();
 

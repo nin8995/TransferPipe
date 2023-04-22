@@ -4,6 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -12,10 +14,11 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.particle.ColorSquare;
 import nin.transferpipe.util.HandlerUtils;
+import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,10 +29,6 @@ import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXE
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE;
 
 public class TileTransferNodeLiquid extends TileBaseTransferNode {
-
-    /**
-     * 基本情報
-     */
 
     public final FluidTank liquidSlot;
     public final ItemStackHandler dummyLiquidItem;
@@ -61,10 +60,6 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
             liquidSlot.readFromNBT(tag.getCompound(LIQUID_SLOT));
     }
 
-    /**
-     * 機能
-     */
-
     @Override
     public boolean shouldSearch() {
         return !liquidSlot.isEmpty();
@@ -72,13 +67,19 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
 
     @Override
     public void facing(BlockPos pos, Direction dir) {
-        if (liquidSlot.getFluidAmount() <= liquidSlot.getCapacity())
-            HandlerUtils.forFluidHandler(level, pos, dir, this::tryPull);
+        if (liquidSlot.getFluidAmount() < liquidSlot.getCapacity())
+            if (HandlerUtils.hasItemHandler(level, pos, dir))
+                HandlerUtils.forFluidHandler(level, pos, dir, this::tryPull);
+            else if (worldInteraction > 0) {
+                var fluid = level.getFluidState(FACING_POS).getType();
+                if (isInfiniteLiquid(fluid))
+                    trySuckInfiniteLiquid(FACING_POS, fluid);
+            }
     }
 
     public void tryPull(IFluidHandler handler) {
         forFirstPullableSlot(handler, slot -> {
-            var drained = handler.drain(getPullAmount(handler, slot), EXECUTE);
+            var drained = handler.drain(getPullableAmount(handler, slot, false), EXECUTE);
             liquidSlot.fill(drained, EXECUTE);
         });
     }
@@ -90,15 +91,55 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
     }
 
     public boolean shouldPull(IFluidHandler handler, int slot) {
-        return getPullAmount(handler, slot) != 0;
+        return getPullableAmount(handler, slot, false) != 0;
     }
 
-    public int getPullAmount(IFluidHandler handler, int slot) {
+    public int getPullableAmount(IFluidHandler handler, int slot, boolean byWorldInteraction) {
         var fluid = handler.getFluidInTank(slot);
         var pullableAmount = stackMode ? fluid.getAmount() : baseSpeed;
+
+        if (byWorldInteraction)
+            pullableAmount = Math.max(pullableAmount, fluidWI());
+
         var drained = handler.drain(pullableAmount, SIMULATE);
-        var filled = liquidSlot.fill(drained, SIMULATE);
-        return filled;
+        return liquidSlot.fill(drained, SIMULATE) == 0 ? 0 : Math.min(drained.getAmount(), getReceivableAmount(byWorldInteraction));
+    }
+
+    public int getReceivableAmount(boolean byWorldInteraction) {
+        var receivableAmount = liquidSlot.getCapacity() - liquidSlot.getFluidAmount();
+
+        if (byWorldInteraction)
+            receivableAmount = Math.max(receivableAmount, fluidWI() - liquidSlot.getFluidAmount());
+
+        return receivableAmount;
+    }
+
+    public boolean isInfiniteLiquid(Fluid fluid) {
+        return fluid == Fluids.WATER;
+    }
+
+    public void trySuckInfiniteLiquid(BlockPos pos, Fluid fluid) {
+        if (Direction.stream().filter(d -> isLiquidSource(pos.relative(d), fluid)).count() >= 2) {
+            var water = new FluidTank(Integer.MAX_VALUE);
+            water.setFluid(new FluidStack(Fluids.WATER, fluidWI()));
+            var amount = getPullableAmount(water, 0, true);
+            receive(new FluidStack(Fluids.WATER, amount));
+        }
+    }
+
+    public void receive(FluidStack fluid) {
+        if (liquidSlot.isEmpty())
+            liquidSlot.setFluid(fluid);
+        else
+            liquidSlot.setFluid(TPUtils.copyWithAddition(liquidSlot.getFluid(), fluid.getAmount()));
+    }
+
+    public boolean isLiquidSource(BlockPos pos, Fluid fluid) {
+        return level.getFluidState(pos).isSourceOfType(fluid);
+    }
+
+    public int fluidWI() {
+        return (int) (worldInteraction * 250);
     }
 
     @Override
@@ -160,7 +201,7 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
     }
 
     @Override
-    public ColorSquare.Option getParticleOption() {
-        return new ColorSquare.Option(0, 0, 1, 1);
+    public Vector3f getColor() {
+        return new Vector3f(0, 0, 1);
     }
 }

@@ -23,13 +23,14 @@ import java.util.function.Function;
 
 public class ColorSquare extends TextureSheetParticle {
 
-    public static final float baseSize = 0.05F;
+    public float baseSize;
 
-    public ColorSquare(Vector3f color, float a, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+    public ColorSquare(Vector3f color, float a, float size, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
         super(level, x, y, z);
         float f4 = level.random.nextFloat() * 0.4F + 0.6F;
         setColor(forEachValue(color, f -> f * f4 * (level.random.nextFloat() * 0.2F + 0.8F)));
         setAlpha(a);
+        baseSize = size;
         calcSize(0);
         setParticleSpeed(xd, yd, zd);
         lifetime = (int) (10.0 / (Math.random() * 0.2 + 0.6));
@@ -60,22 +61,26 @@ public class ColorSquare extends TextureSheetParticle {
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 
-    public static TextureSheetParticle createParticle(Option option, ClientLevel p_172502_, double x, double y, double z, double xd, double yd, double zd) {
-        return new ColorSquare(option.color, option.alpha, p_172502_, x, y, z, xd, yd, zd);
+    public static TextureSheetParticle createParticle(Option option, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        return new ColorSquare(option.color, option.alpha, option.size, level, x, y, z,
+                xd * level.random.nextGaussian() * option.velocityRandomness * option.velocityScale,
+                yd * level.random.nextGaussian() * option.velocityRandomness * option.velocityScale,
+                zd * level.random.nextGaussian() * option.velocityRandomness * option.velocityScale);
     }
 
     public static class Option implements ParticleOptions {
-        private final Vector3f color;
-        private final float alpha;
+        public Vector3f color;
+        public float alpha;
+        public float velocityRandomness;
+        public float velocityScale;
+        public float size;
 
-        public Option(float r, float g, float b, float alpha) {
-            this.color = new Vector3f(r, g, b);
-            this.alpha = alpha;
-        }
-
-        public Option(Vector3f color, float alpha) {
+        public Option(Vector3f color, float alpha, float velocityRandomness, float velocityScale, float size) {
             this.color = color;
             this.alpha = alpha;
+            this.velocityRandomness = velocityRandomness;
+            this.velocityScale = velocityScale;
+            this.size = size;
         }
 
         @Override
@@ -87,32 +92,37 @@ public class ColorSquare extends TextureSheetParticle {
         public void writeToNetwork(FriendlyByteBuf buf) {
             buf.writeVector3f(color);
             buf.writeFloat(alpha);
+            buf.writeFloat(velocityRandomness);
+            buf.writeFloat(velocityScale);
+            buf.writeFloat(size);
         }
 
         @Override
         public String writeToString() {
-            return String.format(Locale.ROOT, "%.2f %.2f %.2f %.2f", color.x, color.y, color.z, alpha);
+            return String.format(Locale.ROOT, "%.2f %.2f %.2f %.2f %.2f %.2f %.2f", color.x, color.y, color.z, alpha, velocityRandomness, velocityScale, size);
         }
 
-        public static final ParticleOptions.Deserializer<Option> DESERIALIZER = new ParticleOptions.Deserializer<Option>() {
+        public static final ParticleOptions.Deserializer<Option> DESERIALIZER = new ParticleOptions.Deserializer<>() {
 
             @Override
             public Option fromNetwork(ParticleType<Option> p_123735_, FriendlyByteBuf buf) {
-                return new Option(buf.readVector3f(), buf.readFloat());
+                return new Option(buf.readVector3f(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat());
             }
 
             @Override
             public Option fromCommand(ParticleType<Option> p_123733_, StringReader reader) throws CommandSyntaxException {
                 Vector3f vector3f = DustParticleOptionsBase.readVector3f(reader);
                 reader.expect(' ');
-                float f = reader.readFloat();
-                return new Option(vector3f, f);
+                return new Option(vector3f, reader.readFloat(), reader.readFloat(), reader.readFloat(), reader.readFloat());
             }
         };
 
         public static final Codec<Option> CODEC = RecordCodecBuilder.create((builder) -> builder.group(
                 ExtraCodecs.VECTOR3F.fieldOf("color").forGetter(it -> it.color),
-                Codec.FLOAT.fieldOf("a").forGetter(it -> it.alpha)).apply(builder, Option::new));
+                Codec.FLOAT.fieldOf("alpha").forGetter(it -> it.alpha),
+                Codec.FLOAT.fieldOf("velocity_randomness").forGetter(it -> it.velocityRandomness),
+                Codec.FLOAT.fieldOf("velocity_scale").forGetter(it -> it.velocityScale),
+                Codec.FLOAT.fieldOf("size").forGetter(it -> it.size)).apply(builder, Option::new));
     }
 
     /*@Override

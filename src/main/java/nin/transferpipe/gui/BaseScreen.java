@@ -23,9 +23,9 @@ public class BaseScreen<T extends BaseMenu> extends AbstractContainerScreen<T> {
         imageWidth = bgWidth;
         imageHeight = bgHeight;
 
-        titleLabelX = menu.disableTitleText ? 114514 : 7;
+        titleLabelX = menu.noTitleText() ? 114514 : 7;
         titleLabelY = 5;
-        inventoryLabelX = menu.disableInventoryText ? 1919810 : 7;
+        inventoryLabelX = menu.noInventoryText() ? 1919810 : 7;
         inventoryLabelY = getMenu().getOffsetY() - 11;
     }
 

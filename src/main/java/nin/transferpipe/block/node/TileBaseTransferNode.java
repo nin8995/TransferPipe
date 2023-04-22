@@ -26,20 +26,20 @@ import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.item.*;
-import nin.transferpipe.particle.ColorSquare;
 import nin.transferpipe.particle.TPParticles;
 import nin.transferpipe.util.PipeUtils;
 import nin.transferpipe.util.TPUtils;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 //搬送する種類に依らない、「ノード」のタイルエンティティとしての機能
 public abstract class TileBaseTransferNode extends TileHolderEntity implements TPItems {
-
     /**
      * 基本情報
      */
@@ -59,6 +59,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     public final BlockPos POS;
     @Nullable
     public Direction FACING;
+    public BlockPos FACING_POS;
     public boolean initialized;
     public boolean isSearching;
     public ContainerData searchData = new ContainerData() {
@@ -90,11 +91,26 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     public TileBaseTransferNode(BlockEntityType<? extends TileBaseTransferNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
         super(p_155228_, p_155229_, p_155230_);
         POS = this.worldPosition;
-        if (getBlockState().getBlock() instanceof BlockTransferNode.FacingNode<?> node)
-            FACING = node.facing(getBlockState());
-
+        updateFacing();
         setSearch(new Search(this));
         upgrades = new UpgradeHandler(6, this);
+    }
+
+    @Override
+    public void setBlockState(BlockState p_155251_) {
+        super.setBlockState(p_155251_);
+        updateFacing();
+    }
+
+    public void updateFacing() {
+        if (getBlockState().getBlock() instanceof BlockTransferNode.FacingNode<?> node) {
+            FACING = node.facing(getBlockState());
+            FACING_POS = POS.relative(FACING);
+            onUpdateFacing();
+        }
+    }
+
+    public void onUpdateFacing() {
     }
 
     public BlockState getPipeState() {
@@ -102,12 +118,10 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     }
 
     public void setPipeStateAndUpdate(BlockState state) {
-        if (pipeState != state) {
-            pipeState = state;
-            updateTile(state);
-            setChanged();//タイルエンティティ更新時の処理
-            level.markAndNotifyBlock(getBlockPos(), level.getChunkAt(getBlockPos()), getBlockState(), getBlockState(), 3, 512);//ブロック更新時の処理
-        }
+        pipeState = state;
+        updateTile(state);
+        setChanged();//タイルエンティティ更新時の処理
+        level.markAndNotifyBlock(getBlockPos(), level.getChunkAt(getBlockPos()), getBlockState(), getBlockState(), 3, 512);//ブロック更新時の処理
     }
 
     public Search getSearch() {
@@ -178,7 +192,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
     public void beforeTick() {
         //インスタンス生成時はlevelがnullでpipeState分らんからここで
         if (firstTick) {
-            setPipeStateAndUpdate(PipeUtils.calcInitialState(level, worldPosition, pipeState));
+            setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipeState));
             firstTick = false;//setChangedは上で呼ばれてる
         }
 
@@ -197,8 +211,11 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
                 || (redstoneBehavior == RedstoneBehavior.ACTIVE_LOW && level.getBestNeighborSignal(POS) > 0))
             return;
 
-        super.tick();
+        bodyTick();
+    }
 
+    public void bodyTick() {
+        super.tick();
         cooltime -= coolRate;
         for (; cooltime <= 0; cooltime += 20) {
             isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
@@ -206,19 +223,15 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
                 setSearch(search.proceed());
 
             if (FACING != null)//if(canWork(POS, FACED))あってもいいけどなくてもいい←world interaction考えるとない方が楽
-                facing(POS.relative(FACING), FACING.getOpposite());
+                facing(FACING_POS, FACING.getOpposite());
             else
                 Direction.stream().forEach(d -> facing(POS.relative(d), d.getOpposite()));
 
         }
-
-        afterTick();
-    }
-
-    public void afterTick() {
     }
 
     public float coolRate;
+    public float worldInteraction;
     public boolean stackMode;
     public boolean pseudoRoundRobin;
     public boolean depthFirst;
@@ -234,6 +247,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
 
     public void calcUpgrades() {
         coolRate = 2;
+        worldInteraction = 0;
         stackMode = false;
         pseudoRoundRobin = false;
         depthFirst = false;
@@ -247,13 +261,18 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
         sortingFunc = (l, i) -> true;
         filteringFunc = i -> true;
 
+        var pipeRemoved = new AtomicBoolean(pipeState.getBlock() != TPBlocks.TRANSFER_PIPE.get());
+
         IntStream.range(0, upgrades.getSlots()).forEach(slot -> {
             var upgrade = upgrades.getStackInSlot(slot);
             if (upgrade.is(SPEED_UPGRADE.get()))
                 coolRate += upgrade.getCount();
-            else if (upgrade.is(AMPLIFIED_SPEED_UPGRADE.get()))
+            else if (upgrade.is(WORLD_INTERACTION_UPGRADE.get()))
+                worldInteraction += upgrade.getCount();
+            else if (upgrade.is(OVERCLOCK_UPGRADE.get())) {
                 coolRate *= Math.pow(1.01, upgrade.getCount());
-            else if (upgrade.is(STACK_UPGRADE.get()))
+                worldInteraction *= Math.pow(1.01, upgrade.getCount());
+            } else if (upgrade.is(STACK_UPGRADE.get()))
                 stackMode = true;
             else if (upgrade.is(PSEUDO_ROUND_ROBIN_UPGRADE.get()))
                 pseudoRoundRobin = true;
@@ -279,9 +298,16 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
             else if (upgrade.getItem() instanceof FilterItem filter)
                 filteringFunc = filter.getFilter(upgrade);
 
-            else if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
-                setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
+            else if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe) {
+                if (pipe != pipeState.getBlock())
+                    setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
+                else
+                    pipeRemoved.set(false);
+            }
         });
+
+        if (pipeRemoved.get())
+            setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, TPBlocks.TRANSFER_PIPE.get().defaultBlockState()));
     }
 
     public enum RedstoneBehavior {
@@ -326,17 +352,25 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements T
         return !PipeUtils.centerOnly(pipeState);
     }
 
-    public void addSearchParticle(Vec3 pos) {
-        if (addParticle)
-            TPParticles.addSearch(level, pos, getParticleOption());
+    public void addPipeParticle(Vec3 pos) {
+        TPParticles.addPipeCorners(level, pos, getColor());
     }
 
-    public void addTerminalParticle(Vec3 pos) {
-        if (addParticle)
-            TPParticles.addTerminal(level, pos, getParticleOption());
+    public static float gold = (float) ((1 + Math.sqrt(5)) / 2);
+
+    public void addBlockParticle(Vec3 pos) {
+        var option = TPParticles.defaultOption(getColor());
+        option.size *= gold;
+        TPParticles.addBlockCorners(level, pos, option);
     }
 
-    public abstract ColorSquare.Option getParticleOption();
+    public void addEdges(Vec3 pos, float boxRadius) {
+        var option = TPParticles.defaultOption(getColor());
+        option.size *= gold;
+        TPParticles.addBoxEdges(level, pos, boxRadius, 2, option);
+    }
+
+    public abstract Vector3f getColor();
 
     public abstract boolean canWork(BlockPos pos, Direction d);
 

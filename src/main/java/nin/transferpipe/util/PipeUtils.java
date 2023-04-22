@@ -11,11 +11,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.node.BlockTransferNode;
 import nin.transferpipe.block.node.TileBaseTransferNode;
 import nin.transferpipe.block.pipe.Connection;
@@ -86,14 +84,15 @@ public class PipeUtils {
 
     //回したFlowで再計算
     public static BlockState cycleFlowAndRecalc(Level l, BlockPos bp) {
-        return calcConnections(l, bp, currentState(l, bp).setValue(FLOW, Flow.getNext(l, bp)));
+        return calcConnections(l, bp, currentState(l, bp), Flow.getNext(l, bp));
+    }
+
+    public static BlockState calcConnections(Level l, BlockPos bp, BlockState state, Flow f) {
+        return calcConnections(l, bp, state.setValue(FLOW, f));
     }
 
     public static BlockState calcConnections(Level l, BlockPos bp, BlockState state) {
-        var f = state.getValue(FLOW);
-        state = state.setValue(FLOW, f);
-        state = Connection.map(state, d -> calcConnection(l, bp, f, d));
-        return state;
+        return Connection.map(state, d -> calcConnection(l, bp, state.getValue(FLOW), d));
     }
 
     public static Connection calcConnection(Level l, BlockPos bp, Flow f, Direction d) {
@@ -104,14 +103,13 @@ public class PipeUtils {
 
     public static boolean shouldConnectToMachine(Flow f, Level l, BlockPos p, Direction d) {
         return f != Flow.IGNORE
-                && !(l.getBlockState(p).getBlock() instanceof BlockTransferNode.FacingNode node && node.facing(l, p) == d)
+                && !(l.getBlockState(p).getBlock() instanceof BlockTransferNode.FacingNode<?> node && node.facing(l, p) == d)
                 && isWorkPlace(l, p.relative(d), d.getOpposite());
     }
 
     public static boolean isWorkPlace(Level level, BlockPos pos, @Nullable Direction dir) {
         return !(level.getBlockState(pos).getBlock() instanceof TransferPipe || level.getBlockEntity(pos) instanceof TileBaseTransferNode)
                 && (HandlerUtils.hasItemHandler(level, pos, dir)
-                || ContainerUtils.hasContainer(level, pos)
                 || HandlerUtils.hasFluidHandler(level, pos, dir)
                 || HandlerUtils.hasEnergyStorage(level, pos, dir));
     }
@@ -185,10 +183,5 @@ public class PipeUtils {
     public static boolean usingWrench(Player pl, InteractionHand hand) {
         var item = pl.getItemInHand(hand);
         return item.is(Items.STICK) || item.is(WRENCH_TAG);
-    }
-
-    public static BlockEntity getTile(Level level, BlockPos pos) {
-        var tile = level.getBlockEntity(pos);
-        return tile instanceof TileHolderEntity holder ? holder.holdingTile : tile;
     }
 }

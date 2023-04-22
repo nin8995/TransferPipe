@@ -73,7 +73,6 @@ public class RationingUpgradeItem extends FunctionUpgrade {
 
         public Menu(int p_38852_, Inventory inv) {
             super(TPItems.REGULATABLE_RATIONING_UPGRADE, p_38852_, inv, "regulatable");
-            noDefaultTexts();
 
             this.upgradeInInventory = new Slot(inv, inv.selected, 114514, 1919810);
             addSlot(upgradeInInventory);
@@ -81,6 +80,11 @@ public class RationingUpgradeItem extends FunctionUpgrade {
 
         @Override
         public boolean noInventory() {
+            return true;
+        }
+
+        @Override
+        public boolean noTitleText() {
             return true;
         }
     }
@@ -105,7 +109,7 @@ public class RationingUpgradeItem extends FunctionUpgrade {
                 itemRation.setValue(String.valueOf(rationing.getItemRation(upgrade)));//もしタグがない場合、クライアントでtag作ってるだけ、サーバーはまだタグ無し
                 addRenderableWidget(itemRation);
 
-                liquidRation = newEditBox(70, 10, 35 + 5);
+                liquidRation = newEditBox(70, 10, 35 + 8);
                 liquidRation.setFilter(this::checkStr);
                 liquidRation.setValue(String.valueOf(rationing.getLiquidRation(upgrade)));
                 addRenderableWidget(liquidRation);
@@ -121,7 +125,7 @@ public class RationingUpgradeItem extends FunctionUpgrade {
             super.renderLabels(pose, p_97809_, p_97810_);
 
             draw(pose, "items", -20 + 2);
-            draw(pose, "mb", 70 + 5 + 2);
+            draw(pose, "mb", 70 + 8 + 2);
         }
 
         public void draw(PoseStack pose, String str, int xOffset) {

@@ -28,10 +28,14 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
 
     public MenuTransferNode(IItemHandler upgrades, ContainerData searchData, TPBlocks.RegistryGUIEntityBlock registry, int containerId, Inventory inv) {
         super(registry, containerId, inv, "transfer_node");
-        noInventoryText();
         this.searchData = searchData;
         this.addDataSlots(searchData);
         addItemHandlerSlots(upgrades, UpgradeSlot::new, upgradesY);
+    }
+
+    @Override
+    public boolean noInventoryText() {
+        return true;
     }
 
     @Override
