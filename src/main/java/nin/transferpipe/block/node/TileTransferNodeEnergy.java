@@ -115,7 +115,7 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     @Override
-    public void terminal(BlockPos pos, Direction dir) {
+    public void work(BlockPos pos, Direction dir) {
         tryEstablishConnection(pos, dir, true);
     }
 
@@ -125,7 +125,7 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     @Override
-    public boolean canWorkMultipleAtTime() {
+    public boolean isMultiTask() {
         return true;
     }
 
@@ -135,9 +135,8 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     @Override
-    public void beforeTick() {
-        super.beforeTick();
-        //load時にはlevelがnullなため、ここで実際にloをload
+    public void onLoad() {
+        super.onLoad();
         if (!loadCache.isEmpty()) {
             loadCache.forEach((pos, dirsSearched) -> dirsSearched.forEach((dir, searched) -> tryEstablishConnection(pos, dir, searched)));
             loadCache.clear();
@@ -270,8 +269,8 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     @Override
-    public void onProceedPipe(BlockPos pos) {
-        super.onProceedPipe(pos);
+    public void onSearchProceed(BlockPos pos) {
+        super.onSearchProceed(pos);
         if (TPUtils.getTile(level, pos) instanceof EnergyReceiverPipe.Tile receiver) {
             receiver.connect(this);
             energyReceiverPipes.put(pos, true);

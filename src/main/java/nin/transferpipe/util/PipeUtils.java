@@ -39,7 +39,7 @@ public class PipeUtils {
     public static BlockState currentState(Level level, BlockPos pos) {
         var bs = level.getBlockState(pos);
         return bs.getBlock() instanceof TransferPipe ? bs
-                : level.getBlockEntity(pos) instanceof TileBaseTransferNode be ? be.getPipeState()
+                : level.getBlockEntity(pos) instanceof TileBaseTransferNode be ? be.pipeState
                 : null;//PipeStateを得得ないときにnull
     }
 

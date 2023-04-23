@@ -79,7 +79,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
             var shape = new AtomicReference<>(shapeCache.get(state));
             blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
                 if (be.shouldRenderPipe())
-                    shape.set(Shapes.or(shape.get(), TransferPipe.getShape(be.getPipeState())));
+                    shape.set(Shapes.or(shape.get(), TransferPipe.getShape(be.pipeState)));
             });
 
             return shape.get();
@@ -101,7 +101,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean p_60514_) {
         if (level.getBlockEntity(pos) instanceof TileBaseTransferNode be) {
-            var prevState = be.getPipeState();
+            var prevState = be.pipeState;
             var currentState = PipeUtils.recalcConnections(level, pos);
             if (prevState != currentState)
                 be.setPipeStateAndUpdate(currentState);
@@ -135,7 +135,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
 
         @Override
         public BaseBlockMenu menu(TileTransferNodeItem be, int id, Inventory inv) {
-            return new MenuTransferNode.Item(be.getItemSlotHandler(), be.getUpgrades(), be.searchData, id, inv);
+            return new MenuTransferNode.Item(be.getItemSlotHandler(), be.upgrades, be.searchData, id, inv);
         }
     }
 
@@ -148,7 +148,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
 
         @Override
         public BaseBlockMenu menu(TileTransferNodeLiquid be, int id, Inventory inv) {
-            return new MenuTransferNode.Liquid(be.dummyLiquidItem, be.getUpgrades(), be.searchData, id, inv);
+            return new MenuTransferNode.Liquid(be.dummyLiquidItem, be.upgrades, be.searchData, id, inv);
         }
     }
 
@@ -161,7 +161,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
 
         @Override
         public BaseBlockMenu menu(TileTransferNodeEnergy be, int id, Inventory inv) {
-            return new MenuTransferNode.Energy(be.energyData, be.getUpgrades(), be.searchData, id, inv);
+            return new MenuTransferNode.Energy(be.energyData, be.upgrades, be.searchData, id, inv);
         }
 
         public static final VoxelShape ENERGY_NODE = Stream.of(
@@ -176,7 +176,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
             var shape = new AtomicReference<>(ENERGY_NODE);
             blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
                 if (be.shouldRenderPipe())
-                    shape.set(Shapes.or(shape.get(), TransferPipe.getShape(be.getPipeState())));
+                    shape.set(Shapes.or(shape.get(), TransferPipe.getShape(be.pipeState)));
             });
 
             return shape.get();

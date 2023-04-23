@@ -11,7 +11,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkHooks;
 import nin.transferpipe.gui.BaseBlockMenu;
 
-public interface GUIEntityBlock<T extends NonStaticTickingEntity> extends TickingEntityBlock<T> {
+public interface GUIEntityBlock<T extends Tile> extends TickingEntityBlock<T> {
 
     @Override
     default TPBlocks.RegistryEntityBlock<T> registry() {

@@ -9,7 +9,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
-import nin.transferpipe.block.NonStaticTickingEntity;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TickingEntityBlock;
 import nin.transferpipe.block.node.TileTransferNodeEnergy;
@@ -24,7 +23,7 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
         return TPBlocks.ENERGY_RECEIVER_PIPE;
     }
 
-    public static class Tile extends NonStaticTickingEntity {
+    public static class Tile extends nin.transferpipe.block.Tile {
 
         @Nullable
         public TileTransferNodeEnergy nodeReference = null;

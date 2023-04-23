@@ -13,10 +13,10 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class TileHolderEntity extends NonStaticTickingEntity {
+public abstract class TileHolderEntity extends Tile {
 
     @Nullable
-    public NonStaticTickingEntity holdingTile = null;
+    public Tile holdingTile = null;
 
     public static String POS = "TilePos";
     public static String STATE = "TileState";
@@ -42,12 +42,13 @@ public abstract class TileHolderEntity extends NonStaticTickingEntity {
         if (tag.contains(POS)) {
             var pos = NbtUtils.readBlockPos(tag.getCompound(POS));
             var state = NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), tag.getCompound(STATE));
-            holdingTile = (NonStaticTickingEntity) BlockEntity.loadStatic(pos, state, tag.getCompound(DATA));
+            holdingTile = (Tile) BlockEntity.loadStatic(pos, state, tag.getCompound(DATA));
         }
     }
 
     @Override
     public void tick() {
+        super.tick();
         if (holdingTile != null) {
             if (holdingTile.getLevel() == null)
                 holdingTile.setLevel(level);
@@ -64,7 +65,7 @@ public abstract class TileHolderEntity extends NonStaticTickingEntity {
     public void updateTile(BlockState state) {
         if (holdingTile != null && holdingTile.getBlockState().getBlock() == state.getBlock())
             holdingTile.setBlockState(state);
-        else if (state.getBlock() instanceof EntityBlock entityBlock && entityBlock.newBlockEntity(worldPosition, state) instanceof NonStaticTickingEntity tile)
+        else if (state.getBlock() instanceof EntityBlock entityBlock && entityBlock.newBlockEntity(worldPosition, state) instanceof Tile tile)
             holdingTile = tile;
         else
             holdingTile = null;

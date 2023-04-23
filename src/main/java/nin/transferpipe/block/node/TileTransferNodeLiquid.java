@@ -143,7 +143,7 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
     }
 
     @Override
-    public void terminal(BlockPos pos, Direction dir) {
+    public void work(BlockPos pos, Direction dir) {
         HandlerUtils.forFluidHandler(level, pos, dir, this::tryPush);
     }
 

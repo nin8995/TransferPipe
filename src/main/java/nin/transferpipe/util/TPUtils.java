@@ -184,11 +184,16 @@ public class TPUtils {
         return String.format("%,d", energy) + "FE";
     }
 
-    public static <K, V> void addToSetMap(Map<K, Set<V>> map, K key, V value) {
-        if (map.containsKey(key))
-            map.get(key).add(value);
-        else
-            map.put(key, new HashSet<>(Set.of(value)));
+    public static <K, V> void addToSetMap(Map<K, Set<V>> map, K k, @Nullable V v) {
+        if (map.containsKey(k)) {
+            if (v != null)
+                map.get(k).add(v);
+        } else {
+            var valueSet = new HashSet<V>();
+            if (v != null)
+                valueSet.add(v);
+            map.put(k, valueSet);
+        }
     }
 
     public static <K1, K2, V> void addToMapMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2, V value) {

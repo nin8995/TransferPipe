@@ -9,12 +9,12 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-public interface TickingEntityBlock<BE extends NonStaticTickingEntity> extends EntityBlock {
+public interface TickingEntityBlock<BE extends Tile> extends EntityBlock {
 
     @Override
     default <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return type == getType() ? (Level l, BlockPos p, BlockState bs, T t) -> {
-            if (!level.isClientSide && t instanceof NonStaticTickingEntity be)
+            if (!level.isClientSide && t instanceof Tile be)
                 be.tick();
         } : null;
     }

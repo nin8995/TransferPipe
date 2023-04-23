@@ -166,7 +166,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     @Override
-    public void terminal(BlockPos pos, Direction dir) {
+    public void work(BlockPos pos, Direction dir) {
         if (!getItemSlot().isEmpty())
             HandlerUtils.forItemHandler(level, pos, dir, this::tryPush);
     }
@@ -371,7 +371,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
 
                 receive(receivableItems);
                 craftSlots.consume(receivableTimes, recipe.getRemainingItems(craftSlots).stream().map(i -> TPUtils.copyWithScale(i, receivableTimes)).toList());
-                itemPositions.stream().map(BlockPos::getCenter).forEach(this::addBlockParticle);
+                itemPositions.forEach(this::addBlockParticle);
             }
         }
     }
