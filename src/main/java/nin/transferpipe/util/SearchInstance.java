@@ -132,13 +132,6 @@ public class SearchInstance {
     }
 
     /**
-     * 楽にランダム使いたいだけ
-     */
-    public Direction random(Set<Direction> dirs) {
-        return TPUtils.getRandomlyFrom(dirs, level.random);
-    }
-
-    /**
      * NBT
      */
     public static String QUEUE = "Queue";
@@ -156,5 +149,12 @@ public class SearchInstance {
             queue.clear();
             TPUtils.readPosDirs(tag.getCompound(QUEUE), queue::addAll);
         }
+    }
+
+    /**
+     * 省略
+     */
+    public Direction random(Set<Direction> dirs) {
+        return TPUtils.getRandomlyFrom(dirs, level.random);
     }
 }

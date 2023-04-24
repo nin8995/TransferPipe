@@ -135,7 +135,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
 
         @Override
         public BaseBlockMenu menu(TileTransferNodeItem be, int id, Inventory inv) {
-            return new MenuTransferNode.Item(be.getItemSlotHandler(), be.upgrades, be.searchData, id, inv);
+            return new MenuTransferNode.Item(be.itemSlot, be.upgrades, be.searchData, id, inv);
         }
     }
 

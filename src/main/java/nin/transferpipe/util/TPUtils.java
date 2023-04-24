@@ -36,6 +36,8 @@ import nin.transferpipe.TPMod;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.mixin.AtlasAccessor;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -47,17 +49,17 @@ import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TPUtils {
+public interface TPUtils {
 
     /**
      * 当たり判定
      */
 
-    public static Map<Direction, VoxelShape> getRotatedShapes(VoxelShape s) {
+    static Map<Direction, VoxelShape> getRotatedShapes(VoxelShape s) {
         return Direction.stream().collect(Collectors.toMap(UnaryOperator.identity(), d -> rotate(s, d)));
     }
 
-    public static VoxelShape rotate(VoxelShape shape, Direction d) {
+    static VoxelShape rotate(VoxelShape shape, Direction d) {
         List<VoxelShape> shapes = new ArrayList<>();
 
         for (AABB aabb : shape.toAabbs()) {
@@ -72,7 +74,7 @@ public class TPUtils {
         return united;
     }
 
-    public static Vec3 rotate(Vec3 v, Direction d) {
+    static Vec3 rotate(Vec3 v, Direction d) {
         var rightAngle = (float) (Math.PI / 2);
         var toRotate = v.add(-.5, -.5, -.5);
 
@@ -92,7 +94,7 @@ public class TPUtils {
      * レンダー
      */
 
-    public static void renderBlockStateWithoutSeed(BlockState blockState, Level level, BlockPos pos, BlockRenderDispatcher renderer, PoseStack pose, MultiBufferSource mbs, int nazo) {
+    static void renderBlockStateWithoutSeed(BlockState blockState, Level level, BlockPos pos, BlockRenderDispatcher renderer, PoseStack pose, MultiBufferSource mbs, int nazo) {
         var model = renderer.getBlockModel(blockState);
         model.getRenderTypes(blockState, level.random, ModelData.EMPTY).forEach(renderType ->
                 renderer.getModelRenderer().tesselateBlock(level, model, blockState, pos, pose, mbs.getBuffer(renderType),
@@ -100,13 +102,13 @@ public class TPUtils {
 
     }
 
-    public static void renderLiquid(FluidStack liquid, PoseStack pose, int x, int y, int size) {
+    static void renderLiquid(FluidStack liquid, PoseStack pose, int x, int y, int size) {
         var color = IClientFluidTypeExtensions.of(liquid.getFluid()).getTintColor();
 
         renderWithColor(color, () -> forStillFluidSprite(liquid, sprite -> blit(sprite, pose, x, y, size)));
     }
 
-    public static void renderWithColor(int argb, Runnable renderer) {
+    static void renderWithColor(int argb, Runnable renderer) {
         float a = ARGB32.alpha(argb) / 255F;
         float r = ARGB32.red(argb) / 255F;
         float g = ARGB32.green(argb) / 255F;
@@ -121,7 +123,7 @@ public class TPUtils {
         RenderSystem.disableBlend();
     }
 
-    public static void forStillFluidSprite(FluidStack fluidStack, Consumer<TextureAtlasSprite> func) {
+    static void forStillFluidSprite(FluidStack fluidStack, Consumer<TextureAtlasSprite> func) {
         var fluid = fluidStack.getFluid();
         var renderProperties = IClientFluidTypeExtensions.of(fluid);
         var fluidStill = renderProperties.getStillTexture(fluidStack);
@@ -133,7 +135,7 @@ public class TPUtils {
             func.accept(sprite);
     }
 
-    public static void blit(TextureAtlasSprite sprite, PoseStack pose, int x, int y, int blitSize) {
+    static void blit(TextureAtlasSprite sprite, PoseStack pose, int x, int y, int blitSize) {
         var atlas = (AtlasAccessor) Minecraft.getInstance().getModelManager().getAtlas(sprite.atlasLocation());
         var image = sprite.contents().getOriginalImage();
 
@@ -147,7 +149,7 @@ public class TPUtils {
         TPUtils.blit(textureLoc, pose, x, y, blitSize, textureWidth, textureHeight, imageStartX, imageStartY, imageSize);
     }
 
-    public static void blit(ResourceLocation texture, PoseStack pose, int x, int y, int blitSize, int textureWidth, int textureHeight, int imageStartX, int imageStartY, int imageSize) {
+    static void blit(ResourceLocation texture, PoseStack pose, int x, int y, int blitSize, int textureWidth, int textureHeight, int imageStartX, int imageStartY, int imageSize) {
         var scale = imageSize / blitSize;
 
         textureWidth /= scale;
@@ -164,7 +166,7 @@ public class TPUtils {
      * その他
      */
 
-    public static <T> T getRandomlyFrom(Collection<T> c, RandomSource rand) {
+    static <T> T getRandomlyFrom(Collection<T> c, RandomSource rand) {
         if (c.isEmpty())
             return null;
 
@@ -172,19 +174,19 @@ public class TPUtils {
         return list.get((int) (rand.nextFloat() * list.size()));//0<nextFloat<1のため配列の範囲外エラーは起きない
     }
 
-    public static ResourceLocation modLoc(String id) {
+    static ResourceLocation modLoc(String id) {
         return new ResourceLocation(TPMod.MODID, id);
     }
 
-    public static String toMilliBucket(int amount) {
+    static String toMilliBucket(int amount) {
         return String.format("%,d", amount) + "mb";
     }
 
-    public static String toFE(int energy) {
+    static String toFE(int energy) {
         return String.format("%,d", energy) + "FE";
     }
 
-    public static <K, V> void addToSetMap(Map<K, Set<V>> map, K k, @Nullable V v) {
+    static <K, V> void addToSetMap(Map<K, Set<V>> map, K k, @Nullable V v) {
         if (map.containsKey(k)) {
             if (v != null)
                 map.get(k).add(v);
@@ -196,14 +198,14 @@ public class TPUtils {
         }
     }
 
-    public static <K1, K2, V> void addToMapMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2, V value) {
+    static <K1, K2, V> void addToMapMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2, V value) {
         if (map.containsKey(key1))
             map.get(key1).put(key2, value);
         else
             map.put(key1, new HashMap<>(Map.of(key2, value)));
     }
 
-    public static <A, B, C> void removeFromMapMap(Map<A, Map<B, C>> map, Predicate3<A, B, C> shouldRemove) {
+    static <A, B, C> void removeFromMapMap(Map<A, Map<B, C>> map, Predicate3<A, B, C> shouldRemove) {
         var toRemove = new HashMap<A, Set<B>>();
         map.forEach((a, value) -> value.forEach((b, c) -> {
             if (shouldRemove.test(a, b, c))
@@ -212,18 +214,18 @@ public class TPUtils {
         toRemove.forEach((a, value) -> value.forEach(b -> TPUtils.removeFromMapMap(map, a, b)));
     }
 
-    public interface Predicate3<A, B, C> {
+    interface Predicate3<A, B, C> {
 
         boolean test(A a, B b, C c);
     }
 
-    public static <K1, K2, V> void removeFromMapMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2) {
+    static <K1, K2, V> void removeFromMapMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2) {
         map.get(key1).remove(key2);
         if (map.get(key1).isEmpty())
             map.remove(key1);
     }
 
-    public static <A, B> void removeFromMap(Map<A, B> map, BiPredicate<A, B> shouldRemove, Consumer<A> terminalFunc) {
+    static <A, B> void removeFromMap(Map<A, B> map, BiPredicate<A, B> shouldRemove, Consumer<A> terminalFunc) {
         var toRemove = new HashSet<A>();
         map.forEach((a, b) -> {
             if (shouldRemove.test(a, b))
@@ -235,11 +237,11 @@ public class TPUtils {
         });
     }
 
-    public static String POS = "Pos";
-    public static String DIRS = "Dirs";
+    String POS = "Pos";
+    String DIRS = "Dirs";
 
     @SafeVarargs
-    public static CompoundTag writePosDirsSetMap(Map<BlockPos, Set<Direction>>... setMaps) {
+    static CompoundTag writePosDirsSetMap(Map<BlockPos, Set<Direction>>... setMaps) {
         var tag = new CompoundTag();
         AtomicInteger i = new AtomicInteger(0);
         for (Map<BlockPos, Set<Direction>> setMap : setMaps)
@@ -249,7 +251,7 @@ public class TPUtils {
     }
 
     @SafeVarargs
-    public static <T> CompoundTag writePosDirsMapMap(BiConsumer<CompoundTag, T> writer, Map<BlockPos, Map<Direction, T>>... mapMaps) {
+    static <T> CompoundTag writePosDirsMapMap(BiConsumer<CompoundTag, T> writer, Map<BlockPos, Map<Direction, T>>... mapMaps) {
         var tag = new CompoundTag();
         AtomicInteger i = new AtomicInteger(0);
         for (Map<BlockPos, Map<Direction, T>> mapMap : mapMaps)
@@ -258,11 +260,11 @@ public class TPUtils {
         return tag;
     }
 
-    public static void putPosDirsFromSetMapTo(Map<BlockPos, Set<Direction>> setMap, CompoundTag tag, AtomicInteger i) {
+    static void putPosDirsFromSetMapTo(Map<BlockPos, Set<Direction>> setMap, CompoundTag tag, AtomicInteger i) {
         setMap.forEach((pos, dirs) -> putPosDirsTo(tag, pos, dirs, i));
     }
 
-    public static <T> void putPosDirsFromMapMapTo(Map<BlockPos, Map<Direction, T>> mapMap, BiConsumer<CompoundTag, T> writer, CompoundTag tag, AtomicInteger i) {
+    static <T> void putPosDirsFromMapMapTo(Map<BlockPos, Map<Direction, T>> mapMap, BiConsumer<CompoundTag, T> writer, CompoundTag tag, AtomicInteger i) {
         mapMap.forEach((pos, dirsMap) -> {
             var subTag = new CompoundTag();
             subTag.put(POS, NbtUtils.writeBlockPos(pos));
@@ -277,7 +279,7 @@ public class TPUtils {
         });
     }
 
-    public static void putPosDirsTo(CompoundTag tag, BlockPos pos, Set<Direction> dirs, AtomicInteger i) {
+    static void putPosDirsTo(CompoundTag tag, BlockPos pos, Set<Direction> dirs, AtomicInteger i) {
         var subTag = new CompoundTag();
         subTag.put(POS, NbtUtils.writeBlockPos(pos));
         subTag.putIntArray(DIRS, dirs.stream().map(Enum::ordinal).toList());
@@ -286,7 +288,7 @@ public class TPUtils {
         i.getAndIncrement();
     }
 
-    public static void readPosDirs(CompoundTag tag, BiConsumer<BlockPos, Set<Direction>> readFunc) {
+    static void readPosDirs(CompoundTag tag, BiConsumer<BlockPos, Set<Direction>> readFunc) {
         tag.getAllKeys().forEach(i -> {
             var entryTag = tag.getCompound(i);
             var pos = NbtUtils.readBlockPos(entryTag.getCompound(POS));
@@ -295,7 +297,7 @@ public class TPUtils {
         });
     }
 
-    public static <T> void readPosDirsMap(CompoundTag tag, Function<CompoundTag, T> translateFunc, BiConsumer<BlockPos, Map<Direction, T>> readFunc) {
+    static <T> void readPosDirsMap(CompoundTag tag, Function<CompoundTag, T> translateFunc, BiConsumer<BlockPos, Map<Direction, T>> readFunc) {
         tag.getAllKeys().forEach(i -> {
             var subTag = tag.getCompound(i);
             var pos = NbtUtils.readBlockPos(subTag.getCompound(POS));
@@ -307,7 +309,7 @@ public class TPUtils {
         });
     }
 
-    public static <T> CompoundTag writePosMap(Map<BlockPos, T> map, BiConsumer<CompoundTag, T> writer) {
+    static <T> CompoundTag writePosMap(Map<BlockPos, T> map, BiConsumer<CompoundTag, T> writer) {
         var tag = new CompoundTag();
         AtomicInteger i = new AtomicInteger(0);
 
@@ -322,7 +324,7 @@ public class TPUtils {
         return tag;
     }
 
-    public static <T> void readPosMap(CompoundTag tag, Function<CompoundTag, T> translateFunc, BiConsumer<BlockPos, T> readFunc) {
+    static <T> void readPosMap(CompoundTag tag, Function<CompoundTag, T> translateFunc, BiConsumer<BlockPos, T> readFunc) {
         tag.getAllKeys().forEach(i -> {
             var subTag = tag.getCompound(i);
             var pos = NbtUtils.readBlockPos(subTag.getCompound(POS));
@@ -331,15 +333,15 @@ public class TPUtils {
         });
     }
 
-    public static BlockEntity getTile(Level level, BlockPos pos) {
+    static BlockEntity getTile(Level level, BlockPos pos) {
         return level.getBlockEntity(pos) instanceof TileHolderEntity tileHolder ? tileHolder.holdingTile : level.getBlockEntity(pos);
     }
 
-    public static BufferedImage getImage(ResourceLocation loc) {
+    static BufferedImage getImage(ResourceLocation loc) {
         return getImage(Minecraft.getInstance().getResourceManager().getResource(loc).get());
     }
 
-    public static BufferedImage getImage(Resource resource) {
+    static BufferedImage getImage(Resource resource) {
         try {
             return ImageIO.read(new ByteArrayInputStream(resource.open().readAllBytes()));
         } catch (IOException e) {
@@ -347,32 +349,32 @@ public class TPUtils {
         }
     }
 
-    public static int computeInt(ItemStack item, String key, int initialValue) {
+    static int computeInt(ItemStack item, String key, int initialValue) {
         return compute(item.getOrCreateTag(), key, CompoundTag::getInt, CompoundTag::putInt, initialValue);
     }
 
-    public static boolean computeBoolean(ItemStack item, String key) {
+    static boolean computeBoolean(ItemStack item, String key) {
         return compute(item.getOrCreateTag(), key, CompoundTag::getBoolean, CompoundTag::putBoolean, false);
     }
 
-    public static CompoundTag computeTag(ItemStack item, String key) {
+    static CompoundTag computeTag(ItemStack item, String key) {
         return compute(item.getOrCreateTag(), key, CompoundTag::getCompound, CompoundTag::put, new CompoundTag());
     }
 
-    public static <T> T compute(CompoundTag tag, String key, BiFunction<CompoundTag, String, T> getter, Consumer3<CompoundTag, String, T> putter, T initialValue) {
+    static <T> T compute(CompoundTag tag, String key, BiFunction<CompoundTag, String, T> getter, Consumer3<CompoundTag, String, T> putter, T initialValue) {
         if (!tag.contains(key))
             putter.accept(tag, key, initialValue);
 
         return getter.apply(tag, key);
     }
 
-    public interface Consumer3<A, B, C> {
+    interface Consumer3<A, B, C> {
 
         void accept(A a, B b, C c);
     }
 
     @Nullable
-    public static CreativeModeTab getFirstlyContainedTab(Item checked) {
+    static CreativeModeTab getFirstlyContainedTab(Item checked) {
         //modタブがあればそこだけ重点的に検索
         var modid = BuiltInRegistries.ITEM.getKey(checked).getNamespace();
         var modTab = getFirstlyContainedTab(checked, CreativeModeTabs.allTabs().stream()
@@ -386,18 +388,18 @@ public class TPUtils {
     }
 
     @Nullable
-    public static CreativeModeTab getFirstlyContainedTab(Item checked, List<CreativeModeTab> tabs) {
+    static CreativeModeTab getFirstlyContainedTab(Item checked, List<CreativeModeTab> tabs) {
         for (CreativeModeTab tab : tabs)
             if (tab.getDisplayItems().stream().anyMatch(itemStack -> itemStack.is(checked)))
                 return tab;
         return null;
     }
 
-    public static boolean isAnyOf(ItemStack item, Item... items) {
+    static boolean isAnyOf(ItemStack item, Item... items) {
         return Arrays.stream(items).anyMatch(item::is);
     }
 
-    public static boolean sameItemSameTagExcept(ItemStack item, ItemStack filteringItem, String tagKey) {
+    static boolean sameItemSameTagExcept(ItemStack item, ItemStack filteringItem, String tagKey) {
         var noDamageItem = item.copy();
         removeTag(noDamageItem, tagKey);
         var noDamageFilteringItem = filteringItem.copy();
@@ -406,13 +408,13 @@ public class TPUtils {
         return ItemStack.isSameItemSameTags(noDamageItem, noDamageFilteringItem);
     }
 
-    public static void removeTag(ItemStack item, String key) {
+    static void removeTag(ItemStack item, String key) {
         if (item.hasTag() && item.getTag().contains(key))
             item.getTag().remove(key);
     }
 
     @Nullable
-    public static TagKey<Item> getCommonTag(List<Item> item) {
+    static TagKey<Item> getCommonTag(List<Item> item) {
         return item.stream()
                 .map(i -> i.builtInRegistryHolder().tags()).map(Stream::toList)
                 .min(Comparator.comparingLong(List::size)).get().stream()
@@ -420,27 +422,76 @@ public class TPUtils {
                 .findFirst().orElse(null);
     }
 
-    public static List<Item> reduceAir(List<Item> items) {
+    static List<Item> reduceAir(List<Item> items) {
         return items.stream().filter(i -> i != Items.AIR).toList();
     }
 
-    public static Set<TagKey<Item>> getAvailableTags(List<Item> items) {
+    static Set<TagKey<Item>> getAvailableTags(List<Item> items) {
         return items.stream()
                 .flatMap(i -> i.builtInRegistryHolder().tags())
                 .collect(Collectors.toSet());
     }
 
-    public static ItemStack copyWithScale(ItemStack item, int scale) {
+    static ItemStack copyWithSub(ItemStack item, ItemStack sub) {
+        return item.copyWithCount(item.getCount() - sub.getCount());
+    }
+
+    static ItemStack copyWithSub(ItemStack item, int sub) {
+        return item.copyWithCount(item.getCount() - sub);
+    }
+
+    static ItemStack copyWithScale(ItemStack item, int scale) {
         return item.copyWithCount(item.getCount() * scale);
     }
 
-    public static FluidStack copyWithAddition(FluidStack fluid, int addition) {
+    static FluidStack copyWithAddition(FluidStack fluid, int addition) {
         return copyWithAmount(fluid, fluid.getAmount() + addition);
     }
 
-    public static FluidStack copyWithAmount(FluidStack fluid, int amount) {
+    static FluidStack copyWithAmount(FluidStack fluid, int amount) {
         var copy = fluid.copy();
         copy.setAmount(amount);
         return copy;
+    }
+
+    static Vec3 getDirectionalCenter(BlockPos pos, Direction dir) {
+        return pos.getCenter().relative(dir, 0.5);
+    }
+
+    static Vec3 toVector(Direction dir, double length) {
+        return Vec3.atLowerCornerOf(dir.getNormal()).scale(length);
+    }
+
+    static Vec3 relative(BlockPos pos, Direction dir, double length) {
+        return getDirectionalCenter(pos, dir.getOpposite()).add(toVector(dir, length));
+    }
+
+    static double log(double base, double antilogarithm) {
+        return Math.log(antilogarithm) / Math.log(base);
+    }
+
+    static Quaternionf rotation(Direction dir) {
+        var q = new Quaternionf();
+        var pi = (float) Math.PI;
+        return switch (dir) {
+            case DOWN -> q.rotationX(-pi / 2);
+            case UP -> q.rotationX(pi / 2);
+            case NORTH -> q;
+            case WEST -> q.rotationY(pi / 2);
+            case SOUTH -> q.rotationY(pi);
+            case EAST -> q.rotationY(-pi / 2);
+        };
+    }
+
+    static BlockPos toPos(Vector3f v) {
+        return BlockPos.containing(v.x, v.y, v.z);
+    }
+
+    static <V> Map<Direction, V> dirMap(Function<Direction, V> mapper) {
+        return Direction.stream().collect(Collectors.toMap(d -> d, mapper));
+    }
+
+    static List<ItemStack> scaleItems(List<ItemStack> items, int scale) {
+        return items.stream().map(i -> TPUtils.copyWithScale(i, scale)).toList();
     }
 }

@@ -206,13 +206,10 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
                 || (redstoneBehavior == RedstoneBehavior.ACTIVE_LOW && level.getBestNeighborSignal(POS) > 0))
             return;
 
-        bodyTick();
-    }
-
-    public void bodyTick() {
+        beforeTick();
         cooltime -= coolRate;
         for (; cooltime <= 0; cooltime += 20) {
-            isSearching = shouldSearch() && !(level.getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
+            isSearching = shouldSearch() && !(getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
             if (isSearching)
                 search.proceed();
 
@@ -221,6 +218,13 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
             else
                 Direction.stream().forEach(d -> facing(POS.relative(d), d.getOpposite()));
         }
+        afterTick();
+    }
+
+    public void beforeTick() {
+    }
+
+    public void afterTick() {
     }
 
     public abstract boolean shouldSearch();

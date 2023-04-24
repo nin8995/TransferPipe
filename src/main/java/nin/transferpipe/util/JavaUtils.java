@@ -6,9 +6,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class JavaUtils {
+public interface JavaUtils {
 
-    public static Class<?> getCommonSuper(List<?> objects) {
+    static Class<?> getCommonSuper(List<?> objects) {
         return objects.stream()
                 .map(JavaUtils::getSupers)
                 .min(Comparator.comparingInt(List::size)).get().stream()
@@ -16,7 +16,7 @@ public class JavaUtils {
                 .findFirst().get();
     }
 
-    public static List<Class<?>> getSupers(Object o) {
+    static List<Class<?>> getSupers(Object o) {
         var classes = new ArrayList<Class<?>>();
 
         var currentClass = o.getClass();
@@ -29,13 +29,13 @@ public class JavaUtils {
     }
 
     @Nullable
-    public static Class<?> getCommonInterface(List<?> objects) {
+    static Class<?> getCommonInterface(List<?> objects) {
         return getInterfaces(objects).stream()
                 .filter(classToCheck -> objects.stream().allMatch(o -> classToCheck.isAssignableFrom(o.getClass())))
                 .findFirst().orElse(null);
     }
 
-    public static List<Class<?>> getInterfaces(List<?> objects) {
+    static List<Class<?>> getInterfaces(List<?> objects) {
         var interfaces = new ArrayList<Class<?>>();
 
         var currentInterfaces = new ArrayList<Class<?>>();
@@ -56,5 +56,12 @@ public class JavaUtils {
         }
 
         return interfaces;
+    }
+
+    static boolean fork(boolean forker, boolean ifTrue, boolean ifFalse) {
+        if (forker)
+            return ifTrue;
+        else
+            return ifFalse;
     }
 }

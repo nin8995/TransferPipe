@@ -6,6 +6,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.world.Container;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.WorldlyContainerHolder;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -20,29 +21,31 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
 import net.minecraftforge.items.wrapper.SidedInvWrapper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
-public class HandlerUtils {
+public interface HandlerUtils {
 
-    public static void forItemHandler(Level level, BlockPos pos, Direction dir, NonNullConsumer<? super IItemHandler> func) {
+    static void forItemHandler(Level level, BlockPos pos, Direction dir, NonNullConsumer<? super IItemHandler> func) {
         getItemHandler(level, pos, dir).ifPresent(func);
     }
 
-    public static boolean hasItemHandler(Level level, BlockPos pos, Direction dir) {
+    static boolean hasItemHandler(Level level, BlockPos pos, Direction dir) {
         return getItemHandler(level, pos, dir).isPresent();
     }
 
-    public static Map<Container, LazyOptional<IItemHandler>> containerCache = new HashMap<>();
+    Map<Container, LazyOptional<IItemHandler>> containerCache = new HashMap<>();
 
-    public static LazyOptional<IItemHandler> getItemHandler(Level level, BlockPos pos, Direction dir) {
+    static LazyOptional<IItemHandler> getItemHandler(Level level, BlockPos pos, Direction dir) {
         var be = level.getBlockEntity(pos);
         if (be != null) {
             var lo = be.getCapability(ForgeCapabilities.ITEM_HANDLER, dir);
@@ -58,13 +61,13 @@ public class HandlerUtils {
     }
 
     @Nullable
-    public static Container getContainer(Level level, BlockPos pos) {
+    static Container getContainer(Level level, BlockPos pos) {
         return level.getBlockEntity(pos) instanceof Container c ? c
                 : level.getBlockState(pos).getBlock() instanceof WorldlyContainerHolder holder ? holder.getContainer(level.getBlockState(pos), level, pos)
                 : null;
     }
 
-    public static void forFirstItemSlot(Level level, BlockPos pos, Direction dir, BiConsumer<IItemHandler, Integer> func) {
+    static void forFirstItemSlot(Level level, BlockPos pos, Direction dir, BiConsumer<IItemHandler, Integer> func) {
         forItemHandler(level, pos, dir, handler -> IntStream
                 .range(0, handler.getSlots())
                 .filter(i -> !handler.extractItem(i, 1, true).isEmpty())
@@ -72,7 +75,20 @@ public class HandlerUtils {
         );
     }
 
-    public static class TileItem<T extends BlockEntity> extends ItemStackHandler {
+    static List<Item> toItemList(IItemHandler inv) {
+        return IntStream.range(0, inv.getSlots())
+                .mapToObj(inv::getStackInSlot)
+                .map(ItemStack::getItem).toList();
+    }
+
+    static int countItem(IItemHandler inv, ItemStack item) {
+        return IntStream.range(0, inv.getSlots())
+                .filter(slot -> ItemHandlerHelper.canItemStacksStack(item, inv.getStackInSlot(slot)))
+                .map(slot -> inv.getStackInSlot(slot).getCount())
+                .reduce(Integer::sum).orElse(0);
+    }
+
+    class TileItem<T extends BlockEntity> extends ItemStackHandler {
 
         public final T be;
 
@@ -88,23 +104,23 @@ public class HandlerUtils {
         }
     }
 
-    public static void forFluidHandler(Level level, BlockPos pos, Direction dir, NonNullConsumer<? super IFluidHandler> func) {
+    static void forFluidHandler(Level level, BlockPos pos, Direction dir, NonNullConsumer<? super IFluidHandler> func) {
         var optional = getFluidHandlerOptional(level, pos, dir);
         if (optional != null)
             optional.ifPresent(func);
     }
 
-    public static boolean hasFluidHandler(Level level, BlockPos pos, Direction dir) {
+    static boolean hasFluidHandler(Level level, BlockPos pos, Direction dir) {
         var optional = getFluidHandlerOptional(level, pos, dir);
         return optional != null && optional.isPresent();
     }
 
-    public static LazyOptional<IFluidHandler> getFluidHandlerOptional(Level level, BlockPos pos, Direction dir) {
+    static LazyOptional<IFluidHandler> getFluidHandlerOptional(Level level, BlockPos pos, Direction dir) {
         var be = level.getBlockEntity(pos);
         return be != null ? be.getCapability(ForgeCapabilities.FLUID_HANDLER, dir) : null;
     }
 
-    public static class TileLiquid<T extends BlockEntity> extends FluidTank {
+    class TileLiquid<T extends BlockEntity> extends FluidTank {
 
         public final T be;
         private final ItemStackHandler dummyLiquidItem;
@@ -137,23 +153,23 @@ public class HandlerUtils {
         }
     }
 
-    public static void forEnergyStorage(Level level, BlockPos pos, Direction dir, NonNullConsumer<? super IEnergyStorage> func) {
+    static void forEnergyStorage(Level level, BlockPos pos, Direction dir, NonNullConsumer<? super IEnergyStorage> func) {
         var optional = getEnergyStorageOptional(level, pos, dir);
         if (optional != null)
             optional.ifPresent(func);
     }
 
-    public static boolean hasEnergyStorage(Level level, BlockPos pos, Direction dir) {
+    static boolean hasEnergyStorage(Level level, BlockPos pos, Direction dir) {
         var optional = getEnergyStorageOptional(level, pos, dir);
         return optional != null && optional.isPresent();
     }
 
-    public static LazyOptional<IEnergyStorage> getEnergyStorageOptional(Level level, BlockPos pos, Direction dir) {
+    static LazyOptional<IEnergyStorage> getEnergyStorageOptional(Level level, BlockPos pos, Direction dir) {
         var be = level.getBlockEntity(pos);
         return be != null ? be.getCapability(ForgeCapabilities.ENERGY, dir) : null;
     }
 
-    public static class TileEnergy<T extends BlockEntity> extends EnergyStorage {
+    class TileEnergy<T extends BlockEntity> extends EnergyStorage {
 
         public final T be;
 

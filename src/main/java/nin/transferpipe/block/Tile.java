@@ -3,6 +3,7 @@ package nin.transferpipe.block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -69,5 +70,20 @@ public abstract class Tile extends BlockEntity {
     public void setRemoved() {
         onRemove();
         super.setRemoved();
+    }
+
+    /**
+     * 省略
+     */
+    public BlockState getBlockState(BlockPos pos) {
+        return level.getBlockState(pos);
+    }
+
+    public Block getBlock(BlockPos pos) {
+        return getBlockState(pos).getBlock();
+    }
+
+    public BlockEntity getBlockEntity(BlockPos pos) {
+        return level.getBlockEntity(pos);
     }
 }

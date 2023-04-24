@@ -144,9 +144,7 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     @Override
-    public void bodyTick() {
-        super.bodyTick();
-
+    public void afterTick() {
         refreshConnections();
 
         var extractables = getEnergyStorages(extractablesLOs);
