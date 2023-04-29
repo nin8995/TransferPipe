@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import nin.transferpipe.gui.BaseScreen;
-import nin.transferpipe.util.TPUtils;
+import nin.transferpipe.util.transferpipe.TPUtils;
 
 public abstract class ScreenTransferNode<T extends MenuTransferNode> extends BaseScreen<T> {
 

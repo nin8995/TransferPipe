@@ -1,9 +1,11 @@
-package nin.transferpipe.util;
+package nin.transferpipe.util.transferpipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.util.INBTSerializable;
+import nin.transferpipe.util.minecraft.PosDirsSet;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
@@ -12,20 +14,19 @@ import java.util.stream.Collectors;
 /**
  * 検索をする。検索者と、検索のための情報を保持する。
  */
-public class SearchInstance {
+public class SearchInstance implements INBTSerializable<CompoundTag> {
 
     /**
      * 初期化処理
      */
     public Searcher searcher;
-    public final OrderedSetMap<BlockPos, Direction> queue = new OrderedSetMap<>();//探索先のキュー。探索地点と既に探索された方角の対応を保持している。決して空洞にはならない。
+    public final PosDirsSet queue = new PosDirsSet();//探索先のキュー。探索地点と既に探索された方角の対応を保持している。決して空洞にはならない。
     public BlockPos searchingPos;//今探索している場所
     public Set<Direction> prevSearchedDirs;//その地点から見て既に探索された方角
     public Level level;
 
     public SearchInstance(Searcher searcher) {
         this.searcher = searcher;
-        resetQueue();
 
         //この辺初期化しないとproceed前に参照されたときまずいから仕方なくしてる
         searchingPos = searcher.initialPos();
@@ -139,16 +140,14 @@ public class SearchInstance {
     public CompoundTag serializeNBT() {
         var tag = new CompoundTag();
 
-        tag.put(QUEUE, TPUtils.writePosDirsSetMap(queue));
+        tag.put(QUEUE, queue.serializeNBT());
 
         return tag;
     }
 
     public void deserializeNBT(CompoundTag tag) {
-        if (tag.contains(QUEUE)) {
-            queue.clear();
-            TPUtils.readPosDirs(tag.getCompound(QUEUE), queue::addAll);
-        }
+        if (tag.contains(QUEUE))
+            queue.deserializeNBT(tag.getCompound(QUEUE));
     }
 
     /**

@@ -58,8 +58,8 @@ public abstract class TileHolderEntity extends Tile {
 
     public <T, C> LazyOptional<T> orSuper(Capability<C> childCap, C childCapInstance, Capability<T> cap, Direction side) {
         return childCap == cap ? LazyOptional.of(() -> childCapInstance).cast()
-                : holdingTile != null ? holdingTile.getCapability(cap, side)
-                : super.getCapability(cap, side);
+                               : holdingTile != null ? holdingTile.getCapability(cap, side)
+                                                     : super.getCapability(cap, side);
     }
 
     public void updateTile(BlockState state) {

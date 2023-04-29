@@ -1,4 +1,4 @@
-package nin.transferpipe.util;
+package nin.transferpipe.util.transferpipe;
 
 public enum RedstoneBehavior {
     ACTIVE_LOW,

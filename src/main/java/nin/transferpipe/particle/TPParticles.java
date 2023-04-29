@@ -90,8 +90,8 @@ public interface TPParticles {
                         .mapToObj(i -> i / boxRadius / particlePerMeter)
                         .map(toVec3)
                         .map(v -> v.add(v.x != 0 ? new Vec3(0, x, y)
-                                : v.y != 0 ? new Vec3(x, 0, y)
-                                : new Vec3(x, y, 0)))
+                                                 : v.y != 0 ? new Vec3(x, 0, y)
+                                                            : new Vec3(x, y, 0)))
                         .map(v -> v.scale(boxRadius))
                         .toList())));
     }

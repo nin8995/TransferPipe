@@ -1,4 +1,4 @@
-package nin.transferpipe.util;
+package nin.transferpipe.util.transferpipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -19,6 +19,7 @@ import nin.transferpipe.block.node.TileBaseTransferNode;
 import nin.transferpipe.block.pipe.Connection;
 import nin.transferpipe.block.pipe.Flow;
 import nin.transferpipe.block.pipe.TransferPipe;
+import nin.transferpipe.util.forge.ForgeUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
@@ -34,13 +35,14 @@ public class PipeUtils {
     /**
      * パラメーター取得
      */
-
     //パイプだけがPipeStateを持つとは限らない
     public static BlockState currentState(Level level, BlockPos pos) {
         var bs = level.getBlockState(pos);
-        return bs.getBlock() instanceof TransferPipe ? bs
-                : level.getBlockEntity(pos) instanceof TileBaseTransferNode be ? be.pipeState
-                : null;//PipeStateを得得ないときにnull
+        return bs.getBlock() instanceof TransferPipe
+               ? bs
+               : level.getBlockEntity(pos) instanceof TileBaseTransferNode be
+                 ? be.pipeState
+                 : null;//PipeStateを得得ないときにnull
     }
 
     public static Block currentPipeBlock(Level level, BlockPos pos) {
@@ -97,8 +99,8 @@ public class PipeUtils {
 
     public static Connection calcConnection(Level l, BlockPos bp, Flow f, Direction d) {
         return shouldConnectToMachine(f, l, bp, d) ? MACHINE
-                : shouldConnectToPipe(f, l, bp, d) ? Connection.PIPE
-                : Connection.NONE;
+                                                   : shouldConnectToPipe(f, l, bp, d) ? Connection.PIPE
+                                                                                      : Connection.NONE;
     }
 
     public static boolean shouldConnectToMachine(Flow f, Level l, BlockPos p, Direction d) {
@@ -109,9 +111,9 @@ public class PipeUtils {
 
     public static boolean isWorkPlace(Level level, BlockPos pos, @Nullable Direction dir) {
         return !(level.getBlockState(pos).getBlock() instanceof TransferPipe || level.getBlockEntity(pos) instanceof TileBaseTransferNode)
-                && (HandlerUtils.hasItemHandler(level, pos, dir)
-                || HandlerUtils.hasFluidHandler(level, pos, dir)
-                || HandlerUtils.hasEnergyStorage(level, pos, dir));
+                && (ForgeUtils.hasItemHandler(level, pos, dir)
+                || ForgeUtils.hasFluidHandler(level, pos, dir)
+                || ForgeUtils.hasEnergyStorage(level, pos, dir));
     }
 
     public static boolean shouldConnectToPipe(Flow myFlow, Level l, BlockPos bp, Direction d) {

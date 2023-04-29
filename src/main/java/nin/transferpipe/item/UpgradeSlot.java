@@ -4,7 +4,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import nin.transferpipe.util.TPUtils;
+import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class UpgradeSlot extends SlotItemHandler {

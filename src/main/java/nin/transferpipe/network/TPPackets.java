@@ -6,7 +6,7 @@ import com.mojang.datafixers.util.Function5;
 import com.mojang.datafixers.util.Function6;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-import nin.transferpipe.util.TPUtils;
+import nin.transferpipe.util.transferpipe.TPUtils;
 
 import java.util.function.*;
 

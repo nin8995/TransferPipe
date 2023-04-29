@@ -25,8 +25,8 @@ import nin.transferpipe.block.LightingBlock;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.gui.BaseBlockMenu;
-import nin.transferpipe.util.PipeUtils;
-import nin.transferpipe.util.TPUtils;
+import nin.transferpipe.util.transferpipe.PipeUtils;
+import nin.transferpipe.util.transferpipe.TPUtils;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;

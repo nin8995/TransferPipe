@@ -13,7 +13,7 @@ import net.minecraft.world.level.Level;
 import nin.transferpipe.gui.BaseItemMenu;
 import nin.transferpipe.gui.BaseScreen;
 import nin.transferpipe.network.TPPackets;
-import nin.transferpipe.util.TPUtils;
+import nin.transferpipe.util.transferpipe.TPUtils;
 
 public class RationingUpgradeItem extends FunctionUpgrade {
 

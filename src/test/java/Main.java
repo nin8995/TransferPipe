@@ -5,11 +5,15 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.stream.IntStream;
 
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println(TileTransferNodeItem.relativeInventoryPositions.get(Direction.UP));
+        var a = IntStream.of(10).boxed().toList();
+        ;
+        System.out.println(a.stream().map(i -> i*19).toList());
+        System.out.println(a);
     }/*
 
     public void tryPull(Container container, Direction dir) {

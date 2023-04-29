@@ -3,8 +3,8 @@ package nin.transferpipe.item;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import nin.transferpipe.util.JavaUtils;
-import nin.transferpipe.util.TPUtils;
+import nin.transferpipe.util.java.JavaUtils;
+import nin.transferpipe.util.transferpipe.TPUtils;
 
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -43,8 +43,8 @@ public class SortingUpgrade extends FunctionUpgrade {
         var commonSuper = JavaUtils.getCommonSuper(objects);
         var commonInterface = JavaUtils.getCommonInterface(objects);
         var commonClass = commonInterface != null
-                ? commonInterface.isAssignableFrom(commonSuper) ? commonSuper : commonInterface
-                : commonSuper;
+                          ? commonInterface.isAssignableFrom(commonSuper) ? commonSuper : commonInterface
+                          : commonSuper;
         return commonClass.isAssignableFrom(blockWhenBlockItem(toPush).getClass());
     });
 

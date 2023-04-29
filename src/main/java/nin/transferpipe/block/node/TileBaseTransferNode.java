@@ -27,7 +27,8 @@ import nin.transferpipe.block.pipe.Connection;
 import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.item.*;
 import nin.transferpipe.particle.TPParticles;
-import nin.transferpipe.util.*;
+import nin.transferpipe.util.java.UtilSetMap;
+import nin.transferpipe.util.transferpipe.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -47,7 +48,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     @Nullable
     public Direction FACING;
     public BlockPos FACING_POS;
-    public SearchInstance search;
+    public SearchInstance searchManager;
     public final ItemStackHandler upgrades;
     public BlockState pipeState = TPBlocks.TRANSFER_PIPE.get().defaultBlockState();
 
@@ -55,7 +56,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
         super(p_155228_, p_155229_, p_155230_);
         POS = this.worldPosition;
         updateFacing();
-        search = new SearchInstance(this);
+        searchManager = new SearchInstance(this);
         upgrades = new UpgradeHandler(6, this);
     }
 
@@ -80,13 +81,14 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     public void onLoad() {
         super.onLoad();
         calcUpgrades();
-        search.onLoad(level);
+        searchManager.onLoad(level);
     }
 
     @Override
     public void onFirstTick() {
         super.onFirstTick();
         setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipeState));
+        searchManager.resetQueue();
     }
 
     public void setPipeStateAndUpdate(BlockState state) {
@@ -173,30 +175,15 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
             setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, TPBlocks.TRANSFER_PIPE.get().defaultBlockState()));
     }
 
+    public int wi() {
+        return (int) worldInteraction;
+    }
+
     /**
      * 毎tick処理
      */
     public int cooltime;
     public boolean isSearching;
-    public ContainerData searchData = new ContainerData() {
-        public int get(int p_58431_) {
-            return switch (p_58431_) {
-                case 0 -> isSearching ? 1 : 0;
-                case 1 -> search.searchingPos.getX();
-                case 2 -> search.searchingPos.getY();
-                case 3 -> search.searchingPos.getZ();
-                default -> 0;
-            };
-        }
-
-        public void set(int p_58433_, int i) {
-        }
-
-        @Override
-        public int getCount() {
-            return 4;
-        }
-    };
 
     @Override
     public final void tick() {
@@ -209,9 +196,9 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
         beforeTick();
         cooltime -= coolRate;
         for (; cooltime <= 0; cooltime += 20) {
-            isSearching = shouldSearch() && !(getBlockEntity(search.getNextPos()) == this && !shouldRenderPipe());
+            isSearching = shouldSearch() && !(getBlockEntity(searchManager.getNextPos()) == this && !shouldRenderPipe());
             if (isSearching)
-                search.proceed();
+                searchManager.proceed();
 
             if (FACING != null)
                 facing(FACING_POS, FACING.getOpposite());
@@ -276,7 +263,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     }
 
     @Override
-    public BlockPos pickNext(OrderedSetMap<BlockPos, Direction> queue) {
+    public BlockPos pickNext(UtilSetMap<BlockPos, Direction> queue) {
         return breadthFirst ? queue.getFirstKey() : Searcher.super.pickNext(queue);
     }
 
@@ -337,9 +324,9 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     public abstract Vector3f getColor();
 
     /**
-     * NBT
+     * ゴミ処理場
      */
-    public static final String SEARCH = "Search";
+    public static final String SEARCH_MANAGER = "SearchManager";
     public static final String UPGRADES = "Upgrades";
     public static final String PIPE_STATE = "PipeState";
     public static final String COOLTIME = "Cooltime";
@@ -347,7 +334,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put(SEARCH, search.serializeNBT());
+        tag.put(SEARCH_MANAGER, searchManager.serializeNBT());
         tag.put(UPGRADES, upgrades.serializeNBT());
         tag.put(PIPE_STATE, NbtUtils.writeBlockState(pipeState));
         tag.putInt(COOLTIME, cooltime);
@@ -356,8 +343,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        if (tag.contains(SEARCH))
-            search.deserializeNBT(tag.getCompound(SEARCH));
+        if (tag.contains(SEARCH_MANAGER))
+            searchManager.deserializeNBT(tag.getCompound(SEARCH_MANAGER));
         if (tag.contains(UPGRADES))
             upgrades.deserializeNBT(tag.getCompound(UPGRADES));
         if (tag.contains(PIPE_STATE))
@@ -379,4 +366,24 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     public Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
+
+    public ContainerData searchData = new ContainerData() {
+        public int get(int p_58431_) {
+            return switch (p_58431_) {
+                case 0 -> isSearching ? 1 : 0;
+                case 1 -> searchManager.searchingPos.getX();
+                case 2 -> searchManager.searchingPos.getY();
+                case 3 -> searchManager.searchingPos.getZ();
+                default -> 0;
+            };
+        }
+
+        public void set(int p_58433_, int i) {
+        }
+
+        @Override
+        public int getCount() {
+            return 4;
+        }
+    };
 }

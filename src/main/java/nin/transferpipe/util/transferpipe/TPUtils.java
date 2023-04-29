@@ -1,4 +1,4 @@
-package nin.transferpipe.util;
+package nin.transferpipe.util.transferpipe;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -13,7 +13,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.tags.TagKey;
@@ -35,6 +34,7 @@ import net.minecraftforge.fluids.FluidStack;
 import nin.transferpipe.TPMod;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.mixin.AtlasAccessor;
+import nin.transferpipe.util.java.Consumer3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -44,7 +44,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,9 +51,8 @@ import java.util.stream.Stream;
 public interface TPUtils {
 
     /**
-     * 当たり判定
+     * VoxelShape
      */
-
     static Map<Direction, VoxelShape> getRotatedShapes(VoxelShape s) {
         return Direction.stream().collect(Collectors.toMap(UnaryOperator.identity(), d -> rotate(s, d)));
     }
@@ -91,9 +89,8 @@ public interface TPUtils {
     }
 
     /**
-     * レンダー
+     * Render
      */
-
     static void renderBlockStateWithoutSeed(BlockState blockState, Level level, BlockPos pos, BlockRenderDispatcher renderer, PoseStack pose, MultiBufferSource mbs, int nazo) {
         var model = renderer.getBlockModel(blockState);
         model.getRenderTypes(blockState, level.random, ModelData.EMPTY).forEach(renderType ->
@@ -198,33 +195,6 @@ public interface TPUtils {
         }
     }
 
-    static <K1, K2, V> void addToMapMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2, V value) {
-        if (map.containsKey(key1))
-            map.get(key1).put(key2, value);
-        else
-            map.put(key1, new HashMap<>(Map.of(key2, value)));
-    }
-
-    static <A, B, C> void removeFromMapMap(Map<A, Map<B, C>> map, Predicate3<A, B, C> shouldRemove) {
-        var toRemove = new HashMap<A, Set<B>>();
-        map.forEach((a, value) -> value.forEach((b, c) -> {
-            if (shouldRemove.test(a, b, c))
-                addToSetMap(toRemove, a, b);
-        }));
-        toRemove.forEach((a, value) -> value.forEach(b -> TPUtils.removeFromMapMap(map, a, b)));
-    }
-
-    interface Predicate3<A, B, C> {
-
-        boolean test(A a, B b, C c);
-    }
-
-    static <K1, K2, V> void removeFromMapMap(Map<K1, Map<K2, V>> map, K1 key1, K2 key2) {
-        map.get(key1).remove(key2);
-        if (map.get(key1).isEmpty())
-            map.remove(key1);
-    }
-
     static <A, B> void removeFromMap(Map<A, B> map, BiPredicate<A, B> shouldRemove, Consumer<A> terminalFunc) {
         var toRemove = new HashSet<A>();
         map.forEach((a, b) -> {
@@ -234,102 +204,6 @@ public interface TPUtils {
         toRemove.forEach(pos -> {
             terminalFunc.accept(pos);
             map.remove(pos);
-        });
-    }
-
-    String POS = "Pos";
-    String DIRS = "Dirs";
-
-    @SafeVarargs
-    static CompoundTag writePosDirsSetMap(Map<BlockPos, Set<Direction>>... setMaps) {
-        var tag = new CompoundTag();
-        AtomicInteger i = new AtomicInteger(0);
-        for (Map<BlockPos, Set<Direction>> setMap : setMaps)
-            putPosDirsFromSetMapTo(setMap, tag, i);
-
-        return tag;
-    }
-
-    @SafeVarargs
-    static <T> CompoundTag writePosDirsMapMap(BiConsumer<CompoundTag, T> writer, Map<BlockPos, Map<Direction, T>>... mapMaps) {
-        var tag = new CompoundTag();
-        AtomicInteger i = new AtomicInteger(0);
-        for (Map<BlockPos, Map<Direction, T>> mapMap : mapMaps)
-            putPosDirsFromMapMapTo(mapMap, writer, tag, i);
-
-        return tag;
-    }
-
-    static void putPosDirsFromSetMapTo(Map<BlockPos, Set<Direction>> setMap, CompoundTag tag, AtomicInteger i) {
-        setMap.forEach((pos, dirs) -> putPosDirsTo(tag, pos, dirs, i));
-    }
-
-    static <T> void putPosDirsFromMapMapTo(Map<BlockPos, Map<Direction, T>> mapMap, BiConsumer<CompoundTag, T> writer, CompoundTag tag, AtomicInteger i) {
-        mapMap.forEach((pos, dirsMap) -> {
-            var subTag = new CompoundTag();
-            subTag.put(POS, NbtUtils.writeBlockPos(pos));
-            dirsMap.forEach((dir, value) -> {
-                var tTag = new CompoundTag();
-                writer.accept(tTag, value);
-                subTag.put(dir.toString(), tTag);
-            });
-
-            tag.put(String.valueOf(i), subTag);
-            i.getAndIncrement();
-        });
-    }
-
-    static void putPosDirsTo(CompoundTag tag, BlockPos pos, Set<Direction> dirs, AtomicInteger i) {
-        var subTag = new CompoundTag();
-        subTag.put(POS, NbtUtils.writeBlockPos(pos));
-        subTag.putIntArray(DIRS, dirs.stream().map(Enum::ordinal).toList());
-
-        tag.put(String.valueOf(i), subTag);
-        i.getAndIncrement();
-    }
-
-    static void readPosDirs(CompoundTag tag, BiConsumer<BlockPos, Set<Direction>> readFunc) {
-        tag.getAllKeys().forEach(i -> {
-            var entryTag = tag.getCompound(i);
-            var pos = NbtUtils.readBlockPos(entryTag.getCompound(POS));
-            var dirs = Arrays.stream(entryTag.getIntArray(DIRS)).mapToObj(j -> Direction.values()[j]).collect(Collectors.toSet());
-            readFunc.accept(pos, dirs);
-        });
-    }
-
-    static <T> void readPosDirsMap(CompoundTag tag, Function<CompoundTag, T> translateFunc, BiConsumer<BlockPos, Map<Direction, T>> readFunc) {
-        tag.getAllKeys().forEach(i -> {
-            var subTag = tag.getCompound(i);
-            var pos = NbtUtils.readBlockPos(subTag.getCompound(POS));
-            var dirsMap = new HashMap<Direction, T>();
-            Direction.stream().filter(d -> subTag.contains(d.toString())).forEach(d ->
-                    dirsMap.put(d, translateFunc.apply(subTag.getCompound(d.toString()))));
-
-            readFunc.accept(pos, dirsMap);
-        });
-    }
-
-    static <T> CompoundTag writePosMap(Map<BlockPos, T> map, BiConsumer<CompoundTag, T> writer) {
-        var tag = new CompoundTag();
-        AtomicInteger i = new AtomicInteger(0);
-
-        map.forEach((pos, t) -> {
-            var subTag = new CompoundTag();
-            subTag.put(POS, NbtUtils.writeBlockPos(pos));
-            writer.accept(subTag, t);
-            tag.put(i.toString(), subTag);
-            i.getAndIncrement();
-        });
-
-        return tag;
-    }
-
-    static <T> void readPosMap(CompoundTag tag, Function<CompoundTag, T> translateFunc, BiConsumer<BlockPos, T> readFunc) {
-        tag.getAllKeys().forEach(i -> {
-            var subTag = tag.getCompound(i);
-            var pos = NbtUtils.readBlockPos(subTag.getCompound(POS));
-            var t = translateFunc.apply(subTag);
-            readFunc.accept(pos, t);
         });
     }
 
@@ -368,11 +242,9 @@ public interface TPUtils {
         return getter.apply(tag, key);
     }
 
-    interface Consumer3<A, B, C> {
-
-        void accept(A a, B b, C c);
-    }
-
+    /**
+     * Creative Tab
+     */
     @Nullable
     static CreativeModeTab getFirstlyContainedTab(Item checked) {
         //modタブがあればそこだけ重点的に検索
@@ -399,6 +271,9 @@ public interface TPUtils {
         return Arrays.stream(items).anyMatch(item::is);
     }
 
+    /**
+     * Tag
+     */
     static boolean sameItemSameTagExcept(ItemStack item, ItemStack filteringItem, String tagKey) {
         var noDamageItem = item.copy();
         removeTag(noDamageItem, tagKey);
@@ -426,12 +301,9 @@ public interface TPUtils {
         return items.stream().filter(i -> i != Items.AIR).toList();
     }
 
-    static Set<TagKey<Item>> getAvailableTags(List<Item> items) {
-        return items.stream()
-                .flatMap(i -> i.builtInRegistryHolder().tags())
-                .collect(Collectors.toSet());
-    }
-
+    /**
+     * ItemStack
+     */
     static ItemStack copyWithSub(ItemStack item, ItemStack sub) {
         return item.copyWithCount(item.getCount() - sub.getCount());
     }
@@ -444,6 +316,9 @@ public interface TPUtils {
         return item.copyWithCount(item.getCount() * scale);
     }
 
+    /**
+     * FluidStack
+     */
     static FluidStack copyWithAddition(FluidStack fluid, int addition) {
         return copyWithAmount(fluid, fluid.getAmount() + addition);
     }
@@ -454,6 +329,9 @@ public interface TPUtils {
         return copy;
     }
 
+    /**
+     * Direction
+     */
     static Vec3 getDirectionalCenter(BlockPos pos, Direction dir) {
         return pos.getCenter().relative(dir, 0.5);
     }
@@ -464,10 +342,6 @@ public interface TPUtils {
 
     static Vec3 relative(BlockPos pos, Direction dir, double length) {
         return getDirectionalCenter(pos, dir.getOpposite()).add(toVector(dir, length));
-    }
-
-    static double log(double base, double antilogarithm) {
-        return Math.log(antilogarithm) / Math.log(base);
     }
 
     static Quaternionf rotation(Direction dir) {

@@ -1,4 +1,4 @@
-package nin.transferpipe.util;
+package nin.transferpipe.util.java;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -8,6 +8,9 @@ import java.util.stream.Stream;
 
 public interface JavaUtils {
 
+    /**
+     * 共通クラス取得
+     */
     static Class<?> getCommonSuper(List<?> objects) {
         return objects.stream()
                 .map(JavaUtils::getSupers)
@@ -58,10 +61,17 @@ public interface JavaUtils {
         return interfaces;
     }
 
+    /**
+     * 省略
+     */
     static boolean fork(boolean forker, boolean ifTrue, boolean ifFalse) {
         if (forker)
             return ifTrue;
         else
             return ifFalse;
+    }
+
+    static double log(double base, double antilogarithm) {
+        return Math.log(antilogarithm) / Math.log(base);
     }
 }

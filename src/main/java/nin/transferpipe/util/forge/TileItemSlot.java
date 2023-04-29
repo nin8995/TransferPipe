@@ -1,10 +1,10 @@
-package nin.transferpipe.util;
+package nin.transferpipe.util.forge;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.ItemHandlerHelper;
 
-public class TileItemSlot<T extends BlockEntity> extends HandlerUtils.TileItem<T> {
+public class TileItemSlot<T extends BlockEntity> extends TileItemHandler<T> {
 
     public TileItemSlot(T be) {
         super(1, be);

@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 
 public abstract class Tile extends BlockEntity {
 
@@ -85,5 +86,9 @@ public abstract class Tile extends BlockEntity {
 
     public BlockEntity getBlockEntity(BlockPos pos) {
         return level.getBlockEntity(pos);
+    }
+
+    public Fluid getFluid(BlockPos pos) {
+        return level.getFluidState(pos).getType();
     }
 }

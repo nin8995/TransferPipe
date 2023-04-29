@@ -7,7 +7,7 @@ import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import nin.transferpipe.block.node.TileTransferNodeItem;
-import nin.transferpipe.util.HandlerUtils;
+import nin.transferpipe.util.forge.ForgeUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +58,7 @@ public class ReferenceCraftingGrid extends CraftingContainer {
         return inventoryReferences.entrySet().stream().anyMatch(e -> {
             var gridNumber = e.getKey();
             var inventory = e.getValue().getFirst();
-            return HandlerUtils.getItemHandler(node.getLevel(), node.inventoryPozzes.get(gridNumber), node.FACING).map(inv -> inv != inventory).orElse(true);
+            return ForgeUtils.getItemHandler(node.getLevel(), node.inventoryPozzes.get(gridNumber), node.FACING).map(inv -> inv != inventory).orElse(true);
         });
     }
 }

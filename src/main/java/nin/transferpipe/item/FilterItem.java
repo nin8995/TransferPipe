@@ -18,7 +18,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import nin.transferpipe.gui.BaseItemMenu;
 import nin.transferpipe.gui.BaseScreen;
-import nin.transferpipe.util.TPUtils;
+import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,9 +57,9 @@ public class FilterItem extends UpgradeItem implements GUIItem {
             var filtered = IntStream.range(0, filteringItems(filter).getSlots()).anyMatch(i -> {
                 var filteringItem = filteringItems(filter).getStackInSlot(i);
                 return filteringItem.getItem() instanceof FilterItem f ? f.getFilter(filteringItem).test(item)
-                        : ignoreNBT(filter) ? filteringItem.is(item.getItem())
-                        : ignoreDurability(filter) ? TPUtils.sameItemSameTagExcept(item, filteringItem, "Damage")
-                        : ItemStack.isSameItemSameTags(item, filteringItem);
+                                                                       : ignoreNBT(filter) ? filteringItem.is(item.getItem())
+                                                                                           : ignoreDurability(filter) ? TPUtils.sameItemSameTagExcept(item, filteringItem, "Damage")
+                                                                                                                      : ItemStack.isSameItemSameTags(item, filteringItem);
             });
             return inverted(filter) != filtered;
         };

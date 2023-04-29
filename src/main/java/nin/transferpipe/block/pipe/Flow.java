@@ -5,7 +5,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.Level;
 import nin.transferpipe.block.node.BlockTransferNode;
-import nin.transferpipe.util.PipeUtils;
+import nin.transferpipe.util.transferpipe.PipeUtils;
 
 import java.util.Arrays;
 import java.util.Set;

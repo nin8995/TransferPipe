@@ -1,7 +1,8 @@
-package nin.transferpipe.util;
+package nin.transferpipe.util.transferpipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import nin.transferpipe.util.java.UtilSetMap;
 
 import java.util.Collections;
 import java.util.Set;
@@ -48,7 +49,7 @@ public interface Searcher {
         return false;
     }
 
-    default BlockPos pickNext(OrderedSetMap<BlockPos, Direction> queue) {
+    default BlockPos pickNext(UtilSetMap<BlockPos, Direction> queue) {
         return queue.getLastKey();
     }
 

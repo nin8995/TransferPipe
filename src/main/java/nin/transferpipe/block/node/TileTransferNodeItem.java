@@ -18,10 +18,10 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.gui.ReferenceCraftingGrid;
-import nin.transferpipe.util.HandlerUtils;
-import nin.transferpipe.util.JavaUtils;
-import nin.transferpipe.util.TPUtils;
-import nin.transferpipe.util.TileItemSlot;
+import nin.transferpipe.util.forge.ForgeUtils;
+import nin.transferpipe.util.forge.TileItemSlot;
+import nin.transferpipe.util.java.JavaUtils;
+import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -65,8 +65,8 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     @Override
     public void facing(BlockPos pos, Direction dir) {
         if (itemSlot.getFreeSpace() > 0)
-            if (HandlerUtils.hasItemHandler(level, pos, dir))
-                HandlerUtils.forItemHandler(level, pos, dir, this::tryExtract);
+            if (ForgeUtils.hasItemHandler(level, pos, dir))
+                ForgeUtils.forItemHandler(level, pos, dir, this::tryExtract);
             else if (worldInteraction > 0)
                 tryWorldInteraction(pos, dir);
     }
@@ -87,7 +87,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     public int getExtractableAmount(ItemStack toExtract, boolean byWorldInteraction) {
         var extractionSpeed = stackMode ? itemSlot.getMaxStackSize() : 1;
         if (byWorldInteraction)
-            extractionSpeed = Math.max(extractionSpeed, itemWI());
+            extractionSpeed = Math.max(extractionSpeed, wi());
 
         return Math.min(extractionSpeed, getReceivableAmount(toExtract, byWorldInteraction));
     }
@@ -95,13 +95,9 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     public int getReceivableAmount(ItemStack toReceive, boolean byWorldInteraction) {
         var freeSpace = itemSlot.getFreeSpace();
         if (byWorldInteraction)
-            freeSpace = Math.max(freeSpace, itemSlot.getFreeSpace(itemWI()));
+            freeSpace = Math.max(freeSpace, itemSlot.getFreeSpace(wi()));
 
         return Math.min(toReceive.getCount(), freeSpace);
-    }
-
-    public int itemWI() {
-        return (int) worldInteraction;
     }
 
     /**
@@ -109,7 +105,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
      */
     @Override
     public boolean canWork(BlockPos pos, Direction d) {
-        return HandlerUtils.getItemHandler(level, pos, d).map(this::canInsert).orElse(false);
+        return ForgeUtils.getItemHandler(level, pos, d).map(this::canInsert).orElse(false);
     }
 
     public boolean canInsert(IItemHandler inv) {
@@ -119,7 +115,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     @Override
     public void work(BlockPos pos, Direction dir) {
         if (!itemSlot.isEmpty())
-            HandlerUtils.forItemHandler(level, pos, dir, this::tryInsert);
+            ForgeUtils.forItemHandler(level, pos, dir, this::tryInsert);
     }
 
     public void tryInsert(IItemHandler inv) {
@@ -129,7 +125,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
 
     public ItemStack insert(IItemHandler inv, boolean simulate) {
         var self = itemSlot.getItem();
-        var itemToInsert = getPushableItem(inv, self);
+        var itemToInsert = getInsertableItem(inv, self);
         if (itemToInsert.isEmpty())
             return self;//failed
 
@@ -138,17 +134,20 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
             return self;//failed
 
         var filteredAmount = self.getCount() - itemToInsert.getCount();
-        return self.copyWithCount(remainder.getCount() + filteredAmount);//succeeded and return remainder
+        return self.copyWithCount(filteredAmount + remainder.getCount());//succeeded and return remainder
     }
 
-    public ItemStack getPushableItem(IItemHandler inv, ItemStack item) {
+    public ItemStack getInsertableItem(IItemHandler inv, ItemStack self) {
+        if (self.isEmpty())
+            return ItemStack.EMPTY;
+
         //test sort
-        if (!sortingFunc.test(HandlerUtils.toItemList(inv), item.getItem()))
+        if (!sortingFunc.test(ForgeUtils.toItemList(inv), self.getItem()))
             return ItemStack.EMPTY;
 
         //consider ration
-        var ration = itemRation - HandlerUtils.countItem(inv, item);
-        return item.copyWithCount(Math.min(ration, item.getCount()));
+        var ration = itemRation - ForgeUtils.countItem(inv, self);
+        return self.copyWithCount(Math.min(ration, self.getCount()));
     }
 
     /**
@@ -164,7 +163,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     public void tryVacuum(BlockPos pos, Direction boxDir) {
-        var boxSize = 1 + 2 * TPUtils.log(2, worldInteraction);
+        var boxSize = 1 + 2 * JavaUtils.log(2, worldInteraction);
         var boxCenter = TPUtils.relative(pos, boxDir, boxSize / 2);
         var box = AABB.ofSize(boxCenter, boxSize, boxSize, boxSize);
         for (ItemEntity dropItem : level.getEntitiesOfClass(ItemEntity.class, box).stream()
@@ -234,7 +233,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
             updateInventoryPozzes();//な　ぜ　か　本当になぜか　上で初期化してるのに、初期化前の状態で来る。どうして？？？
 
         IntStream.range(0, craftSlots.getContainerSize()).forEach(i ->
-                HandlerUtils.forFirstItemSlot(level, inventoryPozzes.get(i), FACING, (inventory, slot) -> {
+                ForgeUtils.forFirstItemSlot(level, inventoryPozzes.get(i), FACING, (inventory, slot) -> {
                     craftSlots.setItem(i, inventory, slot);
                     if (addParticle)
                         itemPositions.add(inventoryPozzes.get(i));
@@ -250,7 +249,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     public void tryAutoCraft() {
         if (recipe != null && !(craftSlots.getMinAmount() <= 0 && updateRecipe() == null)) {
             var item = recipe.assemble(craftSlots, level.registryAccess());
-            var craftableTimes = Math.min(craftSlots.getMinAmount(), itemWI());
+            var craftableTimes = Math.min(craftSlots.getMinAmount(), wi());
             var craftableItems = TPUtils.copyWithScale(item, craftableTimes);
             var receivableTimes = getReceivableAmount(craftableItems, true) / item.getCount();
             if (receivableTimes > 0) {
@@ -272,7 +271,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
         var block = getBlock(pos);
         var item = block.asItem().getDefaultInstance();
         if (shouldReceive(item))
-            if (block == Blocks.COBBLESTONE && isBetween(pos, Blocks.WATER, Blocks.LAVA)) {
+            if (block == Blocks.COBBLESTONE && isBetween(pos, Blocks.WATER, Blocks.LAVA)) {//TODO 丸石以外も
                 var generatableItems = item.copyWithCount((int) worldInteraction);
                 var receivableItems = item.copyWithCount(getReceivableAmount(generatableItems, true));
                 itemSlot.receive(receivableItems);
