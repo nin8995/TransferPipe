@@ -27,7 +27,7 @@ public class TileItemSlot<T extends BlockEntity> extends TileItemHandler<T> {
     }
 
     public int getMaxStackSize() {
-        return getItem().getMaxStackSize();
+        return (int) (getItem().getMaxStackSize() * capacityRate);
     }
 
     public int getFreeSpace() {

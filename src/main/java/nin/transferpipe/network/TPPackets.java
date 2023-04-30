@@ -6,14 +6,14 @@ import com.mojang.datafixers.util.Function5;
 import com.mojang.datafixers.util.Function6;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-import nin.transferpipe.util.transferpipe.TPUtils;
+import nin.transferpipe.TPMod;
 
 import java.util.function.*;
 
 public class TPPackets {
 
     private static final String PROTOCOL_VERSION = "1";
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(TPUtils.modLoc("main"), () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals, PROTOCOL_VERSION::equals);
+    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(TPMod.loc("main"), () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals, PROTOCOL_VERSION::equals);
     private static int i = 0;
 
     public static BiConsumer<Integer, Integer> REGULATE_RATION = sendToServer2(register(RegulateRationPacket::new));

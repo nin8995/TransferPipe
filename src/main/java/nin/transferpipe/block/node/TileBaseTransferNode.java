@@ -20,7 +20,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.pipe.Connection;
@@ -28,7 +27,11 @@ import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.item.*;
 import nin.transferpipe.particle.TPParticles;
 import nin.transferpipe.util.java.UtilSetMap;
-import nin.transferpipe.util.transferpipe.*;
+import nin.transferpipe.util.minecraft.MCUtils;
+import nin.transferpipe.util.transferpipe.RedstoneBehavior;
+import nin.transferpipe.util.transferpipe.SearchInstance;
+import nin.transferpipe.util.transferpipe.Searcher;
+import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -37,7 +40,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
-import java.util.stream.IntStream;
 
 public abstract class TileBaseTransferNode extends TileHolderEntity implements Searcher, TPItems {
 
@@ -49,7 +51,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     public Direction FACING;
     public BlockPos FACING_POS;
     public SearchInstance searchManager;
-    public final ItemStackHandler upgrades;
+    public final UpgradeHandler upgrades;
     public BlockState pipeState = TPBlocks.TRANSFER_PIPE.get().defaultBlockState();
 
     public TileBaseTransferNode(BlockEntityType<? extends TileBaseTransferNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
@@ -87,8 +89,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     @Override
     public void onFirstTick() {
         super.onFirstTick();
-        setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipeState));
-        searchManager.resetQueue();
+        setPipeStateAndUpdate(TPUtils.calcInitialState(level, POS, pipeState));
+        searchManager.reset();
     }
 
     public void setPipeStateAndUpdate(BlockState state) {
@@ -102,11 +104,13 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
      * アップグレード
      */
     public float coolRate;
+    public float capacityRate;
     public float worldInteraction;
     public boolean stackMode;
     public boolean pseudoRoundRobin;
     public boolean depthFirst;
     public boolean breadthFirst;
+    public boolean searchMemory;
     public boolean addParticle;
     public RedstoneBehavior redstoneBehavior;
     public int itemRation;
@@ -116,11 +120,13 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
 
     public void calcUpgrades() {
         coolRate = 2;
+        capacityRate = 1;
         worldInteraction = 0;
         stackMode = false;
         pseudoRoundRobin = false;
         depthFirst = false;
         breadthFirst = false;
+        searchMemory = false;
         addParticle = false;
         redstoneBehavior = RedstoneBehavior.ACTIVE_LOW;
         itemRation = Integer.MAX_VALUE;
@@ -130,15 +136,18 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
 
         var pipeRemoved = new AtomicBoolean(pipeState.getBlock() != TPBlocks.TRANSFER_PIPE.get());
 
-        IntStream.range(0, upgrades.getSlots()).forEach(slot -> {
-            var upgrade = upgrades.getStackInSlot(slot);
+        upgrades.forEachItem(upgrade -> {
             if (upgrade.is(SPEED_UPGRADE.get()))
                 coolRate += upgrade.getCount();
+            else if (upgrade.is(CAPACITY_UPGRADE.get()))
+                capacityRate += upgrade.getCount();
             else if (upgrade.is(WORLD_INTERACTION_UPGRADE.get()))
                 worldInteraction += upgrade.getCount();
             else if (upgrade.is(OVERCLOCK_UPGRADE.get())) {
-                coolRate *= Math.pow(1.01, upgrade.getCount());
-                worldInteraction *= Math.pow(1.01, upgrade.getCount());
+                var multiplier = Math.pow(1.01, upgrade.getCount());
+                coolRate *= multiplier;
+                capacityRate *= multiplier;
+                worldInteraction *= multiplier;
             } else if (upgrade.is(STACK_UPGRADE.get()))
                 stackMode = true;
             else if (upgrade.is(PSEUDO_ROUND_ROBIN_UPGRADE.get()))
@@ -147,6 +156,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
                 depthFirst = true;
             else if (upgrade.is(BREADTH_FIRST_SEARCH_UPGRADE.get()))
                 breadthFirst = true;
+            else if (upgrade.is(SEARCH_MEMORY_UPGRADE.get()))
+                searchMemory = true;
             else if (upgrade.is(Items.GLOWSTONE_DUST))
                 addParticle = true;
             else if (upgrade.is(Items.REDSTONE))
@@ -165,14 +176,14 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
 
             else if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe) {
                 if (pipe != pipeState.getBlock())
-                    setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
+                    setPipeStateAndUpdate(TPUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
                 else
                     pipeRemoved.set(false);
             }
         });
 
         if (pipeRemoved.get())
-            setPipeStateAndUpdate(PipeUtils.calcInitialState(level, POS, TPBlocks.TRANSFER_PIPE.get().defaultBlockState()));
+            setPipeStateAndUpdate(TPUtils.calcInitialState(level, POS, TPBlocks.TRANSFER_PIPE.get().defaultBlockState()));
     }
 
     public int wi() {
@@ -233,7 +244,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
 
     @Override
     public boolean isDest(BlockPos pos, Direction dir, BlockPos relativePos, Direction workDir) {
-        return PipeUtils.currentConnection(level, pos, dir) == Connection.MACHINE
+        return TPUtils.currentConnection(level, pos, dir) == Connection.MACHINE
                 && canWork(relativePos, workDir);
     }
 
@@ -250,7 +261,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
 
     @Override
     public boolean canProceed(BlockPos pos, Direction dir, BlockPos relativePos, Direction workDir) {
-        return PipeUtils.canProceedPipe(level, pos, dir, this);
+        return TPUtils.canProceedPipe(level, pos, dir, this);
     }
 
     @Override
@@ -258,6 +269,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
         return !pseudoRoundRobin;
     }
 
+    @Override
     public boolean isFullSearch() {
         return breadthFirst || depthFirst;
     }
@@ -265,6 +277,11 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     @Override
     public BlockPos pickNext(UtilSetMap<BlockPos, Direction> queue) {
         return breadthFirst ? queue.getFirstKey() : Searcher.super.pickNext(queue);
+    }
+
+    @Override
+    public boolean useMemory() {
+        return searchMemory;
     }
 
     @Override
@@ -291,13 +308,13 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
             var level = be.getLevel();
 
             if (be.shouldRenderPipe() && level != null)//いつlevelがnullになるの
-                TPUtils.renderBlockStateWithoutSeed(be.pipeState, level, be.getBlockPos(),
+                MCUtils.renderBlockStateWithoutSeed(be.pipeState, level, be.getBlockPos(),
                         blockRenderer, pose, mbs, p_112311_);
         }
     }
 
     public boolean shouldRenderPipe() {
-        return !PipeUtils.centerOnly(pipeState);
+        return !TPUtils.centerOnly(pipeState);
     }
 
     /**

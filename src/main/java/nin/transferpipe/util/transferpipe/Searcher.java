@@ -49,6 +49,10 @@ public interface Searcher {
         return false;
     }
 
+    default boolean useMemory() {
+        return false;
+    }
+
     default BlockPos pickNext(UtilSetMap<BlockPos, Direction> queue) {
         return queue.getLastKey();
     }

@@ -31,4 +31,8 @@ public class TileEnergySlot<T extends BlockEntity> extends EnergyStorage {
     public void receive(int energy) {
         this.energy += energy;
     }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
 }

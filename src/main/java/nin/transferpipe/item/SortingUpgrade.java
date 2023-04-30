@@ -4,7 +4,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import nin.transferpipe.util.java.JavaUtils;
-import nin.transferpipe.util.transferpipe.TPUtils;
+import nin.transferpipe.util.minecraft.MCUtils;
 
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -26,14 +26,14 @@ public class SortingUpgrade extends FunctionUpgrade {
         return items.stream().anyMatch(i -> BuiltInRegistries.ITEM.getKey(i).getNamespace().equals(modid));
     }));
     public static final BiPredicate<List<Item>, Item> CREATIVE_TAB_SORT = exceptForAirs((items, toPush) -> {
-        var tab = TPUtils.getFirstlyContainedTab(toPush);
-        return items.stream().anyMatch(i -> TPUtils.getFirstlyContainedTab(i) == tab);
+        var tab = MCUtils.getFirstlyContainedTab(toPush);
+        return items.stream().anyMatch(i -> MCUtils.getFirstlyContainedTab(i) == tab);
     });
     public static final BiPredicate<List<Item>, Item> TAG_SORT = exceptForAirs((items, toPush) -> items.stream()
             .flatMap(i -> i.builtInRegistryHolder().tags()).collect(Collectors.toSet()).stream()
             .anyMatch(tag -> toPush.builtInRegistryHolder().is(tag)));
     public static final BiPredicate<List<Item>, Item> COMMON_TAG_SORT = exceptForAirs((items, toPush) -> {
-        var commonTag = TPUtils.getCommonTag(items);
+        var commonTag = MCUtils.getCommonTag(items);
         return commonTag != null && toPush.builtInRegistryHolder().is(commonTag);
     });
     public static final BiPredicate<List<Item>, Item> CLASS_SORT = exceptForAirs((items, toPush) -> items.stream()
@@ -50,7 +50,7 @@ public class SortingUpgrade extends FunctionUpgrade {
 
     public static BiPredicate<List<Item>, Item> exceptForAirs(BiPredicate<List<Item>, Item> predicate) {
         return (items, toPush) -> {
-            var itemsWithoutAir = TPUtils.reduceAir(items);
+            var itemsWithoutAir = MCUtils.reduceAir(items);
             if (itemsWithoutAir.isEmpty())
                 return true;
 

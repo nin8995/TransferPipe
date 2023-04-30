@@ -12,7 +12,7 @@ import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TickingEntityBlock;
 import nin.transferpipe.block.node.TileTransferNodeEnergy;
 import nin.transferpipe.util.forge.ReferenceEnergyStorage;
-import nin.transferpipe.util.transferpipe.PipeUtils;
+import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,7 +58,7 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
         @Override
         public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
             return nodeReference != null && cap == ForgeCapabilities.ENERGY
-                           && (side == null || PipeUtils.currentConnection(getBlockState(), side) == Connection.MACHINE)
+                           && (side == null || TPUtils.currentConnection(getBlockState(), side) == Connection.MACHINE)
                    ? loReferencedEnergy.cast()
                    : super.getCapability(cap, side);
         }

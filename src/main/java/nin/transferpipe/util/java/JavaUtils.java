@@ -3,6 +3,8 @@ package nin.transferpipe.util.java;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -73,5 +75,19 @@ public interface JavaUtils {
 
     static double log(double base, double antilogarithm) {
         return Math.log(antilogarithm) / Math.log(base);
+    }
+
+    static <V> List<V> filter(List<V> list, Predicate<V> filter) {
+        return list.stream().filter(filter).toList();
+    }
+
+    @Nullable
+    static <V> V findFirst(List<V> list, Predicate<V> filter) {
+        return list.stream().filter(filter).findFirst().orElse(null);
+    }
+
+    @Nullable
+    static <V, Y> Y findFirst(List<V> list, Function<V, Y> mapper, Predicate<Y> filter) {
+        return list.stream().map(mapper).filter(filter).findFirst().orElse(null);
     }
 }

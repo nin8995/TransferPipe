@@ -18,7 +18,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import nin.transferpipe.gui.BaseItemMenu;
 import nin.transferpipe.gui.BaseScreen;
-import nin.transferpipe.util.transferpipe.TPUtils;
+import nin.transferpipe.util.minecraft.MCUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,15 +37,15 @@ public class FilterItem extends UpgradeItem implements GUIItem {
     }
 
     public boolean inverted(ItemStack filter) {
-        return TPUtils.computeBoolean(filter, INVERTED);
+        return MCUtils.computeBoolean(filter, INVERTED);
     }
 
     public boolean ignoreDurability(ItemStack filter) {
-        return TPUtils.computeBoolean(filter, IGNORE_DURABILITY);
+        return MCUtils.computeBoolean(filter, IGNORE_DURABILITY);
     }
 
     public boolean ignoreNBT(ItemStack filter) {
-        return TPUtils.computeBoolean(filter, IGNORE_NBT);
+        return MCUtils.computeBoolean(filter, IGNORE_NBT);
     }
 
     public FilterInventory filteringItems(ItemStack filter) {
@@ -58,7 +58,7 @@ public class FilterItem extends UpgradeItem implements GUIItem {
                 var filteringItem = filteringItems(filter).getStackInSlot(i);
                 return filteringItem.getItem() instanceof FilterItem f ? f.getFilter(filteringItem).test(item)
                                                                        : ignoreNBT(filter) ? filteringItem.is(item.getItem())
-                                                                                           : ignoreDurability(filter) ? TPUtils.sameItemSameTagExcept(item, filteringItem, "Damage")
+                                                                                           : ignoreDurability(filter) ? MCUtils.sameItemSameTagExcept(item, filteringItem, "Damage")
                                                                                                                       : ItemStack.isSameItemSameTags(item, filteringItem);
             });
             return inverted(filter) != filtered;

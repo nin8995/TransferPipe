@@ -15,7 +15,6 @@ import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.LazyOptionalMap;
 import nin.transferpipe.util.forge.TileEnergySlot;
 import nin.transferpipe.util.minecraft.TileMap;
-import nin.transferpipe.util.transferpipe.PipeUtils;
 import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,10 +30,11 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
      * 初期化
      */
     public final TileEnergySlot<TileTransferNodeEnergy> energySlot;
+    public final int baseCapacity = 10000;
 
     public TileTransferNodeEnergy(BlockPos p_155229_, BlockState p_155230_) {
         super(TPBlocks.TRANSFER_NODE_ENERGY.tile(), p_155229_, p_155230_);
-        this.energySlot = new TileEnergySlot<>(10000, Integer.MAX_VALUE, Integer.MAX_VALUE, this);
+        this.energySlot = new TileEnergySlot<>(baseCapacity, Integer.MAX_VALUE, Integer.MAX_VALUE, this);
     }
 
     @Override
@@ -57,6 +57,8 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
         super.calcUpgrades();
         pseudoRoundRobin = true;
         breadthFirst = true;
+        searchMemory = true;
+        energySlot.setCapacity((int) (baseCapacity * capacityRate));
     }
 
     @Override
@@ -95,7 +97,7 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
 
     @Override
     public void facing(BlockPos pos, Direction dir) {
-        if (PipeUtils.isWorkPlace(level, pos, dir))
+        if (TPUtils.isWorkPlace(level, pos, dir))
             tryEstablishConnection(pos, dir);
     }
 

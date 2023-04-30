@@ -21,7 +21,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import nin.transferpipe.block.LightingBlock;
 import nin.transferpipe.block.node.TileBaseTransferNode;
-import nin.transferpipe.util.transferpipe.PipeUtils;
+import nin.transferpipe.util.minecraft.MCUtils;
 import nin.transferpipe.util.transferpipe.TPUtils;
 
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ public class TransferPipe extends LightingBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext bpc) {
-        return PipeUtils.calcInitialState(bpc.getLevel(), bpc.getClickedPos(), defaultBlockState());
+        return TPUtils.calcInitialState(bpc.getLevel(), bpc.getClickedPos(), defaultBlockState());
     }
 
 
@@ -67,8 +67,8 @@ public class TransferPipe extends LightingBlock {
      */
 
     public static final VoxelShape CENTER = Block.box(6, 6, 6, 10, 10, 10);
-    public static final Map<Direction, VoxelShape> LIMBS = TPUtils.getRotatedShapes(Block.box(6, 6, 0, 10, 10, 6));
-    public static final Map<Direction, VoxelShape> JOINTS = TPUtils.getRotatedShapes(Block.box(5, 5, -0.001, 11, 11, 2.999));
+    public static final Map<Direction, VoxelShape> LIMBS = MCUtils.getRotatedShapes(Block.box(6, 6, 0, 10, 10, 6));
+    public static final Map<Direction, VoxelShape> JOINTS = MCUtils.getRotatedShapes(Block.box(5, 5, -0.001, 11, 11, 2.999));
     public static Map<List<Connection>, VoxelShape> shapeCache = calcPossibleConnectionStates().stream().collect(Collectors.toMap(
             UnaryOperator.identity(), TransferPipe::calcShape));
 
@@ -108,7 +108,7 @@ public class TransferPipe extends LightingBlock {
     @Override
     public void neighborChanged(BlockState bs, Level l, BlockPos pos, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
         var currentState = l.getBlockState(pos);
-        var newState = PipeUtils.recalcConnections(l, pos);
+        var newState = TPUtils.recalcConnections(l, pos);
         if (newState != currentState)
             l.setBlockAndUpdate(pos, newState);
 
@@ -122,9 +122,9 @@ public class TransferPipe extends LightingBlock {
 
     @Override
     public InteractionResult use(BlockState p_60503_, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
-        if (PipeUtils.usingWrench(player, hand)) {
+        if (TPUtils.usingWrench(player, hand)) {
             if (!level.isClientSide)
-                level.setBlockAndUpdate(pos, PipeUtils.cycleFlowAndRecalc(level, pos));
+                level.setBlockAndUpdate(pos, TPUtils.cycleFlowAndRecalc(level, pos));
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
 

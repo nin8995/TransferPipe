@@ -13,7 +13,7 @@ import net.minecraft.world.level.Level;
 import nin.transferpipe.gui.BaseItemMenu;
 import nin.transferpipe.gui.BaseScreen;
 import nin.transferpipe.network.TPPackets;
-import nin.transferpipe.util.transferpipe.TPUtils;
+import nin.transferpipe.util.minecraft.MCUtils;
 
 public class RationingUpgradeItem extends FunctionUpgrade {
 
@@ -43,12 +43,12 @@ public class RationingUpgradeItem extends FunctionUpgrade {
 
         @Override
         public int getItemRation(ItemStack item) {
-            return TPUtils.computeInt(item, ITEM, 64);
+            return MCUtils.computeInt(item, ITEM, 64);
         }
 
         @Override
         public int getLiquidRation(ItemStack item) {
-            return TPUtils.computeInt(item, LIQUID, 16000);
+            return MCUtils.computeInt(item, LIQUID, 16000);
         }
 
         public void setRations(ItemStack upgrade, int item, int liquid) {

@@ -6,7 +6,6 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.ItemStackHandler;
-import nin.transferpipe.util.transferpipe.TPUtils;
 
 public class TileLiquidSlot<T extends BlockEntity> extends FluidTank {
 
@@ -48,10 +47,21 @@ public class TileLiquidSlot<T extends BlockEntity> extends FluidTank {
         return getFluidAmount();
     }
 
+    public int getFreeSpace() {
+        return getCapacity() - getAmount();
+    }
+
     public void receive(FluidStack fluid) {
         if (isEmpty())
             setFluid(fluid);
         else
-            setFluid(TPUtils.copyWithAddition(getFluid(), fluid.getAmount()));
+            setFluid(ForgeUtils.copyWithAddition(getFluid(), fluid.getAmount()));
+    }
+
+    public float capacityRate = 1;
+
+    @Override
+    public int getCapacity() {
+        return (int) (super.getCapacity() * capacityRate);
     }
 }

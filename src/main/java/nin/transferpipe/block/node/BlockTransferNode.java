@@ -25,7 +25,7 @@ import nin.transferpipe.block.LightingBlock;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.gui.BaseBlockMenu;
-import nin.transferpipe.util.transferpipe.PipeUtils;
+import nin.transferpipe.util.minecraft.MCUtils;
 import nin.transferpipe.util.transferpipe.TPUtils;
 
 import java.util.Map;
@@ -65,7 +65,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
             return defaultBlockState().setValue(FACING, context.getClickedFace().getOpposite());
         }
 
-        public static final Map<Direction, VoxelShape> ROTATED_NODES = TPUtils.getRotatedShapes(Stream.of(
+        public static final Map<Direction, VoxelShape> ROTATED_NODES = MCUtils.getRotatedShapes(Stream.of(
                 Block.box(1, 1, 0, 15, 15, 1),
                 Block.box(3, 3, 1, 13, 13, 4),
                 Block.box(5, 5, 4, 11, 11, 6)
@@ -102,7 +102,7 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean p_60514_) {
         if (level.getBlockEntity(pos) instanceof TileBaseTransferNode be) {
             var prevState = be.pipeState;
-            var currentState = PipeUtils.recalcConnections(level, pos);
+            var currentState = TPUtils.recalcConnections(level, pos);
             if (prevState != currentState)
                 be.setPipeStateAndUpdate(currentState);
         }
@@ -113,9 +113,9 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
         var be = (T) level.getBlockEntity(pos);
-        if (PipeUtils.usingWrench(player, hand) && be.shouldRenderPipe()) {
+        if (TPUtils.usingWrench(player, hand) && be.shouldRenderPipe()) {
             if (!level.isClientSide)
-                be.setPipeStateAndUpdate(PipeUtils.cycleFlowAndRecalc(level, pos/*, player.isShiftKeyDown() shift右クリックはブロックからは検知できない*/));
+                be.setPipeStateAndUpdate(TPUtils.cycleFlowAndRecalc(level, pos/*, player.isShiftKeyDown() shift右クリックはブロックからは検知できない*/));
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
 

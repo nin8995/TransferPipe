@@ -6,7 +6,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import nin.transferpipe.util.transferpipe.TPUtils;
+import nin.transferpipe.TPMod;
+import nin.transferpipe.util.minecraft.MCUtils;
 
 public class BaseScreen<T extends BaseMenu> extends AbstractContainerScreen<T> {
 
@@ -16,8 +17,8 @@ public class BaseScreen<T extends BaseMenu> extends AbstractContainerScreen<T> {
 
     public BaseScreen(T menu, Inventory p_97742_, Component p_97743_) {
         super(menu, p_97742_, p_97743_);
-        this.bg = TPUtils.modLoc("textures/gui/container/" + menu.bg + ".png");
-        var image = TPUtils.getImage(this.bg);
+        this.bg = TPMod.loc("textures/gui/container/" + menu.bg + ".png");
+        var image = MCUtils.getImage(this.bg);
         this.bgWidth = image.getWidth();
         this.bgHeight = image.getHeight();
         imageWidth = bgWidth;

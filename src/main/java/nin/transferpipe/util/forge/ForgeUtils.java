@@ -24,10 +24,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 public interface ForgeUtils {
 
+    /**
+     * ItemHandler
+     */
     static void forItemHandler(Level level, BlockPos pos, Direction dir, NonNullConsumer<? super IItemHandler> func) {
         getItemHandler(level, pos, dir).ifPresent(func);
     }
@@ -61,10 +65,10 @@ public interface ForgeUtils {
     }
 
     static void forFirstItemSlot(Level level, BlockPos pos, Direction dir, BiConsumer<IItemHandler, Integer> func) {
-        forItemHandler(level, pos, dir, handler -> IntStream
-                .range(0, handler.getSlots())
-                .filter(i -> !handler.extractItem(i, 1, true).isEmpty())
-                .findFirst().ifPresent(i -> func.accept(handler, i))
+        forItemHandler(level, pos, dir, inv -> IntStream
+                .range(0, inv.getSlots())
+                .filter(i -> !inv.extractItem(i, 1, true).isEmpty())
+                .findFirst().ifPresent(i -> func.accept(inv, i))
         );
     }
 
@@ -76,11 +80,28 @@ public interface ForgeUtils {
 
     static int countItem(IItemHandler inv, ItemStack item) {
         return IntStream.range(0, inv.getSlots())
-                .filter(slot -> ItemHandlerHelper.canItemStacksStack(item, inv.getStackInSlot(slot)))
+                .filter(slot -> ItemHandlerHelper.canItemStacksStack(inv.getStackInSlot(slot), item))
                 .map(slot -> inv.getStackInSlot(slot).getCount())
                 .reduce(Integer::sum).orElse(0);
     }
 
+    static List<ItemStack> filter(IItemHandler inv, Predicate<ItemStack> filter) {
+        return IntStream.range(0, inv.getSlots())
+                .filter(i -> filter.test(inv.getStackInSlot(i)))
+                .mapToObj(inv::getStackInSlot).toList();
+    }
+
+    @Nullable
+    static ItemStack findFirst(IItemHandler inv, Predicate<ItemStack> filter) {
+        var oi = IntStream.range(0, inv.getSlots())
+                .filter(i -> !inv.extractItem(i, 1, true).isEmpty() && filter.test(inv.getStackInSlot(i)))
+                .findFirst();
+        return oi.isPresent() ? inv.getStackInSlot(oi.getAsInt()) : null;
+    }
+
+    /**
+     * FluidHandler
+     */
     static void forFluidHandler(Level level, BlockPos pos, Direction dir, NonNullConsumer<? super IFluidHandler> func) {
         getFluidHandler(level, pos, dir).ifPresent(func);
     }
@@ -101,6 +122,9 @@ public interface ForgeUtils {
                 .reduce(Integer::sum).orElse(0);
     }
 
+    /**
+     * EnergyStorage
+     */
     static void forEnergyStorage(Level level, BlockPos pos, Direction dir, NonNullConsumer<? super IEnergyStorage> func) {
         getEnergyStorage(level, pos, dir).ifPresent(func);
     }
@@ -116,5 +140,29 @@ public interface ForgeUtils {
 
     static boolean canBoth(IEnergyStorage energy) {
         return energy.canExtract() && energy.canReceive();
+    }
+
+    /**
+     * FluidStack
+     */
+    static FluidStack copyWithAddition(FluidStack fluid, int addition) {
+        return copyWithAmount(fluid, fluid.getAmount() + addition);
+    }
+
+    static FluidStack copyWithAmount(FluidStack fluid, int amount) {
+        var copy = fluid.copy();
+        copy.setAmount(amount);
+        return copy;
+    }
+
+    /**
+     * Format
+     */
+    static String toMilliBucket(int amount) {
+        return String.format("%,d", amount) + "mb";
+    }
+
+    static String toFE(int energy) {
+        return String.format("%,d", energy) + "FE";
     }
 }

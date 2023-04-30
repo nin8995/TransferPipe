@@ -30,6 +30,10 @@ public class TPMod {
     public static final String MODID = "transferpipe";
     private static final Logger LOGGER = LogUtils.getLogger();
 
+    public static ResourceLocation loc(String id) {
+        return new ResourceLocation(MODID, id);
+    }
+
     public TPMod() {
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
         TPBlocks.init(bus);
@@ -38,7 +42,7 @@ public class TPMod {
         TPPackets.init();
 
         //クリエタブ登録
-        bus.addListener((CreativeModeTabEvent.Register e) -> e.registerCreativeModeTab(new ResourceLocation(MODID, MODID), b -> b
+        bus.addListener((CreativeModeTabEvent.Register e) -> e.registerCreativeModeTab(loc(MODID), b -> b
                 .icon(() -> new ItemStack(TPBlocks.TRANSFER_PIPE.get()))
                 .title(Component.translatable(MODID))
                 .displayItems((params, output) -> {

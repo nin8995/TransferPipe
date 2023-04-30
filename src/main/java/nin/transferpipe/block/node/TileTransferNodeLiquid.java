@@ -14,7 +14,6 @@ import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.TileLiquidSlot;
-import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -60,12 +59,18 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
         return super.wi() * baseSpeed;
     }
 
+    @Override
+    public void calcUpgrades() {
+        super.calcUpgrades();
+        liquidSlot.capacityRate = capacityRate;
+    }
+
     /**
      * 液体搬出
      */
     @Override
     public void facing(BlockPos pos, Direction dir) {
-        if (liquidSlot.getFluidAmount() < liquidSlot.getCapacity())
+        if (liquidSlot.getFreeSpace() > 0)
             if (ForgeUtils.hasItemHandler(level, pos, dir))
                 ForgeUtils.forFluidHandler(level, pos, dir, this::tryExtract);
             else if (worldInteraction > 0) {
@@ -114,7 +119,7 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
         var fluid = getFluid(pos);
         var stack = new FluidStack(fluid, wi());
         if (shouldReceive(stack) && hasTwoNeighbor(pos, fluid))
-            liquidSlot.receive(TPUtils.copyWithAmount(stack, getExtractableAmount(stack, true)));
+            liquidSlot.receive(ForgeUtils.copyWithAmount(stack, getExtractableAmount(stack, true)));
     }
 
     public boolean hasTwoNeighbor(BlockPos pos, Fluid fluid) {
@@ -151,7 +156,7 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
             return self;
 
         var filteredAmount = self.getAmount() - fluidToInsert.getAmount();
-        return TPUtils.copyWithAmount(self, filteredAmount + remainder);
+        return ForgeUtils.copyWithAmount(self, filteredAmount + remainder);
     }
 
     public FluidStack getInsertableFluid(IFluidHandler handler, FluidStack self) {
@@ -159,7 +164,7 @@ public class TileTransferNodeLiquid extends TileBaseTransferNode {
             return FluidStack.EMPTY;
 
         var ration = liquidRation - ForgeUtils.countFluid(handler, self);
-        return TPUtils.copyWithAmount(self, Math.min(ration, self.getAmount()));
+        return ForgeUtils.copyWithAmount(self, Math.min(ration, self.getAmount()));
     }
 
     /**

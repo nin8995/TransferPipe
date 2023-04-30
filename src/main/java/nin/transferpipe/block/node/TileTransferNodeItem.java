@@ -21,7 +21,7 @@ import nin.transferpipe.gui.ReferenceCraftingGrid;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.TileItemSlot;
 import nin.transferpipe.util.java.JavaUtils;
-import nin.transferpipe.util.transferpipe.TPUtils;
+import nin.transferpipe.util.minecraft.MCUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -59,8 +59,14 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
         return new Vector3f(1, 0, 0);
     }
 
+    @Override
+    public void calcUpgrades() {
+        super.calcUpgrades();
+        itemSlot.capacityRate = capacityRate;
+    }
+
     /**
-     * アイテム搬入
+     * アイテム搬出
      */
     @Override
     public void facing(BlockPos pos, Direction dir) {
@@ -72,12 +78,23 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     public void tryExtract(IItemHandler inv) {
-        IntStream.range(0, inv.getSlots())
-                .filter(slot -> shouldReceive(inv.getStackInSlot(slot)))
-                .findFirst().ifPresent(slot -> {
-                    var extractableAmount = getExtractableAmount(inv.getStackInSlot(slot), false);
-                    itemSlot.receive(inv.extractItem(slot, extractableAmount, false));
-                });
+        var toExtract = itemSlot.isEmpty()
+                        ? ForgeUtils.findFirst(inv, filteringFunc)
+                        : itemSlot.getItem();
+        if (toExtract != null) {
+            var remainingExtractionPower = getExtractionSpeed(toExtract, false);
+            for (int slot : IntStream.range(0, inv.getSlots())
+                    .filter(slot -> ItemHandlerHelper.canItemStacksStack(inv.getStackInSlot(slot), toExtract))
+                    .toArray()) {
+
+                var item = inv.getStackInSlot(slot);
+                var extraction = Math.min(getExtractableAmount(item, false), remainingExtractionPower);
+                if (extraction <= 0)
+                    break;
+                remainingExtractionPower -= extraction;
+                itemSlot.receive(inv.extractItem(slot, extraction, false));
+            }
+        }
     }
 
     public boolean shouldReceive(ItemStack item) {
@@ -85,11 +102,15 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     public int getExtractableAmount(ItemStack toExtract, boolean byWorldInteraction) {
-        var extractionSpeed = stackMode ? itemSlot.getMaxStackSize() : 1;
+        return Math.min(getExtractionSpeed(toExtract, byWorldInteraction), getReceivableAmount(toExtract, byWorldInteraction));
+    }
+
+    public int getExtractionSpeed(ItemStack toExtract, boolean byWorldInteraction) {
+        var extractionSpeed = stackMode ? (int) (toExtract.getMaxStackSize() * capacityRate) : 1;
         if (byWorldInteraction)
             extractionSpeed = Math.max(extractionSpeed, wi());
 
-        return Math.min(extractionSpeed, getReceivableAmount(toExtract, byWorldInteraction));
+        return extractionSpeed;
     }
 
     public int getReceivableAmount(ItemStack toReceive, boolean byWorldInteraction) {
@@ -101,7 +122,7 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
     }
 
     /**
-     * アイテム搬出
+     * アイテム搬入
      */
     @Override
     public boolean canWork(BlockPos pos, Direction d) {
@@ -164,21 +185,30 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
 
     public void tryVacuum(BlockPos pos, Direction boxDir) {
         var boxSize = 1 + 2 * JavaUtils.log(2, worldInteraction);
-        var boxCenter = TPUtils.relative(pos, boxDir, boxSize / 2);
+        var boxCenter = MCUtils.relative(pos, boxDir, boxSize / 2);
         var box = AABB.ofSize(boxCenter, boxSize, boxSize, boxSize);
-        for (ItemEntity dropItem : level.getEntitiesOfClass(ItemEntity.class, box).stream()
-                .filter(i -> shouldReceive(i.getItem())).toList()) {
-            var item = dropItem.getItem();
-            var extraction = item.copyWithCount(getExtractableAmount(item, true));
-            itemSlot.receive(extraction);
-            var remainder = TPUtils.copyWithSub(item, extraction);
-            dropItem.setItem(remainder);
+        var items = level.getEntitiesOfClass(ItemEntity.class, box);
+        var toExtract = itemSlot.isEmpty()
+                        ? JavaUtils.findFirst(items, ItemEntity::getItem, filteringFunc)
+                        : itemSlot.getItem();
+        if (toExtract != null) {
+            var remainingExtractionPower = getExtractionSpeed(toExtract, true);
+            var toExtracts = JavaUtils.filter(items, i -> ItemHandlerHelper.canItemStacksStack(i.getItem(), toExtract));
+            if (!toExtracts.isEmpty()) {
+                for (ItemEntity dropItem : toExtracts) {
 
-            //end if node cannot suck any more items
-            if (!remainder.isEmpty()) {
+                    var item = dropItem.getItem();
+                    var extraction = Math.min(getExtractableAmount(item, true), remainingExtractionPower);
+                    if (extraction <= 0)
+                        break;
+                    remainingExtractionPower -= extraction;
+                    var extractedItem = item.copyWithCount(extraction);
+                    itemSlot.receive(extractedItem);
+                    dropItem.setItem(MCUtils.copyWithSub(item, extractedItem));
+                }
+
                 if (addParticle)
                     addEdges(boxCenter, (float) boxSize / 2);
-                break;
             }
         }
     }
@@ -195,10 +225,10 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
 
     public static final Supplier<List<Vector3f>> north = () -> IntStream.rangeClosed(-1, 1).map(i -> -i).boxed().flatMap(y -> IntStream.rangeClosed(-1, 1).boxed().map(x ->
             new Vector3f(x, y, -1))).toList();
-    public static final Map<Direction, List<BlockPos>> relativeInventoryPositions = TPUtils.dirMap(d ->
+    public static final Map<Direction, List<BlockPos>> relativeInventoryPositions = MCUtils.dirMap(d ->
             north.get().stream()
-                    .map(v -> TPUtils.rotation(d).transform(v))
-                    .map(TPUtils::toPos)
+                    .map(v -> MCUtils.rotation(d).transform(v))
+                    .map(MCUtils::toPos)
                     .toList());
 
     public void updateInventoryPozzes() {
@@ -250,11 +280,11 @@ public class TileTransferNodeItem extends TileBaseTransferNode {
         if (recipe != null && !(craftSlots.getMinAmount() <= 0 && updateRecipe() == null)) {
             var item = recipe.assemble(craftSlots, level.registryAccess());
             var craftableTimes = Math.min(craftSlots.getMinAmount(), wi());
-            var craftableItems = TPUtils.copyWithScale(item, craftableTimes);
+            var craftableItems = MCUtils.copyWithScale(item, craftableTimes);
             var receivableTimes = getReceivableAmount(craftableItems, true) / item.getCount();
             if (receivableTimes > 0) {
-                var receivableItems = TPUtils.copyWithScale(item, receivableTimes);
-                var remainders = TPUtils.scaleItems(recipe.getRemainingItems(craftSlots), receivableTimes);
+                var receivableItems = MCUtils.copyWithScale(item, receivableTimes);
+                var remainders = MCUtils.scaleItems(recipe.getRemainingItems(craftSlots), receivableTimes);
 
                 itemSlot.receive(receivableItems);
                 craftSlots.consume(receivableTimes, remainders);

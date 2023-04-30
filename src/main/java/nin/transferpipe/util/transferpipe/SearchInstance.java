@@ -1,13 +1,16 @@
 package nin.transferpipe.util.transferpipe;
 
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.INBTSerializable;
+import nin.transferpipe.util.minecraft.MCUtils;
 import nin.transferpipe.util.minecraft.PosDirsSet;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,11 +22,9 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
     /**
      * 初期化処理
      */
-    public Searcher searcher;
-    public final PosDirsSet queue = new PosDirsSet();//探索先のキュー。探索地点と既に探索された方角の対応を保持している。決して空洞にはならない。
+    public Searcher searcher;//探索者
     public BlockPos searchingPos;//今探索している場所
     public Set<Direction> prevSearchedDirs;//その地点から見て既に探索された方角
-    public Level level;
 
     public SearchInstance(Searcher searcher) {
         this.searcher = searcher;
@@ -33,12 +34,20 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
         prevSearchedDirs = searcher.initialNonValidDirs();
     }
 
-    public SearchInstance resetQueue() {
+    public final PosDirsSet queue = new PosDirsSet();//探索先のキュー。探索地点と既に探索された方角の対応を保持している。決して空洞にはならない。
+    public final LongOpenHashSet memory = new LongOpenHashSet();//必要であれば探索済み地点を保存
+
+    public SearchInstance reset() {
         queue.clear();
         queue.addAll(searcher.initialPos(), searcher.initialNonValidDirs());
 
+        memory.clear();
+        memory.trim();
+
         return this;
     }
+
+    public Level level;//省略
 
     public void onLoad(Level level) {
         this.level = level;
@@ -72,6 +81,9 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
                 proceedableDirs.forEach(this::addQueueRelative);
             else
                 addQueueRelative(random(proceedableDirs));
+
+            if (searcher.useMemory())
+                memory.trim();
         } else {
             //行き詰った
             searcher.onSearchTerminal();
@@ -82,65 +94,56 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
         return this;
     }
 
-    /**
-     * 次の探索地点を取得
-     */
     public BlockPos getNextPos() {
         return searcher.pickNext(queue);
     }
 
-    /**
-     * 探索終了
-     */
     public SearchInstance end() {
         searcher.onSearchEnd();
-        return resetQueue();
+        return reset();
     }
 
-    /**
-     * 目的地の方角
-     */
     public Set<Direction> getDestDirs() {
         return Direction.stream()
                 .filter(d -> !prevSearchedDirs.contains(d))
                 .filter(d -> searcher.isDest(searchingPos, d, searchingPos.relative(d), d.getOpposite())).collect(Collectors.toSet());
     }
 
-    /**
-     * 現在地のdir方向が目的地
-     */
     public void destRelative(Direction dir) {
         searcher.onFind(searchingPos.relative(dir), dir.getOpposite());
     }
 
-    /**
-     * 進める方角
-     */
     public Set<Direction> getProceedableDirs() {
         return Direction.stream()
                 .filter(d -> !prevSearchedDirs.contains(d))
+                .filter(d -> !(searcher.useMemory() && memory.contains(searchingPos.relative(d).asLong())))
                 .filter(d -> searcher.canProceed(searchingPos, d, searchingPos.relative(d), d.getOpposite())).collect(Collectors.toSet());
     }
 
-    /**
-     * 現在地のdir方向をキューに入れる
-     */
     public void addQueueRelative(@Nullable Direction dir) {
         if (dir != null)
-            queue.add(searchingPos.relative(dir), dir.getOpposite());
+            addQueue(searchingPos.relative(dir), dir.getOpposite());
         else
-            queue.add(searchingPos, null);
+            addQueue(searchingPos, null);
+    }
+
+    public void addQueue(BlockPos pos, @Nullable Direction dir) {
+        queue.add(pos, dir);
+        if (searcher.useMemory())
+            memory.add(pos.asLong());
     }
 
     /**
      * NBT
      */
     public static String QUEUE = "Queue";
+    public static String MEMORY = "Memory";
 
     public CompoundTag serializeNBT() {
         var tag = new CompoundTag();
 
         tag.put(QUEUE, queue.serializeNBT());
+        tag.putLongArray(MEMORY, memory.toLongArray());
 
         return tag;
     }
@@ -148,12 +151,16 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
     public void deserializeNBT(CompoundTag tag) {
         if (tag.contains(QUEUE))
             queue.deserializeNBT(tag.getCompound(QUEUE));
+        if (tag.contains(MEMORY)) {
+            memory.addAll(LongOpenHashSet.toSet(Arrays.stream(tag.getLongArray(MEMORY))));
+            memory.trim();
+        }
     }
 
     /**
      * 省略
      */
     public Direction random(Set<Direction> dirs) {
-        return TPUtils.getRandomlyFrom(dirs, level.random);
+        return MCUtils.getRandomlyFrom(dirs, level.random);
     }
 }

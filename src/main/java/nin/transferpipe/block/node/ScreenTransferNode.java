@@ -4,7 +4,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import nin.transferpipe.gui.BaseScreen;
-import nin.transferpipe.util.transferpipe.TPUtils;
+import nin.transferpipe.util.forge.ForgeUtils;
+import nin.transferpipe.util.minecraft.MCUtils;
 
 public abstract class ScreenTransferNode<T extends MenuTransferNode> extends BaseScreen<T> {
 
@@ -66,7 +67,7 @@ public abstract class ScreenTransferNode<T extends MenuTransferNode> extends Bas
             var liquid = menu.getLiquid();
 
             if (!liquid.isEmpty())
-                TPUtils.renderLiquid(liquid, pose, 80, -38 + MenuTransferNode.upgradesY, 16);
+                MCUtils.renderLiquid(liquid, pose, 80, -38 + MenuTransferNode.upgradesY, 16);
         }
 
         @Override
@@ -79,7 +80,7 @@ public abstract class ScreenTransferNode<T extends MenuTransferNode> extends Bas
             var liquid = menu.getLiquid();
             if (!liquid.isEmpty())
                 drawCentered(pose, Component.translatable("gui.transferpipe.liquid_amount",
-                        TPUtils.toMilliBucket(liquid.getAmount()), liquid.getDisplayName()));
+                        ForgeUtils.toMilliBucket(liquid.getAmount()), liquid.getDisplayName()));
             super.drawCenteredTexts(pose);
         }
     }
@@ -101,7 +102,7 @@ public abstract class ScreenTransferNode<T extends MenuTransferNode> extends Bas
 
             var energy = menu.getEnergy();
             if (energy != 0)
-                drawCentered(pose, Component.translatable("gui.transferpipe.energy_amount", TPUtils.toFE(energy)));
+                drawCentered(pose, Component.translatable("gui.transferpipe.energy_amount", ForgeUtils.toFE(energy)));
 
             var extractables = menu.getExtractables();
             var receivables = menu.getReceivables();
