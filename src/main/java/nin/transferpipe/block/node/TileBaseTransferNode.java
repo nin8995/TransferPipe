@@ -28,10 +28,7 @@ import nin.transferpipe.item.*;
 import nin.transferpipe.particle.TPParticles;
 import nin.transferpipe.util.java.UtilSetMap;
 import nin.transferpipe.util.minecraft.MCUtils;
-import nin.transferpipe.util.transferpipe.RedstoneBehavior;
-import nin.transferpipe.util.transferpipe.SearchInstance;
-import nin.transferpipe.util.transferpipe.Searcher;
-import nin.transferpipe.util.transferpipe.TPUtils;
+import nin.transferpipe.util.transferpipe.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -46,7 +43,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     /**
      * 初期化処理
      */
-    public final BlockPos POS;
+    public BlockPos pos;
     @Nullable
     public Direction FACING;
     public BlockPos FACING_POS;
@@ -56,7 +53,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
 
     public TileBaseTransferNode(BlockEntityType<? extends TileBaseTransferNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
         super(p_155228_, p_155229_, p_155230_);
-        POS = this.worldPosition;
+        pos = this.worldPosition;
         updateFacing();
         searchManager = new SearchInstance(this);
         upgrades = new UpgradeHandler(6, this);
@@ -71,26 +68,12 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     public void updateFacing() {
         if (getBlockState().getBlock() instanceof BlockTransferNode.FacingNode<?> node) {
             FACING = node.facing(getBlockState());
-            FACING_POS = POS.relative(FACING);
+            FACING_POS = pos.relative(FACING);
             onUpdateFacing();
         }
     }
 
     public void onUpdateFacing() {
-    }
-
-    @Override
-    public void onLoad() {
-        super.onLoad();
-        calcUpgrades();
-        searchManager.onLoad(level);
-    }
-
-    @Override
-    public void onFirstTick() {
-        super.onFirstTick();
-        setPipeStateAndUpdate(TPUtils.calcInitialState(level, POS, pipeState));
-        searchManager.reset();
     }
 
     public void setPipeStateAndUpdate(BlockState state) {
@@ -176,14 +159,14 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
 
             else if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe) {
                 if (pipe != pipeState.getBlock())
-                    setPipeStateAndUpdate(TPUtils.calcInitialState(level, POS, pipe.defaultBlockState()));
+                    setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipe.defaultBlockState(), FACING));
                 else
                     pipeRemoved.set(false);
             }
         });
 
         if (pipeRemoved.get())
-            setPipeStateAndUpdate(TPUtils.calcInitialState(level, POS, TPBlocks.TRANSFER_PIPE.get().defaultBlockState()));
+            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, TPBlocks.TRANSFER_PIPE.get().defaultBlockState(), FACING));
     }
 
     public int wi() {
@@ -200,8 +183,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     public final void tick() {
         super.tick();
         if (redstoneBehavior == RedstoneBehavior.NEVER
-                || (redstoneBehavior == RedstoneBehavior.ACTIVE_HIGH && level.getBestNeighborSignal(POS) == 0)
-                || (redstoneBehavior == RedstoneBehavior.ACTIVE_LOW && level.getBestNeighborSignal(POS) > 0))
+                || (redstoneBehavior == RedstoneBehavior.ACTIVE_HIGH && level.getBestNeighborSignal(pos) == 0)
+                || (redstoneBehavior == RedstoneBehavior.ACTIVE_LOW && level.getBestNeighborSignal(pos) > 0))
             return;
 
         beforeTick();
@@ -214,7 +197,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
             if (FACING != null)
                 facing(FACING_POS, FACING.getOpposite());
             else
-                Direction.stream().forEach(d -> facing(POS.relative(d), d.getOpposite()));
+                Direction.stream().forEach(d -> facing(pos.relative(d), d.getOpposite()));
         }
         afterTick();
     }
@@ -234,7 +217,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
      */
     @Override
     public BlockPos initialPos() {
-        return POS;
+        return pos;
     }
 
     @Override
@@ -261,7 +244,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
 
     @Override
     public boolean canProceed(BlockPos pos, Direction dir, BlockPos relativePos, Direction workDir) {
-        return TPUtils.canProceedPipe(level, pos, dir, this);
+        return PipeInstance.canProceed(level, pos, dir, this);
     }
 
     @Override
@@ -341,7 +324,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     public abstract Vector3f getColor();
 
     /**
-     * ゴミ処理場
+     * 読む必要ない
      */
     public static final String SEARCH_MANAGER = "SearchManager";
     public static final String UPGRADES = "Upgrades";
@@ -368,6 +351,20 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
             pipeState = NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), tag.getCompound(PIPE_STATE));
         if (tag.contains(COOLTIME))
             cooltime = tag.getInt(COOLTIME);
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        calcUpgrades();
+        searchManager.onLoad(level);
+    }
+
+    @Override
+    public void onFirstTick() {
+        super.onFirstTick();
+        setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipeState, FACING));
+        searchManager.reset();
     }
 
     //見た目を変化させる変更をクライアントに伝えるためのタグ

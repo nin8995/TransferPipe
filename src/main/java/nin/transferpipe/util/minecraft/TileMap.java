@@ -22,12 +22,12 @@ public class TileMap<V extends Tile> extends PosMap<V> {
         this.beClass = beClass;
     }
 
-    public void tryLoadCache(Level level) {
+    public void tryLoadCache(Level level, BiConsumer<BlockPos, V> loadFunc) {
         tryLoadCache(pos ->
                 level.isLoaded(pos)
-                ? TPUtils.getTile(level, pos).getClass().isInstance(beClass)
+                ? beClass.isAssignableFrom(TPUtils.getTile(level, pos).getClass())
                   ? LoadResult.a((V) TPUtils.getTile(level, pos))
                   : LoadResult.na()
-                : LoadResult.nl());
+                : LoadResult.nl(), loadFunc);
     }
 }

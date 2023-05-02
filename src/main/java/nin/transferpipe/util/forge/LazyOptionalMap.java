@@ -34,7 +34,7 @@ public class LazyOptionalMap<V> extends PosDirsMap<LazyOptional<V>> {
                 : LoadResult.nl());
     }
 
-    public List<V> getValues() {
+    public List<V> forceGetValues() {
         return super.getValues(loEnergy -> loEnergy.resolve().get());
     }
 }

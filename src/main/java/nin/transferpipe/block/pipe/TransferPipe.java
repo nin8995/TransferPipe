@@ -8,7 +8,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -20,9 +19,12 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import nin.transferpipe.block.LightingBlock;
-import nin.transferpipe.block.node.TileBaseTransferNode;
+import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.minecraft.MCUtils;
+import nin.transferpipe.util.transferpipe.PipeInstance;
+import nin.transferpipe.util.transferpipe.Searcher;
 import nin.transferpipe.util.transferpipe.TPUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,12 +32,14 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+/**
+ * BlockStateでノードの検索ルートを決めるブロック
+ */
 public class TransferPipe extends LightingBlock {
 
     /**
-     * 基本情報
+     * 初期化
      */
-
     public static final EnumProperty<Flow> FLOW = EnumProperty.create("flow", Flow.class);
     public static final Map<Direction, EnumProperty<Connection>> CONNECTIONS = Direction.stream().collect(Collectors.toMap(
             UnaryOperator.identity(),
@@ -58,14 +62,12 @@ public class TransferPipe extends LightingBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext bpc) {
-        return TPUtils.calcInitialState(bpc.getLevel(), bpc.getClickedPos(), defaultBlockState());
+        return PipeInstance.precalcState(bpc.getLevel(), bpc.getClickedPos(), defaultBlockState());
     }
-
 
     /**
      * 当たり判定
      */
-
     public static final VoxelShape CENTER = Block.box(6, 6, 6, 10, 10, 10);
     public static final Map<Direction, VoxelShape> LIMBS = MCUtils.getRotatedShapes(Block.box(6, 6, 0, 10, 10, 6));
     public static final Map<Direction, VoxelShape> JOINTS = MCUtils.getRotatedShapes(Block.box(5, 5, -0.001, 11, 11, 2.999));
@@ -102,13 +104,12 @@ public class TransferPipe extends LightingBlock {
     }
 
     /**
-     * 機能
+     * ルート計算
      */
-
     @Override
     public void neighborChanged(BlockState bs, Level l, BlockPos pos, Block p_60512_, BlockPos p_60513_, boolean p_60514_) {
         var currentState = l.getBlockState(pos);
-        var newState = TPUtils.recalcConnections(l, pos);
+        var newState = PipeInstance.recalcState(l, pos);
         if (newState != currentState)
             l.setBlockAndUpdate(pos, newState);
 
@@ -116,22 +117,33 @@ public class TransferPipe extends LightingBlock {
     }
 
     @Override
-    public void onBlockStateChange(LevelReader level, BlockPos pos, BlockState oldState, BlockState newState) {
-        super.onBlockStateChange(level, pos, oldState, newState);
-    }
-
-    @Override
     public InteractionResult use(BlockState p_60503_, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
         if (TPUtils.usingWrench(player, hand)) {
             if (!level.isClientSide)
-                level.setBlockAndUpdate(pos, TPUtils.cycleFlowAndRecalc(level, pos));
+                level.setBlockAndUpdate(pos, PipeInstance.cycleAndCalcState(level, pos));
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
         return InteractionResult.PASS;
     }
 
-    public boolean isValidSearcher(TileBaseTransferNode node) {
+    /**
+     * 計算方法変更の余地
+     */
+    public boolean isWorkPlace(Level level, BlockPos pos, @Nullable Direction dir) {
+        return ForgeUtils.hasItemHandler(level, pos, dir)
+                || ForgeUtils.hasFluidHandler(level, pos, dir)
+                || ForgeUtils.hasEnergyStorage(level, pos, dir);
+    }
+
+    public boolean isValidPipe(TransferPipe pipe) {
+        return true;
+    }
+
+    /**
+     * 検索方法変更の余地
+     */
+    public boolean isValidSearcher(Searcher searcher) {
         return true;
     }
 }

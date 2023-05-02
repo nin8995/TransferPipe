@@ -64,6 +64,35 @@ public interface JavaUtils {
     }
 
     /**
+     * Enumのループ検索
+     */
+    static <T extends Enum<T>> T front(T current, T[] values) {
+        return current.ordinal() == values.length - 1 ? values[0] : values[current.ordinal() + 1];
+    }
+
+    static <T extends Enum<T>> T findNext(Collection<T> toSearch, T current, T[] values) {
+        var searching = front(current, values);
+        while (true) {
+            if (toSearch.contains(searching))
+                return searching;
+            searching = front(searching, values);
+        }
+    }
+
+    static <T extends Enum<T>> T back(T current, T[] values) {
+        return current.ordinal() == 0 ? values[values.length - 1] : values[current.ordinal() - 1];
+    }
+
+    static <T extends Enum<T>> T findPrev(Collection<T> toSearch, T current, T[] values) {
+        var searching = back(current, values);
+        while (true) {
+            if (toSearch.contains(searching))
+                return searching;
+            searching = back(searching, values);
+        }
+    }
+
+    /**
      * 省略
      */
     static boolean fork(boolean forker, boolean ifTrue, boolean ifFalse) {
@@ -89,5 +118,21 @@ public interface JavaUtils {
     @Nullable
     static <V, Y> Y findFirst(List<V> list, Function<V, Y> mapper, Predicate<Y> filter) {
         return list.stream().map(mapper).filter(filter).findFirst().orElse(null);
+    }
+
+    static <V> Set<V> filter(Set<V> set, Predicate<V> filter) {
+        return filter(set.stream(), filter);
+    }
+
+    static <V> Set<V> filter(Stream<V> stream, Predicate<V> filter) {
+        return stream.filter(filter).collect(Collectors.toSet());
+    }
+
+    static <V, Y> Set<Y> map(Set<V> set, Function<V, Y> mapper) {
+        return map(set.stream(), mapper);
+    }
+
+    static <V, Y> Set<Y> map(Stream<V> stream, Function<V, Y> mapper) {
+        return stream.map(mapper).collect(Collectors.toSet());
     }
 }

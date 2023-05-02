@@ -22,7 +22,9 @@ import nin.transferpipe.network.TPPackets;
 import nin.transferpipe.particle.TPParticles;
 import org.slf4j.Logger;
 
-//初期化＆イベント処理
+/**
+ * 初期化＆イベント処理
+ */
 @Mod(TPMod.MODID)
 @Mod.EventBusSubscriber(modid = TPMod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class TPMod {

@@ -14,6 +14,7 @@ import nin.transferpipe.block.pipe.EnergyReceiverPipe;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.LazyOptionalMap;
 import nin.transferpipe.util.forge.TileEnergySlot;
+import nin.transferpipe.util.java.JavaUtils;
 import nin.transferpipe.util.minecraft.TileMap;
 import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +23,7 @@ import org.joml.Vector3f;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
+import java.util.function.*;
 
 public class TileTransferNodeEnergy extends TileBaseTransferNode {
 
@@ -62,28 +63,6 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     @Override
-    public void onLoad() {
-        super.onLoad();
-        tryLoadCaches();
-    }
-
-    @Override
-    public void beforeTick() {
-        super.beforeTick();
-        if (level.getGameTime() % 20 == 0)
-            tryLoadCaches();
-    }
-
-    public void tryLoadCaches() {
-        extractablesLOs.tryLoadCache(level);
-        receivableLOs.tryLoadCache(level);
-        bothLOs.tryLoadCache(level);
-        energyReceiverPipes.tryLoadCache(level);
-
-        setChanged();
-    }
-
-    @Override
     public boolean isMultiTask() {
         return true;
     }
@@ -91,13 +70,14 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     /**
      * 接続管理
      */
-    public final LazyOptionalMap<IEnergyStorage> extractablesLOs = new LazyOptionalMap<>(ForgeUtils::getEnergyStorage, (pos, dir, lo) -> setChanged());
-    public final LazyOptionalMap<IEnergyStorage> receivableLOs = new LazyOptionalMap<>(ForgeUtils::getEnergyStorage, (pos, dir, lo) -> setChanged());
-    public final LazyOptionalMap<IEnergyStorage> bothLOs = new LazyOptionalMap<>(ForgeUtils::getEnergyStorage, (pos, dir, lo) -> setChanged());
+    public final Supplier<LazyOptionalMap<IEnergyStorage>> loMap = () -> new LazyOptionalMap<>(ForgeUtils::getEnergyStorage, (pos, dir, lo) -> setChanged());
+    public final LazyOptionalMap<IEnergyStorage> extractLOs = loMap.get();
+    public final LazyOptionalMap<IEnergyStorage> receiveLOs = loMap.get();
+    public final LazyOptionalMap<IEnergyStorage> bothLOs = loMap.get();
 
     @Override
     public void facing(BlockPos pos, Direction dir) {
-        if (TPUtils.isWorkPlace(level, pos, dir))
+        if (canWork(pos, dir))
             tryEstablishConnection(pos, dir);
     }
 
@@ -118,24 +98,29 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
             if (energy.canExtract() && energy.canReceive())
                 bothLOs.addMarked(pos, dir, loEnergy);
             else if (energy.canExtract())
-                extractablesLOs.addMarked(pos, dir, loEnergy);
+                extractLOs.addMarked(pos, dir, loEnergy);
             else if (energy.canReceive())
-                receivableLOs.addMarked(pos, dir, loEnergy);
+                receiveLOs.addMarked(pos, dir, loEnergy);
             else
                 unchanged = true;
+
             if (!unchanged)
                 setChanged();
         });
     }
 
     public final TileMap<EnergyReceiverPipe.Tile> energyReceiverPipes = new TileMap<>(EnergyReceiverPipe.Tile.class,
-            (pos, receiver) -> receiver.nodeReference = null);
+            (pos, receiver) -> {
+                receiver.reset();
+                setChanged();
+            });
 
     @Override
     public void onSearchProceed(BlockPos pos) {
         super.onSearchProceed(pos);
         if (TPUtils.getTile(level, pos) instanceof EnergyReceiverPipe.Tile receiver) {
-            receiver.connect(this);
+            if (receiver.node != this)
+                receiver.connect(this);
             energyReceiverPipes.putMarked(pos, receiver);
             setChanged();
         }
@@ -150,12 +135,10 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     @Override
     public void onSearchEnd() {
         super.onSearchEnd();
-        extractablesLOs.reset();
-        receivableLOs.reset();
+        extractLOs.reset();
+        receiveLOs.reset();
         bothLOs.reset();
-
         energyReceiverPipes.reset();
-        energyReceiverPipes.removeIf((pos, v) -> v.isRemoved());
     }
 
     /**
@@ -163,25 +146,18 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
      */
     @Override
     public void afterTick() {
-        refreshConnection(extractablesLOs, IEnergyStorage::canExtract);
-        refreshConnection(receivableLOs, IEnergyStorage::canReceive);
+        refreshConnection(extractLOs, IEnergyStorage::canExtract);
+        refreshConnection(receiveLOs, IEnergyStorage::canReceive);
         refreshConnection(bothLOs, ForgeUtils::canBoth);
 
-        var extractables = extractablesLOs.getValues();
-        var receivables = receivableLOs.getValues();
-        var both = bothLOs.getValues();
+        var extract = extractLOs.forceGetValues();
+        var receive = receiveLOs.forceGetValues();
+        var both = bothLOs.forceGetValues();
 
-        var prevEnergy = energySlot.getEnergyStored();
-        extractFrom(extractables);
+        extractFrom(extract);
         extractFrom(both);
-        if (prevEnergy != energySlot.getEnergyStored())
-            setChanged();
-
-        prevEnergy = energySlot.getEnergyStored();
-        insertTo(receivables);
+        insertTo(receive);
         insertTo(both);
-        if (prevEnergy != energySlot.getEnergyStored())
-            setChanged();
     }
 
     public void refreshConnection(LazyOptionalMap<IEnergyStorage> loEnergyMap, Predicate<IEnergyStorage> shouldSustain) {
@@ -199,40 +175,31 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     public void extractFrom(List<IEnergyStorage> machines) {
-        machines = machines.stream().filter(e -> e.getEnergyStored() != 0).toList();
-
-        if (machines.size() != 0) {
-            var energy = energySlot.getFreeSpace() / machines.size();
-            if (energy != 0)
-                machines.forEach(e -> energySlot.receiveEnergy(e.extractEnergy(energy, false), false));
-            if (energySlot.getFreeSpace() / machines.size() == 0) {
-                var i = new AtomicInteger(energySlot.getFreeSpace());
-                machines.stream()
-                        .takeWhile(a -> i.get() > 0)
-                        .forEach(e -> {
-                            if (e.extractEnergy(1, false) == 1) {
-                                energySlot.receiveEnergy(1, false);
-                                i.getAndDecrement();
-                            }
-                        });
-            }
-        }
+        interactWith(machines, e -> e.getEnergyStored() != 0, TileEnergySlot::getFreeSpace,
+                (e, energy) -> e.extractEnergy(energy, false), energy -> energySlot.receiveEnergy(energy, false));
     }
 
     public void insertTo(List<IEnergyStorage> machines) {
-        machines = machines.stream().filter(e -> e.getEnergyStored() != e.getMaxEnergyStored()).toList();
+        interactWith(machines, e -> e.getEnergyStored() != e.getMaxEnergyStored(), IEnergyStorage::getEnergyStored,
+                (e, energy) -> e.receiveEnergy(energy, false), energy -> energySlot.extractEnergy(energy, false));
+    }
+
+    public void interactWith(List<IEnergyStorage> machines, Predicate<IEnergyStorage> filter, Function<TileEnergySlot<?>, Integer> energyGetter,
+                             BiFunction<IEnergyStorage, Integer, Integer> targetFunc, Consumer<Integer> selfFunc) {
+        machines = JavaUtils.filter(machines, filter);
 
         if (machines.size() != 0) {
-            var energy = energySlot.getEnergyStored() / machines.size();
+            var energy = energyGetter.apply(energySlot) / machines.size();
             if (energy != 0)
-                machines.forEach(e -> energySlot.extractEnergy(e.receiveEnergy(energy, false), false));
-            if (energySlot.getEnergyStored() / machines.size() == 0) {//1とか3とか端数が残るの嫌だから出し切る
-                var i = new AtomicInteger(energySlot.getEnergyStored());
+                machines.forEach(e ->
+                        selfFunc.accept(targetFunc.apply(e, energy)));
+            if (energyGetter.apply(energySlot) / machines.size() == 0) {//1とか3とか端数が残るの嫌だから出し切る
+                var i = new AtomicInteger(energyGetter.apply(energySlot));
                 machines.stream()
                         .takeWhile(a -> i.get() > 0)
                         .forEach(e -> {
-                            if (e.receiveEnergy(1, false) == 1) {
-                                energySlot.extractEnergy(1, false);
+                            if (targetFunc.apply(e, 1) == 1) {
+                                selfFunc.accept(1);
                                 i.getAndDecrement();
                             }
                         });
@@ -241,7 +208,7 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     }
 
     /**
-     * ゴミ処理場
+     * 読む必要ない
      */
     public static final String ENERGY = "Energy";
     public static final String EXTRACTABLES = "Extractables";
@@ -253,8 +220,8 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putInt(ENERGY, energySlot.getEnergyStored());
-        tag.put(EXTRACTABLES, extractablesLOs.serializeNBT());
-        tag.put(RECEIVABLES, receivableLOs.serializeNBT());
+        tag.put(EXTRACTABLES, extractLOs.serializeNBT());
+        tag.put(RECEIVABLES, receiveLOs.serializeNBT());
         tag.put(BOTH, bothLOs.serializeNBT());
         tag.put(ENERGY_RECEIVER_PIPES, energyReceiverPipes.serializeNBT());
     }
@@ -265,13 +232,35 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
         if (tag.contains(ENERGY))
             energySlot.receive(tag.getInt(ENERGY));
         if (tag.contains(EXTRACTABLES))
-            extractablesLOs.deserializeNBT(tag.getCompound(EXTRACTABLES));
+            extractLOs.deserializeNBT(tag.getCompound(EXTRACTABLES));
         if (tag.contains(RECEIVABLES))
-            receivableLOs.deserializeNBT(tag.getCompound(RECEIVABLES));
+            receiveLOs.deserializeNBT(tag.getCompound(RECEIVABLES));
         if (tag.contains(BOTH))
             bothLOs.deserializeNBT(tag.getCompound(BOTH));
         if (tag.contains(ENERGY_RECEIVER_PIPES))
             energyReceiverPipes.deserializeNBT(tag.getCompound(ENERGY_RECEIVER_PIPES));
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        tryLoadCaches();
+    }
+
+    @Override
+    public void beforeTick() {
+        super.beforeTick();
+        if (level.getGameTime() % 20 == 0)
+            tryLoadCaches();
+    }
+
+    public void tryLoadCaches() {
+        extractLOs.tryLoadCache(level);
+        receiveLOs.tryLoadCache(level);
+        bothLOs.tryLoadCache(level);
+        energyReceiverPipes.tryLoadCache(level, (pos, tile) -> tile.connect(this));
+
+        setChanged();//TODO addFuncにsetChanged
     }
 
     public ContainerData energyData = new ContainerData() {
@@ -279,8 +268,8 @@ public class TileTransferNodeEnergy extends TileBaseTransferNode {
         public int get(int p_39284_) {
             return switch (p_39284_) {
                 case 0 -> energySlot.getEnergyStored();
-                case 1 -> extractablesLOs.valueCount();
-                case 2 -> receivableLOs.valueCount();
+                case 1 -> extractLOs.valueCount();
+                case 2 -> receiveLOs.valueCount();
                 case 3 -> bothLOs.valueCount();
                 case 4 -> energyReceiverPipes.size();
                 default -> -1;

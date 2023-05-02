@@ -2,8 +2,6 @@ package nin.transferpipe.block.pipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -26,11 +24,20 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
     public static class Tile extends nin.transferpipe.block.Tile {
 
         @Nullable
-        public TileTransferNodeEnergy nodeReference = null;
+        public TileTransferNodeEnergy node;
         public LazyOptional<ReferenceEnergyStorage> loReferencedEnergy = LazyOptional.empty();
 
         public Tile(BlockPos p_155229_, BlockState p_155230_) {
             super(TPBlocks.ENERGY_RECEIVER_PIPE.tile(), p_155229_, p_155230_);
+        }
+
+        @Override
+        public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+            return cap == ForgeCapabilities.ENERGY
+                           && loReferencedEnergy.isPresent()
+                           && (side == null || TPUtils.connection(getBlockState(), side) == Connection.MACHINE)
+                   ? loReferencedEnergy.cast()
+                   : super.getCapability(cap, side);
         }
 
         @Override
@@ -40,56 +47,20 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
 
         public void connect(TileTransferNodeEnergy node) {
             disConnect();
-            nodeReference = node;
+            this.node = node;
+            loReferencedEnergy = node.getCapability(ForgeCapabilities.ENERGY).lazyMap(ReferenceEnergyStorage::new);
             setChanged();
-            loReferencedEnergy = node.getCapability(ForgeCapabilities.ENERGY)
-                    .lazyMap(ReferenceEnergyStorage::new);
         }
 
         public void disConnect() {
-            if (nodeReference != null) {
-                nodeReference.energyReceiverPipes.remove(worldPosition);
-                nodeReference = null;
-                setChanged();
-                loReferencedEnergy.invalidate();
-            }
+            if (node != null)
+                node.energyReceiverPipes.remove(worldPosition);
         }
 
-        @Override
-        public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-            return nodeReference != null && cap == ForgeCapabilities.ENERGY
-                           && (side == null || TPUtils.currentConnection(getBlockState(), side) == Connection.MACHINE)
-                   ? loReferencedEnergy.cast()
-                   : super.getCapability(cap, side);
-        }
-
-        /**
-         * NBT
-         */
-        public static String NODE_POS = "NodePos";
-
-        @Override
-        protected void saveAdditional(CompoundTag tag) {
-            super.saveAdditional(tag);
-
-            if (nodeReference != null)
-                tag.put(NODE_POS, NbtUtils.writeBlockPos(nodeReference.POS));
-        }
-
-        private BlockPos initPos = null;
-
-        @Override
-        public void load(CompoundTag tag) {
-            super.load(tag);
-            if (tag.contains(NODE_POS))
-                initPos = NbtUtils.readBlockPos(tag.getCompound(NODE_POS));
-        }
-
-        @Override
-        public void onLoad() {
-            super.onLoad();
-            if (initPos != null)
-                nodeReference = level.getBlockEntity(initPos) instanceof TileTransferNodeEnergy tile ? tile : null;
+        public void reset() {
+            node = null;
+            loReferencedEnergy.invalidate();
+            setChanged();
         }
     }
 }

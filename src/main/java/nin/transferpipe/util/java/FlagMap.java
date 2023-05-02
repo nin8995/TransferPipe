@@ -37,11 +37,13 @@ public class FlagMap<K, V> extends UtilMap<K, V> {
 
     public final UtilMap<K, Boolean> cache = new UtilMap<>();
 
-    public void tryLoadCache(Function<K, LoadResult<V>> valueGetter) {
+    public void tryLoadCache(Function<K, LoadResult<V>> valueGetter, BiConsumer<K, V> loadFunc) {
         cache.removeIf((k, marked) -> {
             var v = valueGetter.apply(k);
-            if (v instanceof LoadResult.A<V> a)
+            if (v instanceof LoadResult.A<V> a) {
+                loadFunc.accept(k, a.v);
                 put(k, a.v, marked);
+            }
 
             return v instanceof LoadResult.A || v instanceof LoadResult.NA;
         });

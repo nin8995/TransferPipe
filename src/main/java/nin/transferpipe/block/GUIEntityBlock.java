@@ -20,13 +20,13 @@ public interface GUIEntityBlock<T extends Tile> extends TickingEntityBlock<T> {
 
     TPBlocks.RegistryGUIEntityBlock<T> registryWithGUI();
 
-    BaseBlockMenu menu(T be, int id, Inventory inv);
+    BaseBlockMenu menu(T tile, int id, Inventory inv);
 
-    default InteractionResult openMenu(Level level, BlockPos pos, Player player) {
+    default InteractionResult openMenu(Level level, BlockPos pos, Player player, T tile) {
         try {
             if (!level.isClientSide && player instanceof ServerPlayer serverPlayer)
                 NetworkHooks.openScreen(serverPlayer, new SimpleMenuProvider(
-                        (i, inv, pl) -> menu((T) level.getBlockEntity(pos), i, inv).setAccess(ContainerLevelAccess.create(level, pos)),
+                        (i, inv, pl) -> menu(tile, i, inv).setAccess(ContainerLevelAccess.create(level, pos)),
                         level.getBlockState(pos).getBlock().getName()));
 
             return InteractionResult.sidedSuccess(level.isClientSide);

@@ -31,19 +31,16 @@ public class PosDirsMap<V> extends FlagMapMap<BlockPos, Direction, V> implements
         var tag = new CompoundTag();
         var i = new AtomicInteger(0);
 
-        forEach((pos, dirsMap) -> {
+        flatForEach((pos, dir, v) -> cache.add(pos, dir, marks.contains(pos, dir)));
+        cache.forEach((pos, dirsMap) -> {
             var subTag = new CompoundTag();
             subTag.put(POS, NbtUtils.writeBlockPos(pos));
-            var dirTag = new CompoundTag();
-            if (cache.containsKey(pos))
-                cache.get(pos).forEach((dir, marked) ->
-                        dirTag.putBoolean(String.valueOf(dir.ordinal()), marked));
-            dirsMap.keySet().forEach(dir ->
-                    dirTag.putBoolean(String.valueOf(dir.ordinal()), marks.contains(pos, dir)));
+            var dirsTag = new CompoundTag();
+            dirsMap.forEach((dir, marked) ->
+                    dirsTag.putBoolean(String.valueOf(dir.ordinal()), marked));
+            subTag.put(DIRS, dirsTag);
 
-            subTag.put(DIRS, dirTag);
-
-            tag.put(String.valueOf(i), subTag);
+            tag.put(i.toString(), subTag);
             i.getAndIncrement();
         });
 

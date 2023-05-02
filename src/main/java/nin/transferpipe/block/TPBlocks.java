@@ -195,7 +195,7 @@ public interface TPBlocks {
                         .condition(CONNECTIONS.get(dir), PIPE));//パイプに
 
                 forRotatedModel(mb, dir, overlayOneway, p -> p//一方通行を
-                        .condition(FLOW, Flow.stream().filter(f -> !f.openToPipe(dir)).toArray(Flow[]::new))//一方通行の時
+                        .condition(FLOW, Flow.stream().filter(f -> !f.openTo(dir)).toArray(Flow[]::new))//一方通行の時
                         .condition(CONNECTIONS.get(dir), PIPE));//パイプに
             });
 

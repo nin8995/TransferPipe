@@ -30,18 +30,11 @@ public class PosMap<V> extends FlagMap<BlockPos, V> implements INBTSerializable<
         var tag = new CompoundTag();
         var i = new AtomicInteger(0);
 
+        keySet().forEach(pos -> cache.put(pos, marks.contains(pos)));
         cache.forEach((pos, marked) -> {
             var subTag = new CompoundTag();
             subTag.put(POS, NbtUtils.writeBlockPos(pos));
             subTag.putBoolean(MARKED, marked);
-
-            tag.put(i.toString(), subTag);
-            i.getAndIncrement();
-        });
-        keySet().forEach(pos -> {
-            var subTag = new CompoundTag();
-            subTag.put(POS, NbtUtils.writeBlockPos(pos));
-            subTag.putBoolean(MARKED, marks.contains(pos));
 
             tag.put(i.toString(), subTag);
             i.getAndIncrement();

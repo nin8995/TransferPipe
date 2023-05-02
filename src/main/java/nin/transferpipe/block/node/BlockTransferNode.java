@@ -26,26 +26,55 @@ import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.util.minecraft.MCUtils;
+import nin.transferpipe.util.transferpipe.PipeInstance;
 import nin.transferpipe.util.transferpipe.TPUtils;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-//搬送する種類に依らない、「ノード」のブロックとしての機能
+/**
+ * TileBaseTransferNodeを持つブロック
+ */
 public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends LightingBlock implements GUIEntityBlock<T> {
-
-    /**
-     * 基本情報
-     */
 
     public BlockTransferNode() {
         super(BlockBehaviour.Properties.of(Material.STONE));
     }
 
-    //energy nodeかそうじゃないか
+    /**
+     * ルート計算
+     */
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean p_60514_) {
+        if (level.getBlockEntity(pos) instanceof TileBaseTransferNode node) {
+            var prevState = node.pipeState;
+            var currentState = PipeInstance.recalcState(level, pos);
+            if (prevState != currentState)
+                node.setPipeStateAndUpdate(currentState);
+        }
+
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, p_60514_);
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
+        if (level.getBlockEntity(pos) instanceof TileBaseTransferNode node) {
+            if (TPUtils.usingWrench(player, hand) && node.shouldRenderPipe()) {
+                if (!level.isClientSide)
+                    node.setPipeStateAndUpdate(PipeInstance.cycleAndCalcState(level, pos/*, player.isShiftKeyDown() shift右クリックはブロックからは検知できない*/));
+                return InteractionResult.sidedSuccess(level.isClientSide);
+            }
+
+            return openMenu(level, pos, player, (T) node);
+        }
+
+        return InteractionResult.PASS;
+    }
+
+    /**
+     * 面を持つノードの初期化と当たり判定
+     */
     public abstract static class FacingNode<T extends TileBaseTransferNode> extends BlockTransferNode<T> {
 
         public static DirectionProperty FACING = BlockStateProperties.FACING;
@@ -70,13 +99,10 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
                 Block.box(3, 3, 1, 13, 13, 4),
                 Block.box(5, 5, 4, 11, 11, 6)
         ).reduce(Shapes::or).get());
-        public final Map<BlockState, VoxelShape> shapeCache = this.stateDefinition.getPossibleStates().stream().collect(Collectors.toMap(
-                UnaryOperator.identity(),
-                bs -> ROTATED_NODES.get(bs.getValue(FACING))));
 
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter blockGetter, BlockPos pos, CollisionContext context) {
-            var shape = new AtomicReference<>(shapeCache.get(state));
+            var shape = new AtomicReference<>(ROTATED_NODES.get(state.getValue(FACING)));
             blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
                 if (be.shouldRenderPipe())
                     shape.set(Shapes.or(shape.get(), TransferPipe.getShape(be.pipeState)));
@@ -95,37 +121,8 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
     }
 
     /**
-     * 一般の機能
+     * 各ノード
      */
-
-    @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean p_60514_) {
-        if (level.getBlockEntity(pos) instanceof TileBaseTransferNode be) {
-            var prevState = be.pipeState;
-            var currentState = TPUtils.recalcConnections(level, pos);
-            if (prevState != currentState)
-                be.setPipeStateAndUpdate(currentState);
-        }
-
-        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, p_60514_);
-    }
-
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
-        var be = (T) level.getBlockEntity(pos);
-        if (TPUtils.usingWrench(player, hand) && be.shouldRenderPipe()) {
-            if (!level.isClientSide)
-                be.setPipeStateAndUpdate(TPUtils.cycleFlowAndRecalc(level, pos/*, player.isShiftKeyDown() shift右クリックはブロックからは検知できない*/));
-            return InteractionResult.sidedSuccess(level.isClientSide);
-        }
-
-        return openMenu(level, pos, player);
-    }
-
-    /**
-     * 搬送種毎の情報
-     */
-
     public static class Item extends FacingNode<TileTransferNodeItem> {
 
         @Override
@@ -134,8 +131,8 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
         }
 
         @Override
-        public BaseBlockMenu menu(TileTransferNodeItem be, int id, Inventory inv) {
-            return new MenuTransferNode.Item(be.itemSlot, be.upgrades, be.searchData, id, inv);
+        public BaseBlockMenu menu(TileTransferNodeItem tile, int id, Inventory inv) {
+            return new MenuTransferNode.Item(tile.itemSlot, tile.upgrades, tile.searchData, id, inv);
         }
     }
 
@@ -147,8 +144,8 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
         }
 
         @Override
-        public BaseBlockMenu menu(TileTransferNodeLiquid be, int id, Inventory inv) {
-            return new MenuTransferNode.Liquid(be.dummyLiquidItem, be.upgrades, be.searchData, id, inv);
+        public BaseBlockMenu menu(TileTransferNodeLiquid tile, int id, Inventory inv) {
+            return new MenuTransferNode.Liquid(tile.dummyLiquidItem, tile.upgrades, tile.searchData, id, inv);
         }
     }
 
@@ -160,8 +157,8 @@ public abstract class BlockTransferNode<T extends TileBaseTransferNode> extends 
         }
 
         @Override
-        public BaseBlockMenu menu(TileTransferNodeEnergy be, int id, Inventory inv) {
-            return new MenuTransferNode.Energy(be.energyData, be.upgrades, be.searchData, id, inv);
+        public BaseBlockMenu menu(TileTransferNodeEnergy tile, int id, Inventory inv) {
+            return new MenuTransferNode.Energy(tile.energyData, tile.upgrades, tile.searchData, id, inv);
         }
 
         public static final VoxelShape ENERGY_NODE = Stream.of(
