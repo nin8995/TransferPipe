@@ -15,11 +15,14 @@ public interface GUIItem {
 
     default InteractionResultHolder<ItemStack> openMenu(Level level, Player player, InteractionHand hand) {
         var item = player.getItemInHand(hand);
+        var slot = hand == InteractionHand.OFF_HAND
+                   ? Inventory.SLOT_OFFHAND
+                   : player.getInventory().selected;
         try {
             if (!level.isClientSide && player instanceof ServerPlayer serverPlayer)
                 NetworkHooks.openScreen(serverPlayer, new SimpleMenuProvider(
-                        (i, inv, pl) -> menu(item, player, i, inv),
-                        item.getItem().getName(item)));
+                        (i, inv, pl) -> menu(item, player, slot, i, inv),
+                        item.getItem().getName(item)), buf -> buf.writeInt(slot));
 
             return InteractionResultHolder.sidedSuccess(item, level.isClientSide);
         } catch (Exception e) {
@@ -27,5 +30,5 @@ public interface GUIItem {
         }
     }
 
-    BaseItemMenu menu(ItemStack item, Player player, int id, Inventory inv);
+    BaseItemMenu menu(ItemStack item, Player player, int slot, int id, Inventory inv);
 }

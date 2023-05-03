@@ -29,12 +29,12 @@ import java.util.stream.Collectors;
 import static nin.transferpipe.block.pipe.TransferPipe.CONNECTIONS;
 import static nin.transferpipe.block.pipe.TransferPipe.FLOW;
 
-public class TPUtils {
+public interface TPUtils {
 
     /**
      * パラメーター取得
      */
-    public static BlockState currentState(Level level, BlockPos pos) {
+    static BlockState currentState(Level level, BlockPos pos) {
         var bs = level.getBlockState(pos);
         return bs.getBlock() instanceof TransferPipe
                ? bs
@@ -44,46 +44,52 @@ public class TPUtils {
     }
 
     @Nullable
-    public static Direction currentNodeDir(Level level, BlockPos pos) {
+    static Block currentPipeBlock(Level level, BlockPos pos) {
+        var state = currentState(level, pos);
+        return state != null ? state.getBlock() : null;
+    }
+
+    @Nullable
+    static Direction currentNodeDir(Level level, BlockPos pos) {
         return level.getBlockState(pos).getBlock() instanceof BlockTransferNode.FacingNode<?> node ? node.facing(level, pos) : null;
     }
 
-    public static Connection connection(BlockState state, Direction dir) {
+    static Connection connection(BlockState state, Direction dir) {
         return state.getValue(CONNECTIONS.get(dir));
     }
 
-    public static Flow flow(BlockState state) {
+    static Flow flow(BlockState state) {
         return state.getValue(FLOW);
     }
 
     @Nullable
-    public static Connection currentConnection(Level level, BlockPos pos, Direction dir) {
+    static Connection currentConnection(Level level, BlockPos pos, Direction dir) {
         return PipeInstance.of(level, pos).map(it -> it.connections.get(dir)).orElse(null);
     }
 
     @Nullable
-    public static Flow currentFlow(Level level, BlockPos pos) {
+    static Flow currentFlow(Level level, BlockPos pos) {
         return PipeInstance.of(level, pos).map(it -> it.flow).orElse(null);
     }
 
     /**
      * 見た目がキューブ
      */
-    public static Set<BlockState> centers = TPBlocks.PIPES.stream().map(RegistryObject::get)
+    Set<BlockState> centers = TPBlocks.PIPES.stream().map(RegistryObject::get)
             .map(Block::defaultBlockState)
             .flatMap(state -> Flow.stream().map(flow -> state.setValue(FLOW, flow)))
             .collect(Collectors.toSet());
 
-    public static boolean centerOnly(BlockState bs) {
+    static boolean centerOnly(BlockState bs) {
         return centers.contains(bs);
     }
 
     /**
      * レンチ判定
      */
-    public static final TagKey<Item> WRENCH_TAG = TagKey.create(Registries.ITEM, new ResourceLocation("forge", "tools/wrench"));
+    TagKey<Item> WRENCH_TAG = TagKey.create(Registries.ITEM, new ResourceLocation("forge", "tools/wrench"));
 
-    public static boolean usingWrench(Player pl, InteractionHand hand) {
+    static boolean usingWrench(Player pl, InteractionHand hand) {
         var item = pl.getItemInHand(hand);
         return item.is(Items.STICK) || item.is(WRENCH_TAG);
     }
@@ -91,7 +97,7 @@ public class TPUtils {
     /**
      * TileHolderを考慮したlevel#getBlockEntity
      */
-    public static BlockEntity getTile(Level level, BlockPos pos) {
+    static BlockEntity getTile(Level level, BlockPos pos) {
         return level.getBlockEntity(pos) instanceof TileHolderEntity tileHolder
                ? tileHolder.holdingTile
                : level.getBlockEntity(pos);

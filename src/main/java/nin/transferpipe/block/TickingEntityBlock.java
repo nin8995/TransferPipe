@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-public interface TickingEntityBlock<BE extends Tile> extends EntityBlock {
+public interface TickingEntityBlock<T extends Tile> extends EntityBlock {
 
     @Override
     default <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
@@ -25,9 +25,13 @@ public interface TickingEntityBlock<BE extends Tile> extends EntityBlock {
         return registry().tileSupplier().create(p_153215_, p_153216_);
     }
 
-    default BlockEntityType<BE> getType() {
+    default BlockEntityType<T> getType() {
         return registry().tile();
     }
 
-    TPBlocks.RegistryEntityBlock<BE> registry();
+    TPBlocks.RegistryEntityBlock<T> registry();
+
+    default T getTile(Level level, BlockPos pos) {
+        return (T) level.getBlockEntity(pos);
+    }
 }

@@ -5,7 +5,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
-import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -17,20 +16,21 @@ import net.minecraftforge.client.model.generators.ConfiguredModel;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.client.model.generators.MultiPartBlockStateBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.network.IContainerFactory;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.node.*;
-import nin.transferpipe.block.pipe.EnergyPipe;
-import nin.transferpipe.block.pipe.EnergyReceiverPipe;
-import nin.transferpipe.block.pipe.Flow;
-import nin.transferpipe.block.pipe.TransferPipe;
+import nin.transferpipe.block.pipe.*;
 import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.gui.RegistryGUI;
 import nin.transferpipe.item.UpgradeBlockItem;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -52,12 +52,19 @@ public interface TPBlocks {
     DeferredRegister<BlockEntityType<?>> TILES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
     DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, MODID);
     DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
+    List<RegistryGUI> GUI = new ArrayList<>();
 
     //Pipes
     RegistryObject<Block> TRANSFER_PIPE = registerPipe("transfer_pipe", TransferPipe::new);
     RegistryObject<Block> ENERGY_PIPE = registerPipe("energy_pipe", EnergyPipe::new);
     RegistryEntityBlock<EnergyReceiverPipe.Tile> ENERGY_RECEIVER_PIPE = registerPipe("energy_receiver_pipe",
             EnergyReceiverPipe::new, EnergyReceiverPipe.Tile::new);
+
+    //Functional Pipes
+    RegistryObject<Block> RATIONING_PIPE = registerPipe("rationing_pipe", () -> new RationingPipe(64));
+    RegistryObject<Block> HYPER_RATIONING_PIPE = registerPipe("hyper_rationing_pipe", () -> new RationingPipe(1));
+    RegistryGUIEntityBlock<RegulatableRationingPipe.Tile> REGULATABLE_RATIONING_PIPE = registerPipe("regulatable_rationing_pipe",
+            RegulatableRationingPipe::new, RegulatableRationingPipe.Tile::new, RegulatableRationingPipe.Menu::new, RegulatableRationingPipe.Screen::new);
 
     //Nodes
     RegistryGUIEntityBlock<TileTransferNodeItem> TRANSFER_NODE_ITEM = registerNode("transfer_node_item",
@@ -85,7 +92,7 @@ public interface TPBlocks {
 
     static <T extends BlockEntity, M extends BaseBlockMenu, U extends Screen & MenuAccess<M>>
     RegistryGUIEntityBlock<T> registerPipe(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
-                                           MenuType.MenuSupplier<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
+                                           IContainerFactory<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
         var registry = registerGUIEntityBlock(id, block, tile, menu, screen);
         PIPES.add(registry.roBlock);
         return registry;
@@ -93,7 +100,7 @@ public interface TPBlocks {
 
     static <T extends TileBaseTransferNode, M extends BaseBlockMenu, U extends Screen & MenuAccess<M>>
     RegistryGUIEntityBlock<T> registerNode(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
-                                           MenuType.MenuSupplier<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
+                                           IContainerFactory<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
         var registry = registerGUIEntityBlock(id, block, tile, menu, screen);
         NODES.add(registry);
         return registry;
@@ -101,12 +108,13 @@ public interface TPBlocks {
 
     static <T extends BlockEntity, M extends BaseBlockMenu, U extends Screen & MenuAccess<M>>
     RegistryGUIEntityBlock<T> registerGUIEntityBlock(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
-                                                     MenuType.MenuSupplier<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
+                                                     IContainerFactory<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
         var roBlock = BLOCKS.register(id, block);
         var roEntity = TILES.register(id, () -> BlockEntityType.Builder.of(tile, roBlock.get()).build(null));
-        var roMenu = MENUS.register(id, () -> new MenuType<>(menu, FeatureFlags.DEFAULT_FLAGS));
+        var roMenu = MENUS.register(id, () -> IForgeMenuType.create(menu));
         var registry = new RegistryGUIEntityBlock<>(roBlock, roEntity, tile, (RegistryObject<MenuType<?>>) (Object) roMenu, screen);
         ITEMS.register(id, () -> new BlockItem(registry.block(), new Item.Properties()));
+        GUI.add(registry.gui());
         return registry;
     }
 

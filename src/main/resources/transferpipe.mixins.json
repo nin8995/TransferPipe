@@ -5,7 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "transferpipe.refmap.json",
   "mixins": [
-    "BanSwapForFilterSlot",
+    "BanSwapForRestrictedSlot",
     "HopperBlockEntityInvoker"
   ],
   "client": [

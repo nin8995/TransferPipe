@@ -33,10 +33,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
+
+import static nin.transferpipe.block.pipe.TransferPipe.FLOW;
 
 public abstract class TileBaseTransferNode extends TileHolderEntity implements Searcher, TPItems {
 
@@ -117,8 +119,6 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
         sortingFunc = (l, i) -> true;
         filteringFunc = i -> true;
 
-        var pipeRemoved = new AtomicBoolean(pipeState.getBlock() != TPBlocks.TRANSFER_PIPE.get());
-
         upgrades.forEachItem(upgrade -> {
             if (upgrade.is(SPEED_UPGRADE.get()))
                 coolRate += upgrade.getCount();
@@ -149,24 +149,26 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
                 redstoneBehavior = RedstoneBehavior.ACTIVE_HIGH;
             else if (upgrade.is(Items.GUNPOWDER))
                 redstoneBehavior = RedstoneBehavior.NEVER;
-            else if (upgrade.getItem() instanceof RationingUpgradeItem rationing) {
+            else if (upgrade.getItem() instanceof RationingUpgrade rationing) {
                 itemRation = rationing.getItemRation(upgrade);
                 liquidRation = rationing.getLiquidRation(upgrade);
             } else if (upgrade.getItem() instanceof SortingUpgrade sorter)
                 sortingFunc = sorter.filter;
             else if (upgrade.getItem() instanceof FilterItem filter)
                 filteringFunc = filter.getFilter(upgrade);
-
-            else if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe) {
-                if (pipe != pipeState.getBlock())
-                    setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipe.defaultBlockState(), FACING));
-                else
-                    pipeRemoved.set(false);
-            }
         });
 
-        if (pipeRemoved.get())
-            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, TPBlocks.TRANSFER_PIPE.get().defaultBlockState(), FACING));
+        var pipes = new ArrayList<TransferPipe>();
+        upgrades.forEachItem(upgrade -> {
+            if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
+                pipes.add(pipe);
+        });
+        if (!pipes.isEmpty()) {
+            var pipe = pipes.get(pipes.size() - 1);
+            if (pipeState.getBlock() != pipe)
+                setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipe.defaultBlockState().setValue(FLOW, pipeState.getValue(FLOW))));
+        } else if (pipeState.getBlock() != TPBlocks.TRANSFER_PIPE.get())
+            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, TPBlocks.TRANSFER_PIPE.get().defaultBlockState().setValue(FLOW, pipeState.getValue(FLOW))));
     }
 
     public int wi() {
@@ -236,6 +238,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     @Override
     public void onFind(BlockPos pos, Direction dir) {
         work(pos, dir);
+
         if (addParticle)
             addBlockParticle(pos);
     }

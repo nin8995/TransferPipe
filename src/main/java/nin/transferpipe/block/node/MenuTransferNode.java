@@ -2,6 +2,7 @@ package nin.transferpipe.block.node;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
@@ -26,21 +27,17 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
     public int upgradesStart = containerStart;
     public int upgradesEnd = upgradesStart + 5;
 
-    public MenuTransferNode(IItemHandler upgrades, ContainerData searchData, TPBlocks.RegistryGUIEntityBlock registry, int containerId, Inventory inv) {
-        super(registry, containerId, inv, "transfer_node");
+    public MenuTransferNode(IItemHandler upgrades, ContainerData searchData, TPBlocks.RegistryGUIEntityBlock<?> registry, int containerId, Inventory inv) {
+        super(registry, containerId, inv, "transfer_node", 225);
         this.searchData = searchData;
         this.addDataSlots(searchData);
+        addInventory();
         addItemHandlerSlots(upgrades, UpgradeSlot::new, upgradesY);
     }
 
     @Override
     public boolean noInventoryText() {
         return true;
-    }
-
-    @Override
-    public int getOffsetY() {
-        return upgradesY + 22;
     }
 
     @Override
@@ -60,7 +57,7 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
     public static class Item extends MenuTransferNode {
 
         //client
-        public Item(int containerId, Inventory inv) {
+        public Item(int containerId, Inventory inv, FriendlyByteBuf buf) {
             this(new ItemStackHandler(), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv);
         }
 
@@ -69,6 +66,7 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
             super(upgrades, data, TPBlocks.TRANSFER_NODE_ITEM, containerId, inv);
             this.addSlot(new SlotItemHandler(slot, 0, 80, -38 + upgradesY));
             containerEnd++;
+            addContainerEnd(1);
         }
     }
 
@@ -77,7 +75,7 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
         private final IItemHandler dummyLiquidItem;
 
         //client
-        public Liquid(int containerId, Inventory inv) {
+        public Liquid(int containerId, Inventory inv, FriendlyByteBuf buf) {
             this(new ItemStackHandler(), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv);
         }
 
@@ -115,7 +113,7 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
 
         private final ContainerData energyNodeData;
 
-        public Energy(int containerId, Inventory inv) {
+        public Energy(int containerId, Inventory inv, FriendlyByteBuf buf) {
             this(new SimpleContainerData(5), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv);
         }
 

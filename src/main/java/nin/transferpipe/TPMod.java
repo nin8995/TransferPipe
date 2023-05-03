@@ -64,8 +64,8 @@ public class TPMod {
     @SubscribeEvent
     public static void clientInit(FMLClientSetupEvent e) {
         e.enqueueWork(() -> {
-            TPBlocks.NODES.forEach(node -> bindMenuAndScreen(node.menu(), node.screen()));
-            TPItems.MENU_SCREENS.forEach(ms -> bindMenuAndScreen(ms.menu(), ms.screen()));
+            TPBlocks.GUI.forEach(gui -> bindMenuAndScreen(gui.menu(), gui.screen()));
+            TPItems.GUI.forEach(gui -> bindMenuAndScreen(gui.menu(), gui.screen()));
         });
     }
 

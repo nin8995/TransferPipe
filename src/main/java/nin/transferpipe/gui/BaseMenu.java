@@ -19,22 +19,17 @@ import java.util.stream.Stream;
 
 public abstract class BaseMenu extends AbstractContainerMenu {
 
-    //slot info
-    public int inventoryStart = 0;
-    public int inventoryEnd = inventoryStart + 26;
-    public int hotbarStart = inventoryEnd + 1;
-    public int hotbarEnd = hotbarStart + 8;
-    public int containerStart = hotbarEnd + 1;
-    public int containerEnd;
+    public Inventory inv;
 
     //screen info
     public String bg;
+    public int bgHeight;
 
-    public BaseMenu(RegistryGUI registry, int p_38852_, Inventory inv, String bg) {
-        super(registry.menu(), p_38852_);
+    public BaseMenu(RegistryGUI registry, int id, Inventory inv, String bg, int bgHeight) {
+        super(registry.menu(), id);
         this.bg = bg;
-        if (!noInventory())
-            addInventory(inv);
+        this.inv = inv;
+        this.bgHeight = bgHeight;
     }
 
     public boolean noInventory() {
@@ -49,12 +44,13 @@ public abstract class BaseMenu extends AbstractContainerMenu {
         return false;
     }
 
-    public void addInventory(Inventory inv) {
+    public void addInventory() {
+        //hotbar
+        addInventorySlots(0, inv, Slot::new, 58);
+
         //inventory
         IntStream.rangeClosed(0, 2).forEach(i ->
                 addInventorySlots(9 * (i + 1), inv, Slot::new, i * 18));
-        //hotbar
-        addInventorySlots(0, inv, Slot::new, 58);
     }
 
     public <T extends Container> void addInventorySlots(int start, T inv, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
@@ -68,6 +64,14 @@ public abstract class BaseMenu extends AbstractContainerMenu {
     public <T extends Container> void addContainerSlots(T container, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
         addCenteredSlots(0, container.getContainerSize() - 1, (index, x) -> slotConstructor.apply(container, index, x, y));
     }
+
+    //slot info
+    public int hotbarStart = 0;
+    public int hotbarEnd = hotbarStart + 8;
+    public int inventoryStart = hotbarEnd + 1;
+    public int inventoryEnd = inventoryStart + 26;
+    public int containerStart = inventoryEnd + 1;
+    public int containerEnd;
 
     public void addCenteredSlots(int start, int end, BiFunction<Integer, Integer, Slot> slotConstructor) {
         var slotInfo = slotConstructor.apply(0, 0);
@@ -85,7 +89,11 @@ public abstract class BaseMenu extends AbstractContainerMenu {
         });
 
         if (!(slotInfo.container instanceof Inventory))
-            containerEnd = containerEnd != 0 ? containerEnd + slotAmount : containerStart + slotAmount - 1;
+            addContainerEnd(slotAmount);
+    }
+
+    public void addContainerEnd(int add) {
+        containerEnd = containerEnd != 0 ? containerEnd + add : containerStart + add - 1;
     }
 
     public int getOffsetX() {
@@ -93,7 +101,7 @@ public abstract class BaseMenu extends AbstractContainerMenu {
     }
 
     public int getOffsetY() {//TODO このオフセットはインベントリの始点を表す。インベントリの始点なんて画像の下から数えれば固定だから、自動化死体
-        return 0;
+        return bgHeight - 82;
     }
 
     public boolean shouldLock(Slot info, int index) {
@@ -108,11 +116,11 @@ public abstract class BaseMenu extends AbstractContainerMenu {
             var item = quickMovedSlot.getItem();
 
             if (containerStart <= quickMovedSlotIndex && quickMovedSlotIndex <= containerEnd) {//コンテナスロットなら
-                if (!moveItemTo(item, inventoryStart, hotbarEnd, true))//インベントリに差して
+                if (!moveItemTo(item, hotbarStart, inventoryEnd, true))//インベントリに差して
                     return ItemStack.EMPTY;//差せなければ終わり
                 else
                     sendContentsChanged(Stream.of(quickMovedSlot));//差せたら更新
-            } else if (inventoryStart <= quickMovedSlotIndex && quickMovedSlotIndex <= hotbarEnd) {//インベントリスロットなら
+            } else if (hotbarStart <= quickMovedSlotIndex && quickMovedSlotIndex <= inventoryEnd) {//インベントリスロットなら
                 //まず優先度の高いコンテナスロットに差してから
                 var highPriorities = getHighPriorityContainerSlots(item);
                 var slotChanged = false;
@@ -122,10 +130,10 @@ public abstract class BaseMenu extends AbstractContainerMenu {
                 //普通にコンテナに差す
                 if (!moveItemTo(item, containerStart, containerEnd, false)) {
                     //コンテナに空きなければインベントリ<=>ホットバーで差しあう
-                    if (quickMovedSlotIndex <= inventoryEnd) {
-                        if (!moveItemTo(item, hotbarStart, hotbarEnd, false) && !slotChanged)
+                    if (quickMovedSlotIndex <= hotbarEnd) {
+                        if (!moveItemTo(item, inventoryStart, inventoryEnd, false) && !slotChanged)
                             return ItemStack.EMPTY;//それでも空きがなくて、高優先度スロットでも変化が無ければ
-                    } else if (!moveItemTo(item, inventoryStart, inventoryEnd, false) && !slotChanged)
+                    } else if (!moveItemTo(item, hotbarStart, hotbarEnd, false) && !slotChanged)
                         return ItemStack.EMPTY;//終わり
                 }
             } else {//範囲外なら

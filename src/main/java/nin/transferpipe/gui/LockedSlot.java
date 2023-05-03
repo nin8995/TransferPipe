@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import javax.annotation.Nullable;
 
 //CreativeModeInventoryScreen.SlotWrapperをpickupとplaceだけ殺した版
-public class LockedSlot extends Slot {
+public class LockedSlot extends Slot implements SwapRestricted {
 
     @Override
     public boolean mayPickup(Player p_40228_) {

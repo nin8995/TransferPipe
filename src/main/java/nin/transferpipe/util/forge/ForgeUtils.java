@@ -99,6 +99,15 @@ public interface ForgeUtils {
         return oi.isPresent() ? inv.getStackInSlot(oi.getAsInt()) : null;
     }
 
+    @Nullable
+    static ItemStack findLast(IItemHandler inv, Predicate<ItemStack> filter) {
+        var oi = IntStream.range(0, inv.getSlots())
+                .map(i -> inv.getSlots() - 1 - i)
+                .filter(i -> !inv.extractItem(i, 1, true).isEmpty() && filter.test(inv.getStackInSlot(i)))
+                .findFirst();
+        return oi.isPresent() ? inv.getStackInSlot(oi.getAsInt()) : null;
+    }
+
     /**
      * FluidHandler
      */

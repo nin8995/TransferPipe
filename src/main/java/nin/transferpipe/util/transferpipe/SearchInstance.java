@@ -6,11 +6,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.INBTSerializable;
+import nin.transferpipe.block.node.TileBaseTransferNode;
+import nin.transferpipe.block.pipe.FunctionChanger;
 import nin.transferpipe.util.minecraft.MCUtils;
 import nin.transferpipe.util.minecraft.PosDirsSet;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -62,6 +65,15 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
         queue.remove(searchingPos);
         searcher.onSearchProceed(searchingPos);
 
+
+        FunctionChanger changer = null;
+        TileBaseTransferNode node = null;
+        List<?> cache = null;
+        if (TPUtils.currentPipeBlock(level, searchingPos) instanceof FunctionChanger changerr && searcher instanceof TileBaseTransferNode nodee) {
+            changer = changerr;
+            node = nodee;
+            cache = changerr.storeAndChange(searchingPos, nodee);
+        }
         var destDirs = getDestDirs();
         if (!destDirs.isEmpty()) {
             //周囲の目的地に対する処理
@@ -70,9 +82,12 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
             else
                 destRelative(random(destDirs));
 
+            if (changer != null)
+                changer.restore(cache, node);
             if (searcher.findToEnd())
                 return end();
-        }
+        } else if (changer != null)
+            changer.restore(cache, node);
 
         var proceedableDirs = getProceedableDirs();
         if (!proceedableDirs.isEmpty()) {
@@ -95,6 +110,10 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
     }
 
     public BlockPos getNextPos() {
+        //queueをremoveし次のqueueを得るまでの過程でクラッシュするなどするとempty
+        if (queue.isEmpty())
+            return reset().searchingPos;
+
         return searcher.pickNext(queue);
     }
 
