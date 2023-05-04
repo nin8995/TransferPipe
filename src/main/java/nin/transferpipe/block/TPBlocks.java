@@ -26,6 +26,7 @@ import nin.transferpipe.block.node.*;
 import nin.transferpipe.block.pipe.*;
 import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.gui.RegistryGUI;
+import nin.transferpipe.item.SortingUpgrade;
 import nin.transferpipe.item.UpgradeBlockItem;
 
 import java.util.ArrayList;
@@ -59,12 +60,17 @@ public interface TPBlocks {
     RegistryObject<Block> ENERGY_PIPE = registerPipe("energy_pipe", EnergyPipe::new);
     RegistryEntityBlock<EnergyReceiverPipe.Tile> ENERGY_RECEIVER_PIPE = registerPipe("energy_receiver_pipe",
             EnergyReceiverPipe::new, EnergyReceiverPipe.Tile::new);
-
-    //Functional Pipes
     RegistryObject<Block> RATIONING_PIPE = registerPipe("rationing_pipe", () -> new RationingPipe(64));
     RegistryObject<Block> HYPER_RATIONING_PIPE = registerPipe("hyper_rationing_pipe", () -> new RationingPipe(1));
     RegistryGUIEntityBlock<RegulatableRationingPipe.Tile> REGULATABLE_RATIONING_PIPE = registerPipe("regulatable_rationing_pipe",
             RegulatableRationingPipe::new, RegulatableRationingPipe.Tile::new, RegulatableRationingPipe.Menu::new, RegulatableRationingPipe.Screen::new);
+    RegistryObject<Block> SORTING_PIPE = registerPipe("sorting_pipe", () -> new SortingPipe(SortingUpgrade.ITEM_SORT));
+    RegistryObject<Block> MOD_SORTING_PIPE = registerPipe("mod_sorting_pipe", () -> new SortingPipe(SortingUpgrade.MOD_SORT));
+    RegistryObject<Block> CREATIVE_TAB_SORTING_PIPE = registerPipe("creative_tab_sorting_pipe", () -> new SortingPipe(SortingUpgrade.CREATIVE_TAB_SORT));
+    RegistryObject<Block> TAG_SORTING_PIPE = registerPipe("tag_sorting_pipe", () -> new SortingPipe(SortingUpgrade.TAG_SORT));
+    RegistryObject<Block> COMMON_TAG_SORTING_PIPE = registerPipe("common_tag_sorting_pipe", () -> new SortingPipe(SortingUpgrade.COMMON_TAG_SORT));
+    RegistryObject<Block> CLASS_SORTING_PIPE = registerPipe("class_sorting_pipe", () -> new SortingPipe(SortingUpgrade.CLASS_SORT));
+    RegistryObject<Block> COMMON_CLASS_SORTING_PIPE = registerPipe("common_class_sorting_pipe", () -> new SortingPipe(SortingUpgrade.COMMON_CLASS_SORT));
 
     //Nodes
     RegistryGUIEntityBlock<TileTransferNodeItem> TRANSFER_NODE_ITEM = registerNode("transfer_node_item",

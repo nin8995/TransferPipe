@@ -68,7 +68,7 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
 
         FunctionChanger changer = null;
         TileBaseTransferNode node = null;
-        List<?> cache = null;
+        Object cache = null;
         if (TPUtils.currentPipeBlock(level, searchingPos) instanceof FunctionChanger changerr && searcher instanceof TileBaseTransferNode nodee) {
             changer = changerr;
             node = nodee;

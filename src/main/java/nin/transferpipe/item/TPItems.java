@@ -3,9 +3,12 @@ package nin.transferpipe.item;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
+import net.minecraft.data.PackOutput;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
+import net.minecraftforge.client.model.generators.ItemModelProvider;
+import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.network.IContainerFactory;
@@ -37,21 +40,21 @@ public interface TPItems {
     RegistryObject<Item> BREADTH_FIRST_SEARCH_UPGRADE = registerUpgrade("breadth_first_search_upgrade", p -> p.stacksTo(1));
     RegistryObject<Item> SEARCH_MEMORY_UPGRADE = registerUpgrade("search_memory_upgrade", p -> p.stacksTo(1));
 
+    RegistryGUIItem ITEM_FILTER = registerGUIItem("item_filter",
+            FilterItem::new, FilterItem.Menu::new, FilterItem.Screen::new);
+
     //Functional Upgrade
     RegistryObject<Item> RATIONING_UPGRADE = register("rationing_upgrade", p -> new RationingUpgrade(64, p.stacksTo(1)));
     RegistryObject<Item> HYPER_RATIONING_UPGRADE = register("hyper_rationing_upgrade", p -> new RationingUpgrade(1, p.stacksTo(1)));
     RegistryGUIItem REGULATABLE_RATIONING_UPGRADE = registerGUIItem("regulatable_rationing_upgrade",
             p -> new RegulatableRationingUpgrade(p.stacksTo(1)), RegulatableRationingUpgrade.Menu::new, RegulatableRationingUpgrade.Screen::new);
-    RegistryObject<Item> ITEM_SORTING_UPGRADE = register("item_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.ITEM_SORT, p));
+    RegistryObject<Item> SORTING_UPGRADE = register("sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.ITEM_SORT, p));
     RegistryObject<Item> MOD_SORTING_UPGRADE = register("mod_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.MOD_SORT, p));
     RegistryObject<Item> CREATIVE_TAB_SORTING_UPGRADE = register("creative_tab_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.CREATIVE_TAB_SORT, p));
     RegistryObject<Item> TAG_SORTING_UPGRADE = register("tag_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.TAG_SORT, p));
     RegistryObject<Item> COMMON_TAG_SORTING_UPGRADE = register("common_tag_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.COMMON_TAG_SORT, p));
     RegistryObject<Item> CLASS_SORTING_UPGRADE = register("class_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.CLASS_SORT, p));
     RegistryObject<Item> COMMON_CLASS_SORTING_UPGRADE = register("common_class_sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.COMMON_CLASS_SORT, p));
-
-    RegistryGUIItem ITEM_FILTER = registerGUIItem("item_filter",
-            FilterItem::new, FilterItem.Menu::new, FilterItem.Screen::new);
 
     static RegistryObject<Item> registerUpgrade(String name) {
         return registerUpgrade(name, p -> p);
@@ -95,6 +98,18 @@ public interface TPItems {
 
         public RegistryGUI gui() {
             return new RegistryGUI(roMenu, screen);
+        }
+    }
+
+    class DataGen extends ItemModelProvider{
+
+        public DataGen(PackOutput output, String modid, ExistingFileHelper existingFileHelper) {
+            super(output, modid, existingFileHelper);
+        }
+
+        @Override
+        protected void registerModels() {
+            ITEMS.getEntries().forEach(roItem -> basicItem(roItem.get()));
         }
     }
 }

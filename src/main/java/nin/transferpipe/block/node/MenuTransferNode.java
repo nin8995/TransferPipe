@@ -65,7 +65,6 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
         public Item(IItemHandler slot, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv) {
             super(upgrades, data, TPBlocks.TRANSFER_NODE_ITEM, containerId, inv);
             this.addSlot(new SlotItemHandler(slot, 0, 80, -38 + upgradesY));
-            containerEnd++;
             addContainerEnd(1);
         }
     }

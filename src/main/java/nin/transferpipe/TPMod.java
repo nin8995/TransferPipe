@@ -59,6 +59,7 @@ public class TPMod {
         var data = event.getGenerator();
         var output = data.getPackOutput();
         data.addProvider(event.includeClient(), new TPBlocks.DataGen(output, MODID, event.getExistingFileHelper()));
+        data.addProvider(event.includeClient(), new TPItems.DataGen(output, MODID, event.getExistingFileHelper()));
     }
 
     @SubscribeEvent

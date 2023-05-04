@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface FunctionChanger {
 
-    List<?> storeAndChange(BlockPos pos, TileBaseTransferNode node);
+    Object storeAndChange(BlockPos pos, TileBaseTransferNode node);
 
-    void restore(List<?> cache, TileBaseTransferNode node);
+    void restore(Object cache, TileBaseTransferNode node);
 }

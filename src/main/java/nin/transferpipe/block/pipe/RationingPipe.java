@@ -1,5 +1,6 @@
 package nin.transferpipe.block.pipe;
 
+import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -32,16 +33,17 @@ public class RationingPipe extends TransferPipe implements FunctionChanger {
     }
 
     @Override
-    public List<Integer> storeAndChange(BlockPos pos, TileBaseTransferNode node) {
-        var cache = List.of(node.itemRation, node.liquidRation);
+    public Object storeAndChange(BlockPos pos, TileBaseTransferNode node) {
+        var cache = Pair.of(node.itemRation, node.liquidRation);
         node.itemRation = getItemRation(node.level, pos);
         node.liquidRation = getLiquidRation(node.level, pos);
         return cache;
     }
 
     @Override
-    public void restore(List<?> cache, TileBaseTransferNode node) {
-        node.itemRation = (int) cache.get(0);
-        node.liquidRation = (int) cache.get(1);
+    public void restore(Object cache, TileBaseTransferNode node) {
+        var pair = (Pair<Integer, Integer>) cache;
+        node.itemRation = pair.first();
+        node.liquidRation = pair.second();
     }
 }

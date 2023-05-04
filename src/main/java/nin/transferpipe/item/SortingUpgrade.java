@@ -12,11 +12,11 @@ import java.util.stream.Collectors;
 
 public class SortingUpgrade extends FunctionUpgrade {
 
-    public final BiPredicate<List<Item>, Item> filter;
+    public final BiPredicate<List<Item>, Item> sorter;
 
-    public SortingUpgrade(BiPredicate<List<Item>, Item> filter, Properties p_41383_) {
+    public SortingUpgrade(BiPredicate<List<Item>, Item> sorter, Properties p_41383_) {
         super(p_41383_);
-        this.filter = filter;
+        this.sorter = sorter;
     }
 
     public static final BiPredicate<List<Item>, Item> ITEM_SORT = exceptForAirs((items, toPush) -> items.stream()
@@ -37,7 +37,7 @@ public class SortingUpgrade extends FunctionUpgrade {
         return commonTag != null && toPush.builtInRegistryHolder().is(commonTag);
     });
     public static final BiPredicate<List<Item>, Item> CLASS_SORT = exceptForAirs((items, toPush) -> items.stream()
-            .anyMatch(i -> i.getClass().isAssignableFrom(toPush.getClass())));
+            .anyMatch(i -> blockWhenBlockItem(i).getClass().isAssignableFrom(toPush.getClass())));
     public static final BiPredicate<List<Item>, Item> COMMON_CLASS_SORT = exceptForAirs((items, toPush) -> {
         var objects = items.stream().map(SortingUpgrade::blockWhenBlockItem).toList();
         var commonSuper = JavaUtils.getCommonSuper(objects);

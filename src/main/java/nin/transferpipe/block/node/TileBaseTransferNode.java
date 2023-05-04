@@ -33,8 +33,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -118,6 +118,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
         liquidRation = Integer.MAX_VALUE;
         sortingFunc = (l, i) -> true;
         filteringFunc = i -> true;
+        var pipeUpgrade = new AtomicReference<>(TPBlocks.TRANSFER_PIPE.get());
 
         upgrades.forEachItem(upgrade -> {
             if (upgrade.is(SPEED_UPGRADE.get()))
@@ -153,22 +154,15 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
                 itemRation = rationing.getItemRation(upgrade);
                 liquidRation = rationing.getLiquidRation(upgrade);
             } else if (upgrade.getItem() instanceof SortingUpgrade sorter)
-                sortingFunc = sorter.filter;
+                sortingFunc = sorter.sorter;
             else if (upgrade.getItem() instanceof FilterItem filter)
                 filteringFunc = filter.getFilter(upgrade);
+            if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
+                pipeUpgrade.set(pipe);
         });
 
-        var pipes = new ArrayList<TransferPipe>();
-        upgrades.forEachItem(upgrade -> {
-            if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
-                pipes.add(pipe);
-        });
-        if (!pipes.isEmpty()) {
-            var pipe = pipes.get(pipes.size() - 1);
-            if (pipeState.getBlock() != pipe)
-                setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipe.defaultBlockState().setValue(FLOW, pipeState.getValue(FLOW))));
-        } else if (pipeState.getBlock() != TPBlocks.TRANSFER_PIPE.get())
-            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, TPBlocks.TRANSFER_PIPE.get().defaultBlockState().setValue(FLOW, pipeState.getValue(FLOW))));
+        if(pipeUpgrade.get() != pipeState.getBlock())
+            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipeUpgrade.get().defaultBlockState().setValue(FLOW, pipeState.getValue(FLOW))));
     }
 
     public int wi() {
