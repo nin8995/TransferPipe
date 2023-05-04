@@ -41,11 +41,13 @@ public interface TPItems {
     RegistryObject<Item> SEARCH_MEMORY_UPGRADE = registerUpgrade("search_memory_upgrade", p -> p.stacksTo(1));
 
     RegistryGUIItem ITEM_FILTER = registerGUIItem("item_filter",
-            FilterItem::new, FilterItem.Menu::new, FilterItem.Screen::new);
+            ItemFilter::new, ItemFilter.Menu::new, ItemFilter.Screen::new);
+    RegistryGUIItem SORTING_FILTER = registerGUIItem("sorting_filter",
+            SortingFilter::new, SortingFilter.Menu::new, SortingFilter.Screen::new);
 
     //Functional Upgrade
-    RegistryObject<Item> RATIONING_UPGRADE = register("rationing_upgrade", p -> new RationingUpgrade(64, p.stacksTo(1)));
-    RegistryObject<Item> HYPER_RATIONING_UPGRADE = register("hyper_rationing_upgrade", p -> new RationingUpgrade(1, p.stacksTo(1)));
+    RegistryObject<Item> RATIONING_UPGRADE = register("rationing_upgrade", p -> new RationingUpgrade(64, p));
+    RegistryObject<Item> HYPER_RATIONING_UPGRADE = register("hyper_rationing_upgrade", p -> new RationingUpgrade(1, p));
     RegistryGUIItem REGULATABLE_RATIONING_UPGRADE = registerGUIItem("regulatable_rationing_upgrade",
             p -> new RegulatableRationingUpgrade(p.stacksTo(1)), RegulatableRationingUpgrade.Menu::new, RegulatableRationingUpgrade.Screen::new);
     RegistryObject<Item> SORTING_UPGRADE = register("sorting_upgrade", p -> new SortingUpgrade(SortingUpgrade.ITEM_SORT, p));
@@ -101,7 +103,7 @@ public interface TPItems {
         }
     }
 
-    class DataGen extends ItemModelProvider{
+    class DataGen extends ItemModelProvider {
 
         public DataGen(PackOutput output, String modid, ExistingFileHelper existingFileHelper) {
             super(output, modid, existingFileHelper);

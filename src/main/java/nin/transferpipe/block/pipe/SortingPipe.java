@@ -8,22 +8,21 @@ import nin.transferpipe.block.node.TileBaseTransferNode;
 import nin.transferpipe.util.forge.ForgeUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiPredicate;
 
 public class SortingPipe extends TransferPipe implements FunctionChanger {
 
-    private final BiPredicate<List<Item>, Item> sorter;
+    public final BiPredicate<List<Item>, Item> sortingFunc;
 
-    public SortingPipe(BiPredicate<List<Item>, Item> sorter){
-        this.sorter = sorter;
+    public SortingPipe(BiPredicate<List<Item>, Item> sortingFunc) {
+        this.sortingFunc = sortingFunc;
     }
 
     @Override
     public Object storeAndChange(BlockPos pos, TileBaseTransferNode node) {
         var cache = node.sortingFunc;
-        node.sortingFunc = sorter;
+        node.sortingFunc = sortingFunc;
         return cache;
     }
 

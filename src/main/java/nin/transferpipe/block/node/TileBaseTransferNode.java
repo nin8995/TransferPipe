@@ -154,14 +154,14 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
                 itemRation = rationing.getItemRation(upgrade);
                 liquidRation = rationing.getLiquidRation(upgrade);
             } else if (upgrade.getItem() instanceof SortingUpgrade sorter)
-                sortingFunc = sorter.sorter;
-            else if (upgrade.getItem() instanceof FilterItem filter)
+                sortingFunc = sorter.sortingFunc;
+            else if (upgrade.getItem() instanceof BaseItemFilter filter)
                 filteringFunc = filter.getFilter(upgrade);
             if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
                 pipeUpgrade.set(pipe);
         });
 
-        if(pipeUpgrade.get() != pipeState.getBlock())
+        if (pipeUpgrade.get() != pipeState.getBlock())
             setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipeUpgrade.get().defaultBlockState().setValue(FLOW, pipeState.getValue(FLOW))));
     }
 

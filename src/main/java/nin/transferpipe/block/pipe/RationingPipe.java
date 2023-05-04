@@ -8,8 +8,6 @@ import nin.transferpipe.block.node.TileBaseTransferNode;
 import nin.transferpipe.util.forge.ForgeUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
 public class RationingPipe extends TransferPipe implements FunctionChanger {
 
     protected final int ration;

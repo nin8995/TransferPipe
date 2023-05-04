@@ -13,7 +13,6 @@ import nin.transferpipe.util.minecraft.PosDirsSet;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 

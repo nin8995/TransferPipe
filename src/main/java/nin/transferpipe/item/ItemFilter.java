@@ -16,6 +16,7 @@ import net.minecraftforge.items.ItemHandlerHelper;
 import nin.transferpipe.gui.BaseItemMenu;
 import nin.transferpipe.gui.BaseScreen;
 import nin.transferpipe.gui.PatternSlot;
+import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.ObscuredInventory;
 import nin.transferpipe.util.minecraft.MCUtils;
 import org.jetbrains.annotations.Nullable;
@@ -23,13 +24,13 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
-public class FilterItem extends UpgradeItem implements GUIItem {
+public class ItemFilter extends BaseItemFilter implements GUIItem {
 
     public static String INVERTED = "Inverted";
     public static String IGNORE_NBT = "IgnoreNBT";
     public static String IGNORE_DURABILITY = "IgnoreDurability";
 
-    public FilterItem(Properties p_41383_) {
+    public ItemFilter(Properties p_41383_) {
         super(p_41383_);
     }
 
@@ -49,14 +50,19 @@ public class FilterItem extends UpgradeItem implements GUIItem {
         return (ObscuredInventory) filter.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve().get();
     }
 
+    public boolean isEmpty(ItemStack filter) {
+        return ForgeUtils.filter(filteringItems(filter), i -> !i.isEmpty()).isEmpty();
+    }
+
+    @Override
     public Predicate<ItemStack> getFilter(ItemStack filter) {
         return item -> {
             var filtered = IntStream.range(0, filteringItems(filter).getSlots()).anyMatch(i -> {
                 var filteringItem = filteringItems(filter).getStackInSlot(i);
-                return filteringItem.getItem() instanceof FilterItem f
+                return filteringItem.getItem() instanceof BaseItemFilter f && !(f instanceof ItemFilter && isEmpty(filteringItem))
                        ? f.getFilter(filteringItem).test(item)
                        : ignoreNBT(filter)
-                         ? filteringItem.is(item.getItem())
+                         ? item.is(filteringItem.getItem())
                          : ignoreDurability(filter)
                            ? MCUtils.sameItemSameTagExcept(item, filteringItem, "Damage")
                            : ItemStack.isSameItemSameTags(item, filteringItem);
@@ -72,7 +78,7 @@ public class FilterItem extends UpgradeItem implements GUIItem {
 
     @Override
     public BaseItemMenu menu(ItemStack item, Player player, int slot, int id, Inventory inv) {
-        return new FilterItem.Menu(filteringItems(item), slot, id, inv);
+        return new ItemFilter.Menu(filteringItems(item), slot, id, inv);
     }
 
     @Override
@@ -83,16 +89,14 @@ public class FilterItem extends UpgradeItem implements GUIItem {
 
     public static class Menu extends BaseItemMenu {
 
-        public static int filteringItemsY = 18;
-
         public Menu(int p_38852_, Inventory inv, FriendlyByteBuf buf) {
             this(new ObscuredInventory(9), buf.readInt(), p_38852_, inv);
         }
 
         public Menu(ObscuredInventory filteringItems, int slot, int p_38852_, Inventory inv) {
-            super(TPItems.ITEM_FILTER, slot, p_38852_, inv, "filter", 131);
+            super(TPItems.ITEM_FILTER, slot, p_38852_, inv, "item_filter", 131);
             addInventory();
-            addItemHandlerSlots(filteringItems, PatternSlot::new, filteringItemsY);
+            addItemHandlerSlots(filteringItems, PatternSlot::new, 18);
         }
 
         @Override

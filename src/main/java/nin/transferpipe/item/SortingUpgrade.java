@@ -12,11 +12,11 @@ import java.util.stream.Collectors;
 
 public class SortingUpgrade extends FunctionUpgrade {
 
-    public final BiPredicate<List<Item>, Item> sorter;
+    public final BiPredicate<List<Item>, Item> sortingFunc;
 
-    public SortingUpgrade(BiPredicate<List<Item>, Item> sorter, Properties p_41383_) {
+    public SortingUpgrade(BiPredicate<List<Item>, Item> sortingFunc, Properties p_41383_) {
         super(p_41383_);
-        this.sorter = sorter;
+        this.sortingFunc = sortingFunc;
     }
 
     public static final BiPredicate<List<Item>, Item> ITEM_SORT = exceptForAirs((items, toPush) -> items.stream()

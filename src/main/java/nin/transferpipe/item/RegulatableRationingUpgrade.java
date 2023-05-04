@@ -82,17 +82,26 @@ public class RegulatableRationingUpgrade extends RationingUpgrade implements GUI
             super(p_97741_, p_97742_, p_97743_);
         }
 
+        int prevItem;
+        int prevLiquid;
+
         @Override
         public Pair<Integer, Integer> getRation() {
             var upgrade = menu.upgradeInInventory.getItem();
-            if (upgrade.getItem() instanceof RationingUpgrade rationing)
-                return Pair.of(rationing.getItemRation(upgrade), rationing.getLiquidRation(upgrade));
+            if (upgrade.getItem() instanceof RationingUpgrade rationing) {
+                prevItem = rationing.getItemRation(upgrade);
+                prevLiquid = rationing.getLiquidRation(upgrade);
+                return Pair.of(prevItem, prevLiquid);
+            }
             return Pair.of(0, 0);
         }
 
         @Override
         public void onClose() {
-            TPPackets.REGULATE_RATION_UPGRADE.accept(menu.slot, toInt(itemRation.getValue()), toInt(liquidRation.getValue()));
+            var item = toInt(itemRation.getValue());
+            var liquid = toInt(liquidRation.getValue());
+            if (prevItem != item || prevLiquid != liquid)
+                TPPackets.REGULATE_RATION_UPGRADE.accept(menu.slot, item, liquid);
             super.onClose();
         }
     }

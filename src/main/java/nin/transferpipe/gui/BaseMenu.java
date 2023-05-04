@@ -58,7 +58,11 @@ public abstract class BaseMenu extends AbstractContainerMenu {
     }
 
     public <T extends IItemHandler> void addItemHandlerSlots(T handler, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
-        addCenteredSlots(0, handler.getSlots() - 1, (index, x) -> slotConstructor.apply(handler, index, x, y));
+        addItemHandlerSlots(handler, 0, handler.getSlots() - 1, slotConstructor, y);
+    }
+
+    public <T extends IItemHandler> void addItemHandlerSlots(T handler, int start, int end, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
+        addCenteredSlots(start, end, (index, x) -> slotConstructor.apply(handler, index, x, y));
     }
 
     public <T extends Container> void addContainerSlots(T container, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
@@ -151,9 +155,9 @@ public abstract class BaseMenu extends AbstractContainerMenu {
 
     //少しでも挿入できたか
     public boolean moveItemTo(ItemStack item, int minSlot, int maxSlot, boolean fillMaxToMin) {
-        var slotsChanged = moveItemStackTo(item, minSlot, maxSlot + 1, fillMaxToMin);/*SlotItemHandlerから取られたアイテムは本来加工してはいけないが*/
+        var slotsChanged = moveItemStackTo(item, minSlot, maxSlot + 1, fillMaxToMin);//safeInsertはしないけどmayPlaceは見て入れる
 
-        if (slotsChanged)
+        if (slotsChanged)/*SlotItemHandlerから取られたアイテムは本来加工してはいけないが*/
             sendContentsChanged(IntStream.rangeClosed(minSlot, maxSlot).mapToObj(slots::get));
 
         return slotsChanged;
