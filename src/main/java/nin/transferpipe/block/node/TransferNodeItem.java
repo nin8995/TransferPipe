@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
@@ -15,7 +14,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.gui.BaseBlockMenu;
@@ -32,8 +30,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-public class TransferNodeItem extends BaseBlockNode.Facing<TransferNodeItem.Tile> {
-
+public class TransferNodeItem extends BaseNodeBlock.Facing<TransferNodeItem.Tile> {
 
     @Override
     public TPBlocks.RegistryGUIEntityBlock<TransferNodeItem.Tile> registryWithGUI() {
@@ -45,7 +42,7 @@ public class TransferNodeItem extends BaseBlockNode.Facing<TransferNodeItem.Tile
         return new Menu(tile.itemSlot, tile.upgrades, tile.searchData, id, inv);
     }
 
-    public static class Menu extends BaseMenuNode.Item {
+    public static class Menu extends BaseNodeMenu.Item {
 
         //client
         public Menu(int containerId, Inventory inv, FriendlyByteBuf buf) {
@@ -58,13 +55,12 @@ public class TransferNodeItem extends BaseBlockNode.Facing<TransferNodeItem.Tile
         }
     }
 
-    public static class Screen extends BaseScreenNode.Item<Menu> {
+    public static class Screen extends BaseNodeScreen.Item<Menu> {
 
         public Screen(Menu p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
         }
     }
-
 
     public static class Tile extends BaseTileNodeItem {
 
@@ -106,40 +102,31 @@ public class TransferNodeItem extends BaseBlockNode.Facing<TransferNodeItem.Tile
          */
         public void tryWorldInteraction(BlockPos pos, Direction dir) {
             if (getBlock(pos) == Blocks.AIR)
-                tryVacuum(pos, dir.getOpposite());
+                tryExtract(pos, dir.getOpposite());
             else if (isAutoCraftMode())
                 tryAutoCraft();
             else if (isProduct(pos))
                 tryGenLiquidReactionProduct(pos, dir);
         }
 
-        public void tryVacuum(BlockPos pos, Direction boxDir) {
+        public void tryExtract(BlockPos pos, Direction boxDir) {
             var boxSize = 1 + 2 * JavaUtils.log(2, worldInteraction);
             var boxCenter = MCUtils.relative(pos, boxDir, boxSize / 2);
             var box = AABB.ofSize(boxCenter, boxSize, boxSize, boxSize);
-            var items = level.getEntitiesOfClass(ItemEntity.class, box);
-            var toExtract = itemSlot.isEmpty()
-                            ? JavaUtils.findFirst(items, ItemEntity::getItem, filteringFunc)
-                            : itemSlot.getItem();
-            if (toExtract != null) {
+            var invEntities = MCUtils.getMappableMappedEntities(level, box, ForgeUtils::getItemHandler);
+            var toExtract = itemSlot.hasItem()
+                            ? itemSlot.getItem()
+                            : ForgeUtils.findFirst(invEntities, filteringFunc);
+            if (!invEntities.isEmpty() && toExtract != null) {
                 var remainingExtractionPower = getExtractionSpeed(toExtract, true);
-                var toExtracts = JavaUtils.filter(items, i -> ItemHandlerHelper.canItemStacksStack(i.getItem(), toExtract));
-                if (!toExtracts.isEmpty()) {
-                    for (ItemEntity dropItem : toExtracts) {
-
-                        var item = dropItem.getItem();
-                        var extraction = Math.min(getExtractableAmount(item, true), remainingExtractionPower);
-                        if (extraction <= 0)
-                            break;
-                        remainingExtractionPower -= extraction;
-                        var extractedItem = item.copyWithCount(extraction);
-                        itemSlot.receive(extractedItem);
-                        dropItem.setItem(MCUtils.copyWithSub(item, extractedItem));
-                    }
-
-                    if (addParticle)
-                        addEdges(boxCenter, (float) boxSize / 2);
+                for (IItemHandler inv : JavaUtils.filter(invEntities, inv -> canExtract(inv, toExtract, true))) {
+                    if (remainingExtractionPower <= 0)
+                        break;
+                    remainingExtractionPower = tryExtract(inv, toExtract, remainingExtractionPower, true);
                 }
+
+                if (addParticle)
+                    addEdges(boxCenter, (float) boxSize / 2);
             }
         }
 

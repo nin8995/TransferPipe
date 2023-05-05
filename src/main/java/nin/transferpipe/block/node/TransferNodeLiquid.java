@@ -18,7 +18,7 @@ import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.minecraft.MCUtils;
 import org.joml.Vector3f;
 
-public class TransferNodeLiquid extends BaseBlockNode.Facing<TransferNodeLiquid.Tile> {
+public class TransferNodeLiquid extends BaseNodeBlock.Facing<TransferNodeLiquid.Tile> {
 
     @Override
     public TPBlocks.RegistryGUIEntityBlock<TransferNodeLiquid.Tile> registryWithGUI() {
@@ -30,7 +30,7 @@ public class TransferNodeLiquid extends BaseBlockNode.Facing<TransferNodeLiquid.
         return new Menu(tile.dummyLiquidItem, tile.upgrades, tile.searchData, id, inv);
     }
 
-    public static class Menu extends BaseMenuNode.Liquid {
+    public static class Menu extends BaseNodeMenu.Liquid {
 
         public Menu(int containerId, Inventory inv, FriendlyByteBuf buf) {
             this(new ItemStackHandler(), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv);
@@ -41,7 +41,7 @@ public class TransferNodeLiquid extends BaseBlockNode.Facing<TransferNodeLiquid.
         }
     }
 
-    public static class Screen extends BaseScreenNode.Liquid<Menu> {
+    public static class Screen extends BaseNodeScreen.Liquid<Menu> {
 
         public Screen(Menu p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);

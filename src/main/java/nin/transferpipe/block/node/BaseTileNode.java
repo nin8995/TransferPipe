@@ -68,7 +68,7 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
     }
 
     public void updateFacing() {
-        if (getBlockState().getBlock() instanceof BaseBlockNode.Facing<?> node) {
+        if (getBlockState().getBlock() instanceof BaseNodeBlock.Facing<?> node) {
             FACING = node.facing(getBlockState());
             FACING_POS = pos.relative(FACING);
             onUpdateFacing();
@@ -182,9 +182,7 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
     @Override
     public final void tick() {
         super.tick();
-        if (redstoneBehavior == RedstoneBehavior.NEVER
-                || (redstoneBehavior == RedstoneBehavior.ACTIVE_HIGH && level.getBestNeighborSignal(pos) == 0)
-                || (redstoneBehavior == RedstoneBehavior.ACTIVE_LOW && level.getBestNeighborSignal(pos) > 0))
+        if (!redstoneBehavior.isActive(level.getBestNeighborSignal(pos)))
             return;
 
         beforeTick();

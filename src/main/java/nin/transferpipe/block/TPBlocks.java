@@ -225,12 +225,12 @@ public interface TPBlocks {
         private void node(RegistryObject<Block> ro) {
             var block = ro.get();
 
-            if (block instanceof BaseBlockNode.Facing) {
+            if (block instanceof BaseNodeBlock.Facing) {
                 var mb = getMultipartBuilder(block);
 
                 var node = genNodeModel("block/transfer_node", ro);
                 Direction.stream().forEach(dir ->
-                        forRotatedModel(mb, dir, node, p -> p.condition(BaseBlockNode.Facing.FACING, dir)));
+                        forRotatedModel(mb, dir, node, p -> p.condition(BaseNodeBlock.Facing.FACING, dir)));
 
                 var inv = genNodeModel("block/transfer_node_inv", ro);
                 simpleBlockItem(block, inv);

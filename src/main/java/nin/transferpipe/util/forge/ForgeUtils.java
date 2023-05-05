@@ -5,9 +5,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.Container;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.WorldlyContainerHolder;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.capabilities.CapabilityProvider;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.common.util.NonNullConsumer;
@@ -38,6 +40,14 @@ public interface ForgeUtils {
 
     static boolean hasItemHandler(Level level, BlockPos pos, Direction dir) {
         return getItemHandler(level, pos, dir).isPresent();
+    }
+
+    static IItemHandler getItemHandler(CapabilityProvider<?> cap) {
+        return cap instanceof ItemEntity dropItem ? new DropItemHandler(dropItem) : cap.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve().get();
+    }
+
+    static boolean hasItemHandler(CapabilityProvider<?> cap) {
+        return cap.getCapability(ForgeCapabilities.ITEM_HANDLER).isPresent();
     }
 
     Map<Container, LazyOptional<IItemHandler>> containerCache = new HashMap<>();
@@ -91,12 +101,23 @@ public interface ForgeUtils {
                 .mapToObj(inv::getStackInSlot).toList();
     }
 
+    static List<IItemHandler> filter(List<IItemHandler> invs, Predicate<ItemStack> filter) {
+        return invs.stream().filter(inv -> !filter(inv, filter).isEmpty()).toList();
+    }
+
     @Nullable
     static ItemStack findFirst(IItemHandler inv, Predicate<ItemStack> filter) {
         var oi = IntStream.range(0, inv.getSlots())
                 .filter(i -> !inv.extractItem(i, 1, true).isEmpty() && filter.test(inv.getStackInSlot(i)))
                 .findFirst();
         return oi.isPresent() ? inv.getStackInSlot(oi.getAsInt()) : null;
+    }
+
+    @Nullable
+    static ItemStack findFirst(List<IItemHandler> invs, Predicate<ItemStack> filter) {
+        return invs.stream().filter(inv -> findFirst(inv, filter) != null)
+                .findFirst().map(inv -> findFirst(inv, filter))
+                .orElse(null);
     }
 
     @Nullable
@@ -117,6 +138,14 @@ public interface ForgeUtils {
 
     static boolean hasFluidHandler(Level level, BlockPos pos, Direction dir) {
         return getFluidHandler(level, pos, dir).isPresent();
+    }
+
+    static IFluidHandler getFluidHandler(CapabilityProvider<?> cap) {
+        return cap.getCapability(ForgeCapabilities.FLUID_HANDLER).resolve().get();
+    }
+
+    static boolean hasFluidHandler(CapabilityProvider<?> cap) {
+        return cap.getCapability(ForgeCapabilities.FLUID_HANDLER).isPresent();
     }
 
     static LazyOptional<IFluidHandler> getFluidHandler(Level level, BlockPos pos, Direction dir) {
@@ -140,6 +169,14 @@ public interface ForgeUtils {
 
     static boolean hasEnergyStorage(Level level, BlockPos pos, Direction dir) {
         return getEnergyStorage(level, pos, dir).isPresent();
+    }
+
+    static IEnergyStorage getEnergyHandler(CapabilityProvider<?> cap) {
+        return cap.getCapability(ForgeCapabilities.ENERGY).resolve().get();
+    }
+
+    static boolean hasEnergyStorage(CapabilityProvider<?> cap) {
+        return cap.getCapability(ForgeCapabilities.ENERGY).isPresent();
     }
 
     static LazyOptional<IEnergyStorage> getEnergyStorage(Level level, BlockPos pos, Direction dir) {

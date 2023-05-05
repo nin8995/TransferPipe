@@ -6,7 +6,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.items.IItemHandler;
@@ -15,9 +14,10 @@ import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.item.Upgrade;
 import nin.transferpipe.item.UpgradeSlot;
+import nin.transferpipe.util.forge.ForgeUtils;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class BaseMenuNode extends BaseBlockMenu {
+public abstract class BaseNodeMenu extends BaseBlockMenu {
 
     public final ContainerData searchData;
 
@@ -25,7 +25,7 @@ public abstract class BaseMenuNode extends BaseBlockMenu {
     public int upgradesStart = containerStart;
     public int upgradesEnd = upgradesStart + 5;
 
-    public BaseMenuNode(IItemHandler upgrades, ContainerData searchData, TPBlocks.RegistryGUIEntityBlock<?> registry, int containerId, Inventory inv) {
+    public BaseNodeMenu(IItemHandler upgrades, ContainerData searchData, TPBlocks.RegistryGUIEntityBlock<?> registry, int containerId, Inventory inv) {
         super(registry, containerId, inv, "transfer_node", 225);
         this.searchData = searchData;
         this.addDataSlots(searchData);
@@ -52,7 +52,7 @@ public abstract class BaseMenuNode extends BaseBlockMenu {
     }
 
 
-    public static class Item extends BaseMenuNode {
+    public static class Item extends BaseNodeMenu {
 
         public Item(TPBlocks.RegistryGUIEntityBlock<?> registry, IItemHandler slot, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
             super(upgrades, searchData, registry, containerId, inv);
@@ -60,7 +60,7 @@ public abstract class BaseMenuNode extends BaseBlockMenu {
         }
     }
 
-    public static class Liquid extends BaseMenuNode {
+    public static class Liquid extends BaseNodeMenu {
 
         private final IItemHandler dummyLiquidItem;
 
@@ -94,7 +94,7 @@ public abstract class BaseMenuNode extends BaseBlockMenu {
         }
     }
 
-    public static class Energy extends BaseMenuNode {
+    public static class Energy extends BaseNodeMenu {
 
         private final ContainerData energyNodeData;
 
@@ -107,7 +107,7 @@ public abstract class BaseMenuNode extends BaseBlockMenu {
 
         @Override
         public Pair<Integer, Integer> getHighPriorityContainerSlots(ItemStack item) {
-            return item.getCapability(ForgeCapabilities.ENERGY).isPresent() ? Pair.of(containerEnd, containerEnd) : super.getHighPriorityContainerSlots(item);
+            return ForgeUtils.hasEnergyStorage(item) ? Pair.of(containerEnd, containerEnd) : super.getHighPriorityContainerSlots(item);
         }
 
         public static class ChargeSlot extends SlotItemHandler {
@@ -118,7 +118,7 @@ public abstract class BaseMenuNode extends BaseBlockMenu {
 
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return super.mayPlace(stack) && stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+                return super.mayPlace(stack) && ForgeUtils.hasEnergyStorage(stack);
             }
         }
 

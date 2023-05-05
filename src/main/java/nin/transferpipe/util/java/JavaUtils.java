@@ -128,6 +128,10 @@ public interface JavaUtils {
         return stream.filter(filter).collect(Collectors.toSet());
     }
 
+    static <V, Y> List<Y> map(List<V> set, Function<V, Y> mapper) {
+        return set.stream().map(mapper).toList();
+    }
+
     static <V, Y> Set<Y> map(Set<V> set, Function<V, Y> mapper) {
         return map(set.stream(), mapper);
     }

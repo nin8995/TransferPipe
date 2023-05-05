@@ -7,11 +7,11 @@ import nin.transferpipe.gui.BaseScreen;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.minecraft.MCUtils;
 
-public abstract class BaseScreenNode<T extends BaseMenuNode> extends BaseScreen<T> {
+public abstract class BaseNodeScreen<T extends BaseNodeMenu> extends BaseScreen<T> {
 
     public int customLabelY;
 
-    public BaseScreenNode(T p_97741_, Inventory p_97742_, Component p_97743_) {
+    public BaseNodeScreen(T p_97741_, Inventory p_97742_, Component p_97743_) {
         super(p_97741_, p_97742_, p_97743_);
         this.titleLabelY = 7;
     }
@@ -42,7 +42,7 @@ public abstract class BaseScreenNode<T extends BaseMenuNode> extends BaseScreen<
         customLabelY += 10;
     }
 
-    public static class Item<T extends BaseMenuNode.Item> extends BaseScreenNode<T> {
+    public static class Item<T extends BaseNodeMenu.Item> extends BaseNodeScreen<T> {
 
         public Item(T p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
@@ -54,7 +54,7 @@ public abstract class BaseScreenNode<T extends BaseMenuNode> extends BaseScreen<
         }
     }
 
-    public static class Liquid<T extends BaseMenuNode.Liquid> extends BaseScreenNode<T> {
+    public static class Liquid<T extends BaseNodeMenu.Liquid> extends BaseNodeScreen<T> {
 
         public Liquid(T p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
@@ -66,7 +66,7 @@ public abstract class BaseScreenNode<T extends BaseMenuNode> extends BaseScreen<
             var liquid = menu.getLiquid();
 
             if (!liquid.isEmpty())
-                MCUtils.renderLiquid(liquid, pose, 80, -38 + BaseMenuNode.upgradesY, 16);
+                MCUtils.renderLiquid(liquid, pose, 80, -38 + BaseNodeMenu.upgradesY, 16);
         }
 
         @Override
@@ -84,7 +84,7 @@ public abstract class BaseScreenNode<T extends BaseMenuNode> extends BaseScreen<
         }
     }
 
-    public static class Energy<T extends BaseMenuNode.Energy> extends BaseScreenNode<T> {
+    public static class Energy<T extends BaseNodeMenu.Energy> extends BaseNodeScreen<T> {
 
         public Energy(T p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);

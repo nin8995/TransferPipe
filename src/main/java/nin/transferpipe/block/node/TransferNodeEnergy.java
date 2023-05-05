@@ -18,6 +18,7 @@ import nin.transferpipe.block.pipe.EnergyReceiverPipe;
 import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.LazyOptionalMap;
+import nin.transferpipe.util.java.ExceptionPredicate;
 import nin.transferpipe.util.minecraft.TileMap;
 import nin.transferpipe.util.transferpipe.TPUtils;
 import org.joml.Vector3f;
@@ -25,7 +26,7 @@ import org.joml.Vector3f;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.Tile> {
+public class TransferNodeEnergy extends BaseNodeBlock.Energy<TransferNodeEnergy.Tile> {
 
     @Override
     public TPBlocks.RegistryGUIEntityBlock<TransferNodeEnergy.Tile> registryWithGUI() {
@@ -37,7 +38,7 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
         return new Menu(tile.energyData, tile.chargeSlot, tile.upgrades, tile.searchData, id, inv);
     }
 
-    public static class Menu extends BaseMenuNode.Energy {
+    public static class Menu extends BaseNodeMenu.Energy {
 
         public Menu(int containerId, Inventory inv, FriendlyByteBuf buf) {
             this(new SimpleContainerData(5), new ItemStackHandler(), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv);
@@ -48,7 +49,7 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
         }
     }
 
-    public static class Screen extends BaseScreenNode.Energy<Menu> {
+    public static class Screen extends BaseNodeScreen.Energy<Menu> {
 
         public Screen(Menu p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
@@ -171,17 +172,11 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
         }
 
         public void refreshConnection(LazyOptionalMap<IEnergyStorage> loEnergyMap, Predicate<IEnergyStorage> shouldSustain) {
-            loEnergyMap.removeValueIf((pos, dir, loEnergy) -> {//!isPresentとisEmptyはLazyOptionalにおいては違う
-                if (loEnergy.filter(shouldSustain::test).isEmpty() || !loEnergy.isPresent()) //保持するべきではない or そもそもなくなってる
-                    return true;
-                else //なんかRFToolsのマルチブロック蓄電器はこれだけじゃ消去されなかったから、実際にやってエラー吐かれることを以て無効化とみなす
-                    try {
-                        loEnergy.resolve().get().getEnergyStored();
-                        return false;
-                    } catch (Exception e) {
-                        return true;
-                    }
-            });
+            loEnergyMap.removeValueIf((pos, dir, loEnergy) ->
+                    !loEnergy.isPresent()  //!isPresentとisEmptyはLazyOptionalにおいては違う
+                            || loEnergy.filter(shouldSustain::test).isEmpty()
+                            //なんかRFToolsのマルチブロック蓄電器はこれだけじゃ消去されなかったから、実際にやってエラー吐かれることを以て無効化とみなす
+                            || ExceptionPredicate.failed(() -> loEnergy.resolve().get().getEnergyStored()));
         }
 
         /**

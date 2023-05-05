@@ -46,7 +46,7 @@ public class TPMod {
         //クリエタブ登録
         bus.addListener((CreativeModeTabEvent.Register e) -> e.registerCreativeModeTab(loc(MODID), b -> b
                 .icon(() -> new ItemStack(TPBlocks.TRANSFER_PIPE.get()))
-                .title(Component.translatable(MODID))
+                .title(Component.translatable("itemGroup." + MODID))
                 .displayItems((params, output) -> {
                     TPBlocks.ITEMS.getEntries().stream().map(RegistryObject::get).forEach(output::accept);
                     TPItems.ITEMS.getEntries().stream().map(RegistryObject::get).forEach(output::accept);

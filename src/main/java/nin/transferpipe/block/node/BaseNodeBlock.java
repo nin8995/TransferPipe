@@ -30,9 +30,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-public abstract class BaseBlockNode<T extends BaseTileNode> extends LightingBlock implements GUIEntityBlock<T> {
+public abstract class BaseNodeBlock<T extends BaseTileNode> extends LightingBlock implements GUIEntityBlock<T> {
 
-    public BaseBlockNode() {
+    public BaseNodeBlock() {
         super(BlockBehaviour.Properties.of(Material.STONE));
     }
 
@@ -69,7 +69,7 @@ public abstract class BaseBlockNode<T extends BaseTileNode> extends LightingBloc
     /**
      * 面を持つノードの初期化と当たり判定
      */
-    public abstract static class Facing<T extends BaseTileNode> extends BaseBlockNode<T> {
+    public abstract static class Facing<T extends BaseTileNode> extends BaseNodeBlock<T> {
 
         public static DirectionProperty FACING = BlockStateProperties.FACING;
 
@@ -117,7 +117,7 @@ public abstract class BaseBlockNode<T extends BaseTileNode> extends LightingBloc
     /**
      * エネルギーノード型の当たり判定
      */
-    public abstract static class Energy<T extends BaseTileNode> extends BaseBlockNode<T> {
+    public abstract static class Energy<T extends BaseTileNode> extends BaseNodeBlock<T> {
 
         public static final VoxelShape ENERGY_NODE = Stream.of(
                 Block.box(5, 3, 5, 11, 13, 11),

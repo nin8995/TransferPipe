@@ -18,10 +18,12 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -32,6 +34,7 @@ import net.minecraftforge.common.CreativeModeTabRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import nin.transferpipe.mixin.AtlasAccessor;
 import nin.transferpipe.util.java.Consumer3;
+import nin.transferpipe.util.java.ExceptionPredicate;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -41,10 +44,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
+import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -271,11 +271,19 @@ public interface MCUtils {
      * ItemStack
      */
     static ItemStack copyWithSub(ItemStack item, ItemStack sub) {
-        return item.copyWithCount(item.getCount() - sub.getCount());
+        return copyWithSub(item, sub.getCount());
     }
 
     static ItemStack copyWithSub(ItemStack item, int sub) {
         return item.copyWithCount(item.getCount() - sub);
+    }
+
+    static ItemStack copyWithAdd(ItemStack item, ItemStack add) {
+        return copyWithAdd(item, add.getCount());
+    }
+
+    static ItemStack copyWithAdd(ItemStack item, int add) {
+        return item.copyWithCount(item.getCount() + add);
     }
 
     static ItemStack copyWithScale(ItemStack item, int scale) {
@@ -322,5 +330,24 @@ public interface MCUtils {
 
         var list = new ArrayList<>(c);
         return list.get((int) (rand.nextFloat() * list.size()));//0<nextFloat<1のため配列の範囲外エラーは起きない
+    }
+
+    static List<Entity> getEntities(Level level, AABB box, Predicate<Entity> filter) {
+        return level.getEntities(new EntityTypeTest<>() {
+            @Override
+            public Entity tryCast(Entity p_156918_) {
+                return p_156918_;
+            }
+
+            @Override
+            public Class<? extends Entity> getBaseClass() {
+                return Entity.class;
+            }
+        }, box, filter);
+    }
+
+    static <T> List<T> getMappableMappedEntities(Level level, AABB box, Function<Entity, T> throwableMapper) {
+        return getEntities(level, box, ExceptionPredicate.succeeded(throwableMapper::apply))
+                .stream().map(throwableMapper).toList();
     }
 }

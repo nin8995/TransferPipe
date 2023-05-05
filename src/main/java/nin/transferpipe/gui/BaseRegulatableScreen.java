@@ -5,6 +5,7 @@ import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import nin.transferpipe.util.java.ExceptionPredicate;
 
 public abstract class BaseRegulatableScreen<T extends BaseMenu> extends BaseScreen<T> {
 
@@ -60,11 +61,6 @@ public abstract class BaseRegulatableScreen<T extends BaseMenu> extends BaseScre
     }
 
     public boolean checkStr(String str) {
-        try {
-            toInt(str);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return ExceptionPredicate.succeeded(() -> toInt(str));
     }
 }

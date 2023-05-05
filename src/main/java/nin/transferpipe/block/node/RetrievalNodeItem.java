@@ -7,15 +7,19 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.util.forge.ForgeUtils;
+import nin.transferpipe.util.java.JavaUtils;
+import nin.transferpipe.util.minecraft.MCUtils;
 import org.joml.Vector3f;
 
-public class RetrievalNodeItem extends BaseBlockNode.Facing<RetrievalNodeItem.Tile> {
+public class RetrievalNodeItem extends BaseNodeBlock.Facing<RetrievalNodeItem.Tile> {
 
     @Override
     public TPBlocks.RegistryGUIEntityBlock<RetrievalNodeItem.Tile> registryWithGUI() {
@@ -27,7 +31,7 @@ public class RetrievalNodeItem extends BaseBlockNode.Facing<RetrievalNodeItem.Ti
         return new Menu(tile.itemSlot, tile.upgrades, tile.searchData, id, inv);
     }
 
-    public static class Menu extends BaseMenuNode.Item {
+    public static class Menu extends BaseNodeMenu.Item {
 
         //client
         public Menu(int containerId, Inventory inv, FriendlyByteBuf buf) {
@@ -40,7 +44,7 @@ public class RetrievalNodeItem extends BaseBlockNode.Facing<RetrievalNodeItem.Ti
         }
     }
 
-    public static class Screen extends BaseScreenNode<Menu> {
+    public static class Screen extends BaseNodeScreen<Menu> {
 
         public Screen(Menu p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
@@ -78,7 +82,29 @@ public class RetrievalNodeItem extends BaseBlockNode.Facing<RetrievalNodeItem.Ti
         @Override
         public void facing(BlockPos pos, Direction dir) {
             if (itemSlot.hasItem())
-                ForgeUtils.forItemHandler(level, pos, dir, this::tryInsert);
+                if (ForgeUtils.hasItemHandler(level, pos, dir))
+                    ForgeUtils.forItemHandler(level, pos, dir, this::tryInsert);
+                else if (worldInteraction > 0) {
+                    if (getBlock(pos) == Blocks.AIR)
+                        tryInsert(pos, dir.getOpposite());
+                }
+        }
+
+        public void tryInsert(BlockPos pos, Direction boxDir) {
+            var boxSize = 1 + 2 * JavaUtils.log(2, worldInteraction);
+            var boxCenter = MCUtils.relative(pos, boxDir, boxSize / 2);
+            var box = AABB.ofSize(boxCenter, boxSize, boxSize, boxSize);
+            var invEntities = JavaUtils.filter(MCUtils.getMappableMappedEntities(level, box, ForgeUtils::getItemHandler), this::canInsert);
+            if (!invEntities.isEmpty()) {
+                for (IItemHandler inv : invEntities) {
+                    if (itemSlot.isEmpty())
+                        break;
+                    tryInsert(inv);
+                }
+
+                if (addParticle)
+                    addEdges(boxCenter, (float) boxSize / 2);
+            }
         }
 
         @Override

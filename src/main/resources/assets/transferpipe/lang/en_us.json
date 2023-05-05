@@ -45,6 +45,7 @@
   "item.transferpipe.item_filter": "Item Filter",
   "item.transferpipe.sorting_filter": "Sorting Filter",
   "_comment": "GUI",
+  "itemGroup.transferpipe": "Transfer Pipe",
   "gui.transferpipe.searching_item": "Searching for inventories at",
   "gui.transferpipe.searching_liquid": "Searching for tanks at",
   "gui.transferpipe.searching_energy": "Searching for machines at",

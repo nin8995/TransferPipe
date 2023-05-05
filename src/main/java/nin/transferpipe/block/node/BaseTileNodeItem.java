@@ -48,13 +48,17 @@ public abstract class BaseTileNodeItem extends BaseTileNode {
         var toExtract = itemSlot.isEmpty()
                         ? ForgeUtils.findFirst(inv, filteringFunc)
                         : itemSlot.getItem();
-        var extractionSpeed = getExtractionSpeed(toExtract, false);
+        return toExtract != null && canExtract(inv, toExtract, false);
+    }
 
-        return toExtract != null && IntStream.range(0, inv.getSlots())
+    public boolean canExtract(IItemHandler inv, ItemStack toExtract, boolean byWorldInteraction) {
+        var extractionSpeed = getExtractionSpeed(toExtract, byWorldInteraction);
+
+        return IntStream.range(0, inv.getSlots())
                 .filter(slot -> ItemHandlerHelper.canItemStacksStack(inv.getStackInSlot(slot), toExtract))
                 .anyMatch(slot -> {
                     var item = inv.getStackInSlot(slot);
-                    var extraction = Math.min(getExtractableAmount(item, false), extractionSpeed);
+                    var extraction = Math.min(getExtractableAmount(item, byWorldInteraction), extractionSpeed);
                     return extraction > 0;
                 });
     }
@@ -65,18 +69,23 @@ public abstract class BaseTileNodeItem extends BaseTileNode {
                         : itemSlot.getItem();
         if (toExtract != null) {
             var remainingExtractionPower = getExtractionSpeed(toExtract, false);
-            for (int slot : IntStream.range(0, inv.getSlots())
-                    .filter(slot -> ItemHandlerHelper.canItemStacksStack(inv.getStackInSlot(slot), toExtract))
-                    .toArray()) {
-
-                var item = inv.getStackInSlot(slot);
-                var extraction = Math.min(getExtractableAmount(item, false), remainingExtractionPower);
-                if (extraction <= 0)
-                    break;
-                remainingExtractionPower -= extraction;
-                itemSlot.receive(inv.extractItem(slot, extraction, false));
-            }
+            tryExtract(inv, toExtract, remainingExtractionPower, false);
         }
+    }
+
+    public int tryExtract(IItemHandler inv, ItemStack toExtract, int remainingExtractionPower, boolean byWorldInteraction) {
+        for (int slot : IntStream.range(0, inv.getSlots())
+                .filter(slot -> ItemHandlerHelper.canItemStacksStack(inv.getStackInSlot(slot), toExtract))
+                .toArray()) {
+
+            var item = inv.getStackInSlot(slot);
+            var extraction = Math.min(getExtractableAmount(item, byWorldInteraction), remainingExtractionPower);
+            if (extraction <= 0)
+                break;
+            remainingExtractionPower -= extraction;
+            itemSlot.receive(inv.extractItem(slot, extraction, false));
+        }
+        return remainingExtractionPower;
     }
 
     public boolean shouldReceive(ItemStack item) {
