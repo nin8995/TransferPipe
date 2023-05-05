@@ -4,7 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
-import nin.transferpipe.block.node.TileBaseTransferNode;
+import nin.transferpipe.block.node.BaseTileNode;
 import nin.transferpipe.util.forge.ForgeUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,14 +20,14 @@ public class SortingPipe extends TransferPipe implements FunctionChanger {
     }
 
     @Override
-    public Object storeAndChange(BlockPos pos, TileBaseTransferNode node) {
+    public Object storeAndChange(BlockPos pos, BaseTileNode node) {
         var cache = node.sortingFunc;
         node.sortingFunc = sortingFunc;
         return cache;
     }
 
     @Override
-    public void restore(Object cache, TileBaseTransferNode node) {
+    public void restore(Object cache, BaseTileNode node) {
         node.sortingFunc = (BiPredicate<List<Item>, Item>) cache;
     }
 

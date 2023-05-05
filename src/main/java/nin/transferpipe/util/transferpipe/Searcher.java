@@ -53,6 +53,10 @@ public interface Searcher {
         return false;
     }
 
+    default boolean stickingSearch() {
+        return false;
+    }
+
     default BlockPos pickNext(UtilSetMap<BlockPos, Direction> queue) {
         return queue.getLastKey();
     }

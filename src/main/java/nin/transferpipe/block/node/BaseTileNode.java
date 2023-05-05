@@ -40,7 +40,7 @@ import java.util.function.Predicate;
 
 import static nin.transferpipe.block.pipe.TransferPipe.FLOW;
 
-public abstract class TileBaseTransferNode extends TileHolderEntity implements Searcher, TPItems {
+public abstract class BaseTileNode extends TileHolderEntity implements Searcher, TPItems {
 
     /**
      * 初期化処理
@@ -53,7 +53,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     public final UpgradeHandler upgrades;
     public BlockState pipeState = TPBlocks.TRANSFER_PIPE.get().defaultBlockState();
 
-    public TileBaseTransferNode(BlockEntityType<? extends TileBaseTransferNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
+    public BaseTileNode(BlockEntityType<? extends BaseTileNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
         super(p_155228_, p_155229_, p_155230_);
         pos = this.worldPosition;
         updateFacing();
@@ -68,7 +68,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     }
 
     public void updateFacing() {
-        if (getBlockState().getBlock() instanceof BlockTransferNode.FacingNode<?> node) {
+        if (getBlockState().getBlock() instanceof BaseBlockNode.Facing<?> node) {
             FACING = node.facing(getBlockState());
             FACING_POS = pos.relative(FACING);
             onUpdateFacing();
@@ -96,6 +96,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     public boolean depthFirst;
     public boolean breadthFirst;
     public boolean searchMemory;
+    public boolean stickingSearch;
     public boolean addParticle;
     public RedstoneBehavior redstoneBehavior;
     public int itemRation;
@@ -112,6 +113,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
         depthFirst = false;
         breadthFirst = false;
         searchMemory = false;
+        stickingSearch = false;
         addParticle = false;
         redstoneBehavior = RedstoneBehavior.ACTIVE_LOW;
         itemRation = Integer.MAX_VALUE;
@@ -142,6 +144,8 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
                 breadthFirst = true;
             else if (upgrade.is(SEARCH_MEMORY_UPGRADE.get()))
                 searchMemory = true;
+            else if (upgrade.is(STICKING_SEARCH_UPGRADE.get()))
+                stickingSearch = true;
             else if (upgrade.is(Items.GLOWSTONE_DUST))
                 addParticle = true;
             else if (upgrade.is(Items.REDSTONE))
@@ -265,6 +269,11 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     }
 
     @Override
+    public boolean stickingSearch() {
+        return stickingSearch;
+    }
+
+    @Override
     public void onSearchProceed(BlockPos pos) {
         setChanged();
         if (addParticle)
@@ -274,7 +283,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
     /**
      * PipeStateの表示
      */
-    public static class Renderer implements BlockEntityRenderer<TileBaseTransferNode> {
+    public static class Renderer implements BlockEntityRenderer<BaseTileNode> {
         private final BlockRenderDispatcher blockRenderer;
 
         public Renderer(BlockEntityRendererProvider.Context p_173623_) {
@@ -284,7 +293,7 @@ public abstract class TileBaseTransferNode extends TileHolderEntity implements S
         // TODO ノード本体が視界外になるだけでPipeStateが表示されなくなる
         // TODO 重い
         @Override
-        public void render(TileBaseTransferNode be, float p_112308_, @NotNull PoseStack pose, @NotNull MultiBufferSource mbs, int p_112311_, int overlay) {
+        public void render(BaseTileNode be, float p_112308_, @NotNull PoseStack pose, @NotNull MultiBufferSource mbs, int p_112311_, int overlay) {
             var level = be.getLevel();
 
             if (be.shouldRenderPipe() && level != null)//いつlevelがnullになるの

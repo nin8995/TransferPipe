@@ -7,11 +7,11 @@ import nin.transferpipe.gui.BaseScreen;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.minecraft.MCUtils;
 
-public abstract class ScreenTransferNode<T extends MenuTransferNode> extends BaseScreen<T> {
+public abstract class BaseScreenNode<T extends BaseMenuNode> extends BaseScreen<T> {
 
     public int customLabelY;
 
-    public ScreenTransferNode(T p_97741_, Inventory p_97742_, Component p_97743_) {
+    public BaseScreenNode(T p_97741_, Inventory p_97742_, Component p_97743_) {
         super(p_97741_, p_97742_, p_97743_);
         this.titleLabelY = 7;
     }
@@ -42,9 +42,9 @@ public abstract class ScreenTransferNode<T extends MenuTransferNode> extends Bas
         customLabelY += 10;
     }
 
-    public static class Item extends ScreenTransferNode<MenuTransferNode.Item> {
+    public static class Item<T extends BaseMenuNode.Item> extends BaseScreenNode<T> {
 
-        public Item(MenuTransferNode.Item p_97741_, Inventory p_97742_, Component p_97743_) {
+        public Item(T p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
         }
 
@@ -54,9 +54,9 @@ public abstract class ScreenTransferNode<T extends MenuTransferNode> extends Bas
         }
     }
 
-    public static class Liquid extends ScreenTransferNode<MenuTransferNode.Liquid> {
+    public static class Liquid<T extends BaseMenuNode.Liquid> extends BaseScreenNode<T> {
 
-        public Liquid(MenuTransferNode.Liquid p_97741_, Inventory p_97742_, Component p_97743_) {
+        public Liquid(T p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
         }
 
@@ -66,7 +66,7 @@ public abstract class ScreenTransferNode<T extends MenuTransferNode> extends Bas
             var liquid = menu.getLiquid();
 
             if (!liquid.isEmpty())
-                MCUtils.renderLiquid(liquid, pose, 80, -38 + MenuTransferNode.upgradesY, 16);
+                MCUtils.renderLiquid(liquid, pose, 80, -38 + BaseMenuNode.upgradesY, 16);
         }
 
         @Override
@@ -84,9 +84,9 @@ public abstract class ScreenTransferNode<T extends MenuTransferNode> extends Bas
         }
     }
 
-    public static class Energy extends ScreenTransferNode<MenuTransferNode.Energy> {
+    public static class Energy<T extends BaseMenuNode.Energy> extends BaseScreenNode<T> {
 
-        public Energy(MenuTransferNode.Energy p_97741_, Inventory p_97742_, Component p_97743_) {
+        public Energy(T p_97741_, Inventory p_97742_, Component p_97743_) {
             super(p_97741_, p_97742_, p_97743_);
         }
 

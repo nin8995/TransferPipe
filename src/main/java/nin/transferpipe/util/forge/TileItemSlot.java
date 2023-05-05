@@ -42,6 +42,18 @@ public class TileItemSlot<T extends BlockEntity> extends TileItemHandler<T> {
         return getItem().isEmpty();
     }
 
+    public boolean hasFreeSpace() {
+        return getFreeSpace() > 0;
+    }
+
+    public boolean isFull() {
+        return getFreeSpace() == 0;
+    }
+
+    public boolean hasItem() {
+        return !isEmpty();
+    }
+
     public boolean canStack(ItemStack item) {
         return (getItem().isEmpty() && !item.isEmpty()) || ItemHandlerHelper.canItemStacksStack(item, getItem());
     }

@@ -16,8 +16,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TileHolderEntity;
-import nin.transferpipe.block.node.BlockTransferNode;
-import nin.transferpipe.block.node.TileBaseTransferNode;
+import nin.transferpipe.block.node.BaseBlockNode;
+import nin.transferpipe.block.node.BaseTileNode;
 import nin.transferpipe.block.pipe.Connection;
 import nin.transferpipe.block.pipe.Flow;
 import nin.transferpipe.block.pipe.TransferPipe;
@@ -38,7 +38,7 @@ public interface TPUtils {
         var bs = level.getBlockState(pos);
         return bs.getBlock() instanceof TransferPipe
                ? bs
-               : level.getBlockEntity(pos) instanceof TileBaseTransferNode be
+               : level.getBlockEntity(pos) instanceof BaseTileNode be
                  ? be.pipeState
                  : null;//PipeStateを得得ないときにnull
     }
@@ -51,7 +51,7 @@ public interface TPUtils {
 
     @Nullable
     static Direction currentNodeDir(Level level, BlockPos pos) {
-        return level.getBlockState(pos).getBlock() instanceof BlockTransferNode.FacingNode<?> node ? node.facing(level, pos) : null;
+        return level.getBlockState(pos).getBlock() instanceof BaseBlockNode.Facing<?> node ? node.facing(level, pos) : null;
     }
 
     static Connection connection(BlockState state, Direction dir) {

@@ -6,7 +6,7 @@ import net.minecraft.world.Containers;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
-import nin.transferpipe.block.node.TileTransferNodeItem;
+import nin.transferpipe.block.node.TransferNodeItem;
 import nin.transferpipe.util.forge.ForgeUtils;
 
 import java.util.HashMap;
@@ -17,9 +17,9 @@ import java.util.stream.IntStream;
 public class ReferenceCraftingGrid extends CraftingContainer {
 
     private final Map<Integer, Pair<IItemHandler, Integer>> inventoryReferences = new HashMap<>();
-    private final TileTransferNodeItem node;
+    private final TransferNodeItem.Tile node;
 
-    public ReferenceCraftingGrid(TileTransferNodeItem referencer) {
+    public ReferenceCraftingGrid(TransferNodeItem.Tile referencer) {
         super(new DummyMenu(), 3, 3);
         this.node = referencer;
     }

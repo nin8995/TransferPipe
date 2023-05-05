@@ -2,16 +2,13 @@ package nin.transferpipe.block.node;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.gui.BaseBlockMenu;
@@ -19,7 +16,7 @@ import nin.transferpipe.item.Upgrade;
 import nin.transferpipe.item.UpgradeSlot;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class MenuTransferNode extends BaseBlockMenu {
+public abstract class BaseMenuNode extends BaseBlockMenu {
 
     public final ContainerData searchData;
 
@@ -27,7 +24,7 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
     public int upgradesStart = containerStart;
     public int upgradesEnd = upgradesStart + 5;
 
-    public MenuTransferNode(IItemHandler upgrades, ContainerData searchData, TPBlocks.RegistryGUIEntityBlock<?> registry, int containerId, Inventory inv) {
+    public BaseMenuNode(IItemHandler upgrades, ContainerData searchData, TPBlocks.RegistryGUIEntityBlock<?> registry, int containerId, Inventory inv) {
         super(registry, containerId, inv, "transfer_node", 225);
         this.searchData = searchData;
         this.addDataSlots(searchData);
@@ -54,32 +51,21 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
     }
 
 
-    public static class Item extends MenuTransferNode {
+    public static class Item extends BaseMenuNode {
 
-        //client
-        public Item(int containerId, Inventory inv, FriendlyByteBuf buf) {
-            this(new ItemStackHandler(), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv);
-        }
-
-        //server
-        public Item(IItemHandler slot, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv) {
-            super(upgrades, data, TPBlocks.TRANSFER_NODE_ITEM, containerId, inv);
+        public Item(TPBlocks.RegistryGUIEntityBlock<?> registry, IItemHandler slot, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv) {
+            super(upgrades, data, registry, containerId, inv);
             addItemHandlerSlots(slot, SlotItemHandler::new, -38 + upgradesY);
         }
     }
 
-    public static class Liquid extends MenuTransferNode {
+    public static class Liquid extends BaseMenuNode {
 
         private final IItemHandler dummyLiquidItem;
 
-        //client
-        public Liquid(int containerId, Inventory inv, FriendlyByteBuf buf) {
-            this(new ItemStackHandler(), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv);
-        }
-
         //server
-        public Liquid(IItemHandler dummyLiquidItem, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
-            super(upgrades, searchData, TPBlocks.TRANSFER_NODE_LIQUID, containerId, inv);
+        public Liquid(TPBlocks.RegistryGUIEntityBlock<?> registry, IItemHandler dummyLiquidItem, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
+            super(upgrades, searchData, registry, containerId, inv);
             this.dummyLiquidItem = dummyLiquidItem;
             addSlot(new DummyItemSlot(dummyLiquidItem, 0, 114514, 0));
         }
@@ -107,16 +93,12 @@ public abstract class MenuTransferNode extends BaseBlockMenu {
         }
     }
 
-    public static class Energy extends MenuTransferNode {
+    public static class Energy extends BaseMenuNode {
 
         private final ContainerData energyNodeData;
 
-        public Energy(int containerId, Inventory inv, FriendlyByteBuf buf) {
-            this(new SimpleContainerData(5), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv);
-        }
-
-        public Energy(ContainerData energyNodeData, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv) {
-            super(upgrades, data, TPBlocks.TRANSFER_NODE_ENERGY, containerId, inv);
+        public Energy(TPBlocks.RegistryGUIEntityBlock<?> registry, ContainerData energyNodeData, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv) {
+            super(upgrades, data, registry, containerId, inv);
             this.energyNodeData = energyNodeData;
             addDataSlots(energyNodeData);
         }

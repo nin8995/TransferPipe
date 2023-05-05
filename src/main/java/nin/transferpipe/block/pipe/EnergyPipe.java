@@ -3,7 +3,7 @@ package nin.transferpipe.block.pipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
-import nin.transferpipe.block.node.TileTransferNodeEnergy;
+import nin.transferpipe.block.node.TransferNodeEnergy;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.transferpipe.Searcher;
 import org.jetbrains.annotations.Nullable;
@@ -17,6 +17,6 @@ public class EnergyPipe extends TransferPipe {
 
     @Override
     public boolean isValidSearcher(Searcher searcher) {
-        return searcher instanceof TileTransferNodeEnergy;
+        return searcher instanceof TransferNodeEnergy.Tile;
     }
 }

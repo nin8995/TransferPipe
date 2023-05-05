@@ -8,7 +8,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TickingEntityBlock;
-import nin.transferpipe.block.node.TileTransferNodeEnergy;
+import nin.transferpipe.block.node.TransferNodeEnergy;
 import nin.transferpipe.util.forge.ReferenceEnergyStorage;
 import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +24,7 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
     public static class Tile extends nin.transferpipe.block.Tile {
 
         @Nullable
-        public TileTransferNodeEnergy node;
+        public TransferNodeEnergy.Tile node;
         public LazyOptional<ReferenceEnergyStorage> loReferencedEnergy = LazyOptional.empty();
 
         public Tile(BlockPos p_155229_, BlockState p_155230_) {
@@ -45,7 +45,7 @@ public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock
             this.disConnect();
         }
 
-        public void connect(TileTransferNodeEnergy node) {
+        public void connect(TransferNodeEnergy.Tile node) {
             disConnect();
             this.node = node;
             loReferencedEnergy = node.getCapability(ForgeCapabilities.ENERGY).lazyMap(ReferenceEnergyStorage::new);

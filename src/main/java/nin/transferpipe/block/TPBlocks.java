@@ -47,7 +47,7 @@ import static nin.transferpipe.block.pipe.TransferPipe.FLOW;
 public interface TPBlocks {
 
     Set<RegistryObject<Block>> PIPES = new HashSet<>();
-    Set<RegistryGUIEntityBlock<? extends TileBaseTransferNode>> NODES = new HashSet<>();
+    Set<RegistryGUIEntityBlock<? extends BaseTileNode>> NODES = new HashSet<>();
 
     DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     DeferredRegister<BlockEntityType<?>> TILES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
@@ -73,12 +73,16 @@ public interface TPBlocks {
     RegistryObject<Block> COMMON_CLASS_SORTING_PIPE = registerPipe("common_class_sorting_pipe", () -> new SortingPipe(SortingUpgrade.COMMON_CLASS_SORT));
 
     //Nodes
-    RegistryGUIEntityBlock<TileTransferNodeItem> TRANSFER_NODE_ITEM = registerNode("transfer_node_item",
-            BlockTransferNode.Item::new, TileTransferNodeItem::new, MenuTransferNode.Item::new, ScreenTransferNode.Item::new);
-    RegistryGUIEntityBlock<TileTransferNodeLiquid> TRANSFER_NODE_LIQUID = registerNode("transfer_node_liquid",
-            BlockTransferNode.Liquid::new, TileTransferNodeLiquid::new, MenuTransferNode.Liquid::new, ScreenTransferNode.Liquid::new);
-    RegistryGUIEntityBlock<TileTransferNodeEnergy> TRANSFER_NODE_ENERGY = registerNode("transfer_node_energy",
-            BlockTransferNode.Energy::new, TileTransferNodeEnergy::new, MenuTransferNode.Energy::new, ScreenTransferNode.Energy::new);
+    RegistryGUIEntityBlock<TransferNodeItem.Tile> TRANSFER_NODE_ITEM = registerNode("transfer_node_item",
+            TransferNodeItem::new, TransferNodeItem.Tile::new, TransferNodeItem.Menu::new, TransferNodeItem.Screen::new);
+    RegistryGUIEntityBlock<TransferNodeLiquid.Tile> TRANSFER_NODE_LIQUID = registerNode("transfer_node_liquid",
+            TransferNodeLiquid::new, TransferNodeLiquid.Tile::new, TransferNodeLiquid.Menu::new, TransferNodeLiquid.Screen::new);
+    RegistryGUIEntityBlock<TransferNodeEnergy.Tile> TRANSFER_NODE_ENERGY = registerNode("transfer_node_energy",
+            TransferNodeEnergy::new, TransferNodeEnergy.Tile::new, TransferNodeEnergy.Menu::new, TransferNodeEnergy.Screen::new);
+    RegistryGUIEntityBlock<RetrievalNodeItem.Tile> RETRIEVAL_NODE_ITEM = registerNode("retrieval_node_item",
+            RetrievalNodeItem::new, RetrievalNodeItem.Tile::new, RetrievalNodeItem.Menu::new, RetrievalNodeItem.Screen::new);
+    RegistryGUIEntityBlock<RetrievalNodeLiquid.Tile> RETRIEVAL_NODE_LIQUID = registerNode("retrieval_node_liquid",
+            RetrievalNodeLiquid::new, RetrievalNodeLiquid.Tile::new, RetrievalNodeLiquid.Menu::new, RetrievalNodeLiquid.Screen::new);
 
     static RegistryObject<Block> registerPipe(String id, Supplier<Block> block) {
         var ro = BLOCKS.register(id, block);
@@ -104,7 +108,7 @@ public interface TPBlocks {
         return registry;
     }
 
-    static <T extends TileBaseTransferNode, M extends BaseBlockMenu, U extends Screen & MenuAccess<M>>
+    static <T extends BaseTileNode, M extends BaseBlockMenu, U extends Screen & MenuAccess<M>>
     RegistryGUIEntityBlock<T> registerNode(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
                                            IContainerFactory<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
         var registry = registerGUIEntityBlock(id, block, tile, menu, screen);
@@ -221,12 +225,12 @@ public interface TPBlocks {
         private void node(RegistryObject<Block> ro) {
             var block = ro.get();
 
-            if (block instanceof BlockTransferNode.FacingNode) {
+            if (block instanceof BaseBlockNode.Facing) {
                 var mb = getMultipartBuilder(block);
 
                 var node = genNodeModel("block/transfer_node", ro);
                 Direction.stream().forEach(dir ->
-                        forRotatedModel(mb, dir, node, p -> p.condition(BlockTransferNode.FacingNode.FACING, dir)));
+                        forRotatedModel(mb, dir, node, p -> p.condition(BaseBlockNode.Facing.FACING, dir)));
 
                 var inv = genNodeModel("block/transfer_node_inv", ro);
                 simpleBlockItem(block, inv);

@@ -6,7 +6,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.INBTSerializable;
-import nin.transferpipe.block.node.TileBaseTransferNode;
+import nin.transferpipe.block.node.BaseTileNode;
 import nin.transferpipe.block.pipe.FunctionChanger;
 import nin.transferpipe.util.minecraft.MCUtils;
 import nin.transferpipe.util.minecraft.PosDirsSet;
@@ -66,9 +66,9 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
 
 
         FunctionChanger changer = null;
-        TileBaseTransferNode node = null;
+        BaseTileNode node = null;
         Object cache = null;
-        if (TPUtils.currentPipeBlock(level, searchingPos) instanceof FunctionChanger changerr && searcher instanceof TileBaseTransferNode nodee) {
+        if (TPUtils.currentPipeBlock(level, searchingPos) instanceof FunctionChanger changerr && searcher instanceof BaseTileNode nodee) {
             changer = changerr;
             node = nodee;
             cache = changerr.storeAndChange(searchingPos, nodee);
@@ -76,6 +76,7 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
         var destDirs = getDestDirs();
         if (!destDirs.isEmpty()) {
             //周囲の目的地に対する処理
+
             if (searcher.isMultiTask())
                 destDirs.forEach(this::destRelative);
             else
@@ -85,6 +86,10 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
                 changer.restore(cache, node);
             if (searcher.findToEnd())
                 return end();
+            if (searcher.stickingSearch()) {
+                queue.addAll(searchingPos, prevSearchedDirs);
+                return this;
+            }
         } else if (changer != null)
             changer.restore(cache, node);
 

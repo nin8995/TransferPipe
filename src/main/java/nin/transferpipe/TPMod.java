@@ -16,7 +16,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.block.node.TileBaseTransferNode;
+import nin.transferpipe.block.node.BaseTileNode;
 import nin.transferpipe.item.TPItems;
 import nin.transferpipe.network.TPPackets;
 import nin.transferpipe.particle.TPParticles;
@@ -76,7 +76,7 @@ public class TPMod {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers e) {
-        TPBlocks.NODES.forEach(node -> e.registerBlockEntityRenderer(node.tile(), TileBaseTransferNode.Renderer::new));
+        TPBlocks.NODES.forEach(node -> e.registerBlockEntityRenderer(node.tile(), BaseTileNode.Renderer::new));
     }
 
     @SubscribeEvent

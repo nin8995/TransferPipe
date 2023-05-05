@@ -1,11 +1,11 @@
 package nin.transferpipe.item;
 
-import nin.transferpipe.block.node.TileBaseTransferNode;
+import nin.transferpipe.block.node.BaseTileNode;
 import nin.transferpipe.util.forge.TileItemHandler;
 
-public class UpgradeHandler extends TileItemHandler<TileBaseTransferNode> {
+public class UpgradeHandler extends TileItemHandler<BaseTileNode> {
 
-    public UpgradeHandler(int size, TileBaseTransferNode be) {
+    public UpgradeHandler(int size, BaseTileNode be) {
         super(size, be);
     }
 

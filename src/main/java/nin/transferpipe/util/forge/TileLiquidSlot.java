@@ -51,6 +51,18 @@ public class TileLiquidSlot<T extends BlockEntity> extends FluidTank {
         return getCapacity() - getAmount();
     }
 
+    public boolean hasFreeSpace() {
+        return getFreeSpace() > 0;
+    }
+
+    public boolean isFull() {
+        return getFreeSpace() == 0;
+    }
+
+    public boolean hasLiquid() {
+        return !isEmpty();
+    }
+
     public void receive(FluidStack fluid) {
         if (isEmpty())
             setFluid(fluid);

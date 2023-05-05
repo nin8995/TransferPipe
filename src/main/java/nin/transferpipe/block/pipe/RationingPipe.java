@@ -4,7 +4,7 @@ import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
-import nin.transferpipe.block.node.TileBaseTransferNode;
+import nin.transferpipe.block.node.BaseTileNode;
 import nin.transferpipe.util.forge.ForgeUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +31,7 @@ public class RationingPipe extends TransferPipe implements FunctionChanger {
     }
 
     @Override
-    public Object storeAndChange(BlockPos pos, TileBaseTransferNode node) {
+    public Object storeAndChange(BlockPos pos, BaseTileNode node) {
         var cache = Pair.of(node.itemRation, node.liquidRation);
         node.itemRation = getItemRation(node.level, pos);
         node.liquidRation = getLiquidRation(node.level, pos);
@@ -39,7 +39,7 @@ public class RationingPipe extends TransferPipe implements FunctionChanger {
     }
 
     @Override
-    public void restore(Object cache, TileBaseTransferNode node) {
+    public void restore(Object cache, BaseTileNode node) {
         var pair = (Pair<Integer, Integer>) cache;
         node.itemRation = pair.first();
         node.liquidRation = pair.second();

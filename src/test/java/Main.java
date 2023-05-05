@@ -1,6 +1,5 @@
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import nin.transferpipe.block.node.TileTransferNodeItem;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 

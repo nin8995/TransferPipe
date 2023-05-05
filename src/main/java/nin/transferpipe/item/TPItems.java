@@ -39,6 +39,7 @@ public interface TPItems {
     RegistryObject<Item> DEPTH_FIRST_SEARCH_UPGRADE = registerUpgrade("depth_first_search_upgrade", p -> p.stacksTo(1));
     RegistryObject<Item> BREADTH_FIRST_SEARCH_UPGRADE = registerUpgrade("breadth_first_search_upgrade", p -> p.stacksTo(1));
     RegistryObject<Item> SEARCH_MEMORY_UPGRADE = registerUpgrade("search_memory_upgrade", p -> p.stacksTo(1));
+    RegistryObject<Item> STICKING_SEARCH_UPGRADE = registerUpgrade("sticking_search_upgrade", p -> p.stacksTo(1));
 
     RegistryGUIItem ITEM_FILTER = registerGUIItem("item_filter",
             ItemFilter::new, ItemFilter.Menu::new, ItemFilter.Screen::new);
