@@ -6,6 +6,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.items.IItemHandler;
@@ -53,8 +54,8 @@ public abstract class BaseMenuNode extends BaseBlockMenu {
 
     public static class Item extends BaseMenuNode {
 
-        public Item(TPBlocks.RegistryGUIEntityBlock<?> registry, IItemHandler slot, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv) {
-            super(upgrades, data, registry, containerId, inv);
+        public Item(TPBlocks.RegistryGUIEntityBlock<?> registry, IItemHandler slot, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
+            super(upgrades, searchData, registry, containerId, inv);
             addItemHandlerSlots(slot, SlotItemHandler::new, -38 + upgradesY);
         }
     }
@@ -97,21 +98,39 @@ public abstract class BaseMenuNode extends BaseBlockMenu {
 
         private final ContainerData energyNodeData;
 
-        public Energy(TPBlocks.RegistryGUIEntityBlock<?> registry, ContainerData energyNodeData, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv) {
-            super(upgrades, data, registry, containerId, inv);
+        public Energy(TPBlocks.RegistryGUIEntityBlock<?> registry, ContainerData energyNodeData, IItemHandler charge, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
+            super(upgrades, searchData, registry, containerId, inv);
             this.energyNodeData = energyNodeData;
             addDataSlots(energyNodeData);
+            addItemHandlerSlots(charge, ChargeSlot::new, -38 + upgradesY);
+        }
+
+        @Override
+        public Pair<Integer, Integer> getHighPriorityContainerSlots(ItemStack item) {
+            return item.getCapability(ForgeCapabilities.ENERGY).isPresent() ? Pair.of(containerEnd, containerEnd) : super.getHighPriorityContainerSlots(item);
+        }
+
+        public static class ChargeSlot extends SlotItemHandler {
+
+            public ChargeSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+                super(itemHandler, index, xPosition, yPosition);
+            }
+
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return super.mayPlace(stack) && stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+            }
         }
 
         public int getEnergy() {
             return energyNodeData.get(0);
         }
 
-        public int getExtractables() {
+        public int getExtract() {
             return energyNodeData.get(1);
         }
 
-        public int getReceivables() {
+        public int getInsert() {
             return energyNodeData.get(2);
         }
 

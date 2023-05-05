@@ -53,8 +53,8 @@ public class TransferNodeItem extends BaseBlockNode.Facing<TransferNodeItem.Tile
         }
 
         //server
-        public Menu(IItemHandler slot, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv) {
-            super(TPBlocks.TRANSFER_NODE_ITEM, slot, upgrades, data, containerId, inv);
+        public Menu(IItemHandler slot, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
+            super(TPBlocks.TRANSFER_NODE_ITEM, slot, upgrades, searchData, containerId, inv);
         }
     }
 
@@ -110,7 +110,7 @@ public class TransferNodeItem extends BaseBlockNode.Facing<TransferNodeItem.Tile
             else if (isAutoCraftMode())
                 tryAutoCraft();
             else if (isProduct(pos))
-                tryGenLiquidReactionProduct(pos);
+                tryGenLiquidReactionProduct(pos, dir);
         }
 
         public void tryVacuum(BlockPos pos, Direction boxDir) {
@@ -224,18 +224,29 @@ public class TransferNodeItem extends BaseBlockNode.Facing<TransferNodeItem.Tile
         }
 
         public boolean isProduct(BlockPos pos) {
-            return getBlock(pos) == Blocks.COBBLESTONE;
+            return getBlock(pos) == Blocks.COBBLESTONE || getBlock(pos) == Blocks.STONE;
         }
 
-        public void tryGenLiquidReactionProduct(BlockPos pos) {
+        public void tryGenLiquidReactionProduct(BlockPos pos, Direction dir) {
             var block = getBlock(pos);
             var item = block.asItem().getDefaultInstance();
-            if (shouldReceive(item))
-                if (block == Blocks.COBBLESTONE && isBetween(pos, Blocks.WATER, Blocks.LAVA)) {//TODO 丸石以外も
-                    var generatableItems = item.copyWithCount((int) worldInteraction);
+            if (shouldReceive(item))//TODO 一般の液体生成物について
+                if (block == Blocks.COBBLESTONE && canGenerateCobbleStone(pos, dir)
+                        || block == Blocks.STONE && canGenerateStone(pos, dir)) {
+                    var generatableItems = item.copyWithCount(wi());
                     var receivableItems = item.copyWithCount(getReceivableAmount(generatableItems, true));
                     itemSlot.receive(receivableItems);
                 }
+        }
+
+        public boolean canGenerateCobbleStone(BlockPos pos, Direction dir) {
+            var blocks = MCUtils.horizontalDirectionsExcept(dir).map(pos::relative).map(this::getBlock).toList();
+            return blocks.contains(Blocks.WATER) && blocks.contains(Blocks.LAVA);
+        }
+
+        public boolean canGenerateStone(BlockPos pos, Direction dir) {
+            return getBlock(pos.relative(Direction.UP)) == Blocks.LAVA
+                    && MCUtils.horizontalDirectionsExcept(dir).map(pos::relative).map(this::getBlock).anyMatch(b -> b == Blocks.WATER);
         }
 
         public boolean isBetween(BlockPos pos, Block b1, Block b2) {

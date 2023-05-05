@@ -103,12 +103,12 @@ public abstract class BaseScreenNode<T extends BaseMenuNode> extends BaseScreen<
             if (energy != 0)
                 drawCentered(pose, Component.translatable("gui.transferpipe.energy_amount", ForgeUtils.toFE(energy)));
 
-            var extractables = menu.getExtractables();
-            var receivables = menu.getReceivables();
+            var extract = menu.getExtract();
+            var insert = menu.getInsert();
             var both = menu.getBoth();
-            if (!(extractables == 0 && receivables == 0 && both == 0)) {
+            if (!(extract == 0 && insert == 0 && both == 0)) {
                 drawCentered(pose, Component.translatable("gui.transferpipe.connection"));
-                drawCentered(pose, Component.translatable("gui.transferpipe.connection_amounts", extractables, receivables, both));
+                drawCentered(pose, Component.translatable("gui.transferpipe.connection_amounts", extract, insert, both));
             }
 
             var energyReceiverPipes = menu.getEnergyReceiverPipes();

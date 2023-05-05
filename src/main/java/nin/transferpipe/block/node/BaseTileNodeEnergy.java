@@ -10,6 +10,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import nin.transferpipe.util.forge.TileEnergySlot;
+import nin.transferpipe.util.forge.TileItemSlot;
 import nin.transferpipe.util.java.JavaUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,11 +28,13 @@ public abstract class BaseTileNodeEnergy extends BaseTileNode {
      * 初期化
      */
     public final TileEnergySlot<BaseTileNodeEnergy> energySlot;
+    public final TileItemSlot<BaseTileNodeEnergy> chargeSlot;
     public final int baseCapacity = 10000;
 
     public BaseTileNodeEnergy(BlockEntityType<? extends BaseTileNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
         super(p_155228_, p_155229_, p_155230_);
         this.energySlot = new TileEnergySlot<>(baseCapacity, Integer.MAX_VALUE, Integer.MAX_VALUE, this);
+        this.chargeSlot = new TileItemSlot<>(this);
     }
 
     @Override
@@ -51,6 +54,14 @@ public abstract class BaseTileNodeEnergy extends BaseTileNode {
     /**
      * エネルギーを流す
      */
+    public void extractFrom(IEnergyStorage machine) {
+        extractFrom(List.of(machine));
+    }
+
+    public void insertTo(IEnergyStorage machine) {
+        insertTo(List.of(machine));
+    }
+
     public void extractFrom(List<IEnergyStorage> machines) {
         interactWith(machines, e -> e.getEnergyStored() != 0, TileEnergySlot::getFreeSpace,
                 (e, energy) -> e.extractEnergy(energy, false), energy -> energySlot.receiveEnergy(energy, false));
@@ -88,11 +99,13 @@ public abstract class BaseTileNodeEnergy extends BaseTileNode {
      * NBT
      */
     public static final String ENERGY = "Energy";
+    public static final String CHARGE = "Charge";
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putInt(ENERGY, energySlot.getEnergyStored());
+        tag.put(CHARGE, chargeSlot.serializeNBT());
     }
 
     @Override
@@ -100,5 +113,7 @@ public abstract class BaseTileNodeEnergy extends BaseTileNode {
         super.load(tag);
         if (tag.contains(ENERGY))
             energySlot.receive(tag.getInt(ENERGY));
+        if (tag.contains(CHARGE))
+            chargeSlot.deserializeNBT(tag.getCompound(CHARGE));
     }
 }

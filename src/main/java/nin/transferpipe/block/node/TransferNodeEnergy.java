@@ -9,6 +9,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
@@ -33,17 +34,17 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
 
     @Override
     public BaseBlockMenu menu(TransferNodeEnergy.Tile tile, int id, Inventory inv) {
-        return new Menu(tile.energyData, tile.upgrades, tile.searchData, id, inv);
+        return new Menu(tile.energyData, tile.chargeSlot, tile.upgrades, tile.searchData, id, inv);
     }
 
     public static class Menu extends BaseMenuNode.Energy {
 
         public Menu(int containerId, Inventory inv, FriendlyByteBuf buf) {
-            this(new SimpleContainerData(5), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv);
+            this(new SimpleContainerData(5), new ItemStackHandler(), new ItemStackHandler(6), new SimpleContainerData(4), containerId, inv);
         }
 
-        public Menu(ContainerData energyNodeData, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv) {
-            super(TPBlocks.TRANSFER_NODE_ENERGY, energyNodeData, upgrades, data, containerId, inv);
+        public Menu(ContainerData energyNodeData, IItemHandler charge, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
+            super(TPBlocks.TRANSFER_NODE_ENERGY, energyNodeData, charge, upgrades, searchData, containerId, inv);
         }
     }
 
@@ -80,7 +81,7 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
          */
         public final Supplier<LazyOptionalMap<IEnergyStorage>> loMap = () -> new LazyOptionalMap<>(ForgeUtils::getEnergyStorage, (pos, dir, lo) -> setChanged());
         public final LazyOptionalMap<IEnergyStorage> extractLOs = loMap.get();
-        public final LazyOptionalMap<IEnergyStorage> receiveLOs = loMap.get();
+        public final LazyOptionalMap<IEnergyStorage> insertLOs = loMap.get();
         public final LazyOptionalMap<IEnergyStorage> bothLOs = loMap.get();
 
         @Override
@@ -108,7 +109,7 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
                 else if (energy.canExtract())
                     extractLOs.addMarked(pos, dir, loEnergy);
                 else if (energy.canReceive())
-                    receiveLOs.addMarked(pos, dir, loEnergy);
+                    insertLOs.addMarked(pos, dir, loEnergy);
                 else
                     unchanged = true;
 
@@ -144,7 +145,7 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
         public void onSearchEnd() {
             super.onSearchEnd();
             extractLOs.reset();
-            receiveLOs.reset();
+            insertLOs.reset();
             bothLOs.reset();
             energyReceiverPipes.reset();
         }
@@ -155,15 +156,16 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
         @Override
         public void afterTick() {
             refreshConnection(extractLOs, IEnergyStorage::canExtract);
-            refreshConnection(receiveLOs, IEnergyStorage::canReceive);
+            refreshConnection(insertLOs, IEnergyStorage::canReceive);
             refreshConnection(bothLOs, ForgeUtils::canBoth);
 
             var extract = extractLOs.forceGetValues();
-            var receive = receiveLOs.forceGetValues();
+            var receive = insertLOs.forceGetValues();
             var both = bothLOs.forceGetValues();
 
             extractFrom(extract);
             extractFrom(both);
+            chargeSlot.getItem().getCapability(ForgeCapabilities.ENERGY).ifPresent(this::insertTo);
             insertTo(receive);
             insertTo(both);
         }
@@ -185,16 +187,16 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
         /**
          * 読む必要ない
          */
-        public static final String EXTRACTABLES = "Extractables";
-        public static final String RECEIVABLES = "Receivables";
+        public static final String EXTRACT = "Extract";
+        public static final String INSERT = "Insert";
         public static final String BOTH = "Both";
         public static final String ENERGY_RECEIVER_PIPES = "EnergyReceiverPipes";
 
         @Override
         protected void saveAdditional(CompoundTag tag) {
             super.saveAdditional(tag);
-            tag.put(EXTRACTABLES, extractLOs.serializeNBT());
-            tag.put(RECEIVABLES, receiveLOs.serializeNBT());
+            tag.put(EXTRACT, extractLOs.serializeNBT());
+            tag.put(INSERT, insertLOs.serializeNBT());
             tag.put(BOTH, bothLOs.serializeNBT());
             tag.put(ENERGY_RECEIVER_PIPES, energyReceiverPipes.serializeNBT());
         }
@@ -202,10 +204,10 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
         @Override
         public void load(CompoundTag tag) {
             super.load(tag);
-            if (tag.contains(EXTRACTABLES))
-                extractLOs.deserializeNBT(tag.getCompound(EXTRACTABLES));
-            if (tag.contains(RECEIVABLES))
-                receiveLOs.deserializeNBT(tag.getCompound(RECEIVABLES));
+            if (tag.contains(EXTRACT))
+                extractLOs.deserializeNBT(tag.getCompound(EXTRACT));
+            if (tag.contains(INSERT))
+                insertLOs.deserializeNBT(tag.getCompound(INSERT));
             if (tag.contains(BOTH))
                 bothLOs.deserializeNBT(tag.getCompound(BOTH));
             if (tag.contains(ENERGY_RECEIVER_PIPES))
@@ -227,7 +229,7 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
 
         public void tryLoadCaches() {
             extractLOs.tryLoadCache(level);
-            receiveLOs.tryLoadCache(level);
+            insertLOs.tryLoadCache(level);
             bothLOs.tryLoadCache(level);
             energyReceiverPipes.tryLoadCache(level, (pos, tile) -> tile.connect(this));
 
@@ -240,7 +242,7 @@ public class TransferNodeEnergy extends BaseBlockNode.Energy<TransferNodeEnergy.
                 return switch (p_39284_) {
                     case 0 -> energySlot.getEnergyStored();
                     case 1 -> extractLOs.valueCount();
-                    case 2 -> receiveLOs.valueCount();
+                    case 2 -> insertLOs.valueCount();
                     case 3 -> bothLOs.valueCount();
                     case 4 -> energyReceiverPipes.size();
                     default -> -1;

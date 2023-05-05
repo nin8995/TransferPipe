@@ -210,6 +210,12 @@ public interface MCUtils {
         return Direction.stream().collect(Collectors.toMap(d -> d, mapper));
     }
 
+    Set<Direction> horizontals = Direction.stream().filter(d -> !(d == Direction.UP || d == Direction.DOWN)).collect(Collectors.toSet());
+
+    static Stream<Direction> horizontalDirectionsExcept(Direction exception) {
+        return horizontals.stream().filter(d -> d != exception);
+    }
+
     /**
      * Creative Tab
      */

@@ -52,6 +52,6 @@
   "gui.transferpipe.liquid_amount": "Holding: %s of %s",
   "gui.transferpipe.energy_amount": "Holding: %s",
   "gui.transferpipe.connection": "Sustaining connections of",
-  "gui.transferpipe.connection_amounts": "Extract: %s Receive: %s Both: %s",
+  "gui.transferpipe.connection_amounts": "Extract: %s Insert: %s Both: %s",
   "gui.transferpipe.energy_receiver_pipe_amount": "Holding %s Energy Receiver Pipe"
 }

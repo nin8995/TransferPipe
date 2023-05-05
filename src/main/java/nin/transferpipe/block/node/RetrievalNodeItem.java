@@ -35,8 +35,8 @@ public class RetrievalNodeItem extends BaseBlockNode.Facing<RetrievalNodeItem.Ti
         }
 
         //server
-        public Menu(IItemHandler slot, IItemHandler upgrades, ContainerData data, int containerId, Inventory inv) {
-            super(TPBlocks.RETRIEVAL_NODE_ITEM, slot, upgrades, data, containerId, inv);
+        public Menu(IItemHandler slot, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
+            super(TPBlocks.RETRIEVAL_NODE_ITEM, slot, upgrades, searchData, containerId, inv);
         }
     }
 

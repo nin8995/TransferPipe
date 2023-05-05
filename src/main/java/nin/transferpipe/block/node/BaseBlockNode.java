@@ -54,7 +54,7 @@ public abstract class BaseBlockNode<T extends BaseTileNode> extends LightingBloc
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
         if (level.getBlockEntity(pos) instanceof BaseTileNode node) {
-            if (TPUtils.usingWrench(player, hand) && node.shouldRenderPipe()) {
+            if (TPUtils.usingWrench(player, hand)) {
                 if (!level.isClientSide)
                     node.setPipeStateAndUpdate(PipeInstance.cycleAndCalcState(level, pos/*, player.isShiftKeyDown() shift右クリックはブロックからは検知できない*/));
                 return InteractionResult.sidedSuccess(level.isClientSide);

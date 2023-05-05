@@ -15,6 +15,7 @@ public class UpgradeSlot extends SlotItemHandler {
 
     @Override
     public boolean mayPlace(@NotNull ItemStack stack) {
-        return (stack.getItem() instanceof Upgrade || MCUtils.isAnyOf(stack, Items.GLOWSTONE_DUST, Items.REDSTONE, Items.REDSTONE_TORCH, Items.GUNPOWDER)) && super.mayPlace(stack);
+        return super.mayPlace(stack)
+                && (stack.getItem() instanceof Upgrade || MCUtils.isAnyOf(stack, Items.GLOWSTONE_DUST, Items.REDSTONE, Items.REDSTONE_TORCH, Items.GUNPOWDER));
     }
 }

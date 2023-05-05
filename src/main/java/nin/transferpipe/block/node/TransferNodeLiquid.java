@@ -15,6 +15,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.util.forge.ForgeUtils;
+import nin.transferpipe.util.minecraft.MCUtils;
 import org.joml.Vector3f;
 
 public class TransferNodeLiquid extends BaseBlockNode.Facing<TransferNodeLiquid.Tile> {
@@ -86,7 +87,7 @@ public class TransferNodeLiquid extends BaseBlockNode.Facing<TransferNodeLiquid.
         }
 
         public boolean hasTwoNeighbor(BlockPos pos, Fluid fluid) {
-            return Direction.stream().filter(d -> level.getFluidState(pos).isSourceOfType(fluid)).count() >= 2;
+            return MCUtils.horizontals.stream().filter(d -> level.getFluidState(pos).isSourceOfType(fluid)).count() >= 2;
         }
 
         @Override

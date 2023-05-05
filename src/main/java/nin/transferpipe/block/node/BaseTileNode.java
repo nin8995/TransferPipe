@@ -166,7 +166,7 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
         });
 
         if (pipeUpgrade.get() != pipeState.getBlock())
-            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipeUpgrade.get().defaultBlockState().setValue(FLOW, pipeState.getValue(FLOW))));
+            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipeUpgrade.get().defaultBlockState().setValue(FLOW, pipeState.getValue(FLOW)), FACING));
     }
 
     public int wi() {
