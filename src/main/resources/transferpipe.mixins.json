@@ -2,11 +2,10 @@
   "required": true,
   "minVersion": "0.8",
   "package": "nin.transferpipe.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_17",
   "refmap": "transferpipe.refmap.json",
   "mixins": [
     "BanRestrictedSwapping",
-    ,
     "HandlePatternClicking"
   ],
   "client": [

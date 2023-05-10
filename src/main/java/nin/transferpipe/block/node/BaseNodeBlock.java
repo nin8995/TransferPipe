@@ -19,7 +19,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import nin.transferpipe.block.pipe.TransferPipe;
+import nin.transferpipe.block.pipe.Pipe;
 import nin.transferpipe.util.minecraft.GUIEntityBlock;
 import nin.transferpipe.util.minecraft.LightingBlock;
 import nin.transferpipe.util.minecraft.MCUtils;
@@ -30,6 +30,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
+/**
+ * ノードのブロック部分。中のパイプの更新。
+ */
 public abstract class BaseNodeBlock<T extends BaseTileNode> extends LightingBlock implements GUIEntityBlock<T> {
 
     public BaseNodeBlock() {
@@ -99,7 +102,7 @@ public abstract class BaseNodeBlock<T extends BaseTileNode> extends LightingBloc
             var shape = new AtomicReference<>(ROTATED_NODES.get(state.getValue(FACING)));
             blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
                 if (be.shouldRenderPipe())
-                    shape.set(Shapes.or(shape.get(), TransferPipe.getShape(be.pipeState)));
+                    shape.set(Shapes.or(shape.get(), Pipe.getShape(be.pipeState)));
             });
 
             return shape.get();
@@ -131,7 +134,7 @@ public abstract class BaseNodeBlock<T extends BaseTileNode> extends LightingBloc
             var shape = new AtomicReference<>(ENERGY_NODE);
             blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
                 if (be.shouldRenderPipe())
-                    shape.set(Shapes.or(shape.get(), TransferPipe.getShape(be.pipeState)));
+                    shape.set(Shapes.or(shape.get(), Pipe.getShape(be.pipeState)));
             });
 
             return shape.get();

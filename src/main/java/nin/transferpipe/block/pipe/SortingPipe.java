@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.function.BiPredicate;
 
-public class SortingPipe extends TransferPipe implements FunctionChanger {
+public class SortingPipe extends Pipe implements FunctionChanger {
 
     public final BiPredicate<List<Item>, Item> sortingFunc;
 

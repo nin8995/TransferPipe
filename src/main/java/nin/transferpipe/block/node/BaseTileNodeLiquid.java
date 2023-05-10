@@ -21,6 +21,9 @@ import java.util.stream.IntStream;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE;
 
+/**
+ * 液体ノードの搬入出部分
+ */
 public abstract class BaseTileNodeLiquid extends BaseTileNode {
 
     /**

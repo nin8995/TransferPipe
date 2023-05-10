@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+/**
+ * Transfer Node (Item) の自動クラフト用の、インベントリを参照するクラフトグリッド
+ */
 public class ReferenceCraftingGrid extends CraftingContainer {
 
     private final Map<Integer, Pair<IItemHandler, Integer>> inventoryReferences = new HashMap<>();

@@ -20,7 +20,7 @@ public enum Connection implements StringRepresentable {
 
     public static BlockState map(BlockState state, Function<Direction, Connection> dirToConnection) {
         for (Direction d : Direction.values())
-            state = state.setValue(TransferPipe.CONNECTIONS.get(d), dirToConnection.apply(d));
+            state = state.setValue(Pipe.CONNECTIONS.get(d), dirToConnection.apply(d));
 
         return state;
     }

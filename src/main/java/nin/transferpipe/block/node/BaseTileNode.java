@@ -22,8 +22,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fluids.FluidStack;
 import nin.transferpipe.block.TPBlocks;
+import nin.transferpipe.block.pipe.Pipe;
 import nin.transferpipe.block.pipe.Connection;
-import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.item.TPItems;
 import nin.transferpipe.item.filter.BaseItemFilter;
 import nin.transferpipe.item.filter.BaseLiquidFilter;
@@ -45,8 +45,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
-import static nin.transferpipe.block.pipe.TransferPipe.FLOW;
+import static nin.transferpipe.block.pipe.Pipe.FLOW;
 
+/**
+ * ノードの基本部分。アップグレード、毎tick処理、探索、レンダー。
+ */
 public abstract class BaseTileNode extends TileHolderEntity implements Searcher, TPItems {
 
     /**
@@ -172,12 +175,13 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
                 itemFilter = filter.getFilter(upgrade);
             else if (upgrade.getItem() instanceof BaseLiquidFilter filter)
                 liquidFilter = filter.getFilter(upgrade);
-            if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
+            if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof Pipe pipe)
                 pipeUpgrade.set(pipe);
         });
 
-        if (pipeUpgrade.get() != pipeState.getBlock())
-            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipeUpgrade.get().defaultBlockState().setValue(FLOW, pipeState.getValue(FLOW)), FACING));
+        if (pipeUpgrade.get() != pipeState.getBlock()) {
+            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, TPUtils.withFlow(pipeUpgrade.get().defaultBlockState(), pipeState), FACING));
+        }
     }
 
     public int wi() {

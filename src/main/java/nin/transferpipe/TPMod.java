@@ -1,6 +1,5 @@
 package nin.transferpipe;
 
-import com.mojang.logging.LogUtils;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -20,7 +19,6 @@ import nin.transferpipe.block.node.BaseTileNode;
 import nin.transferpipe.item.TPItems;
 import nin.transferpipe.network.TPPackets;
 import nin.transferpipe.particle.TPParticles;
-import org.slf4j.Logger;
 
 /**
  * 初期化＆イベント処理
@@ -30,7 +28,6 @@ import org.slf4j.Logger;
 public class TPMod {
 
     public static final String MODID = "transferpipe";
-    private static final Logger LOGGER = LogUtils.getLogger();
 
     public static ResourceLocation loc(String id) {
         return new ResourceLocation(MODID, id);

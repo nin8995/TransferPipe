@@ -6,6 +6,9 @@ import net.minecraftforge.items.IItemHandler;
 import nin.transferpipe.util.forge.LiquidItemSlot;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Transfer Node (Liquid) のための液体表示スロット
+ */
 //TODO
 public class LiquidInteractiveSlot extends LiquidItemSlot {
 

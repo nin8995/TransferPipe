@@ -8,7 +8,7 @@ import nin.transferpipe.block.node.BaseTileNode;
 import nin.transferpipe.util.forge.ForgeUtils;
 import org.jetbrains.annotations.Nullable;
 
-public class RationingPipe extends TransferPipe implements FunctionChanger {
+public class RationingPipe extends Pipe implements FunctionChanger {
 
     protected final int ration;
 

@@ -4,9 +4,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import nin.transferpipe.block.pipe.Pipe;
 import nin.transferpipe.block.pipe.Connection;
 import nin.transferpipe.block.pipe.Flow;
-import nin.transferpipe.block.pipe.TransferPipe;
 import nin.transferpipe.util.java.JavaUtils;
 import nin.transferpipe.util.minecraft.MCUtils;
 import org.jetbrains.annotations.Nullable;
@@ -17,14 +17,14 @@ import java.util.Set;
 
 import static nin.transferpipe.block.pipe.Connection.*;
 import static nin.transferpipe.block.pipe.Flow.*;
-import static nin.transferpipe.block.pipe.TransferPipe.FLOW;
+import static nin.transferpipe.block.pipe.Pipe.FLOW;
 
 public class PipeInstance {
 
     public Level level;
     public BlockPos pos;
     public BlockState state;
-    public TransferPipe pipe;
+    public Pipe pipe;
     public Flow flow;
     public Map<Direction, Connection> connections;
     public Direction nodeDir;
@@ -56,7 +56,7 @@ public class PipeInstance {
         this.level = level;
         this.pos = pos;
         this.state = state;
-        if (state != null && state.getBlock() instanceof TransferPipe pipe) {
+        if (state != null && state.getBlock() instanceof Pipe pipe) {
             this.pipe = pipe;
             this.flow = TPUtils.flow(state);
             this.connections = MCUtils.dirMap(d -> TPUtils.connection(state, d));
@@ -128,8 +128,10 @@ public class PipeInstance {
     }
 
     public PipeInstance setFlow(Flow flow) {
-        this.flow = flow;
-        state = state.setValue(FLOW, flow);
+        if(TPUtils.hasFlow(state)) {
+            this.flow = flow;
+            state = state.setValue(FLOW, flow);
+        }
         return this;
     }
 

@@ -6,6 +6,9 @@ import net.minecraft.world.entity.player.Inventory;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.minecraft.BaseScreen;
 
+/**
+ * ノード画面の基礎。検索状況の表示。
+ */
 public abstract class BaseNodeScreen<T extends BaseNodeMenu> extends BaseScreen<T> {
 
     public int customLabelY;

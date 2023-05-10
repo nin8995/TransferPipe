@@ -22,6 +22,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+/**
+ * エネルギーノードの搬入出部分
+ */
 public abstract class BaseTileNodeEnergy extends BaseTileNode {
 
     /**

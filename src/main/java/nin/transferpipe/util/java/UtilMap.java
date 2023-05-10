@@ -1,12 +1,13 @@
 package nin.transferpipe.util.java;
 
-import org.antlr.v4.misc.OrderedHashMap;
-
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 
-public class UtilMap<K, V> extends OrderedHashMap<K, V> {
+public class UtilMap<K, V> extends LinkedHashMap<K, V> {
 
     /**
      * 削除機能拡張
@@ -36,6 +37,7 @@ public class UtilMap<K, V> extends OrderedHashMap<K, V> {
     public V remove(Object key) {
         try {
             removeFunc.accept((K) key, get(key));
+            keys.remove(key);
         } catch (Exception ignored) {
         }
         return super.remove(key);
@@ -48,12 +50,26 @@ public class UtilMap<K, V> extends OrderedHashMap<K, V> {
     /**
      * 追加番号から取得
      */
+    public List<K> keys = new ArrayList<>();
+
+    @Override
+    public V put(K key, V value) {
+        keys.add(key);
+        return super.put(key, value);
+    }
+
+    @Override
+    public void clear() {
+        keys.clear();
+        super.clear();
+    }
+
     public K getFirstKey() {
-        return getKey(0);
+        return keys.get(0);
     }
 
     public K getLastKey() {
-        return getKey(size() - 1);
+        return keys.get(size() - 1);
     }
 
     public V getFirstValue() {

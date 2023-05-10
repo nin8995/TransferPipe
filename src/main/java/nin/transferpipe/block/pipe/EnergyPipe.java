@@ -8,7 +8,7 @@ import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.transferpipe.Searcher;
 import org.jetbrains.annotations.Nullable;
 
-public class EnergyPipe extends TransferPipe {
+public class EnergyPipe extends Pipe {
 
     @Override
     public boolean isWorkPlace(Level level, BlockPos pos, @Nullable Direction dir) {

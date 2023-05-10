@@ -30,6 +30,7 @@ import nin.transferpipe.util.forge.RegistryEntityBlock;
 import nin.transferpipe.util.forge.RegistryGUI;
 import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 import nin.transferpipe.util.minecraft.BaseBlockMenu;
+import nin.transferpipe.util.transferpipe.TPUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -42,8 +43,8 @@ import static nin.transferpipe.TPMod.MODID;
 import static nin.transferpipe.block.pipe.Connection.MACHINE;
 import static nin.transferpipe.block.pipe.Connection.PIPE;
 import static nin.transferpipe.block.pipe.Flow.IGNORE;
-import static nin.transferpipe.block.pipe.TransferPipe.CONNECTIONS;
-import static nin.transferpipe.block.pipe.TransferPipe.FLOW;
+import static nin.transferpipe.block.pipe.Pipe.CONNECTIONS;
+import static nin.transferpipe.block.pipe.Pipe.FLOW;
 
 //public static finalの省略＆staticインポートの明示として実装
 public interface TPBlocks {
@@ -156,32 +157,40 @@ public interface TPBlocks {
 
         private void pipe(RegistryObject<Block> ro) {
             var block = ro.get();
+            var hasFlow = TPUtils.hasFlow(block);
             var mb = getMultipartBuilder(block);
 
             //中心モデル
             var center = genPipeModel("block/pipe_center", ro);
-            var overlayIgnoreCenter = genPipeModel("block/pipe_overlay_ignore_center", ro);
             forModel(mb, center, p -> p);//中心を無条件で
-            forModel(mb, overlayIgnoreCenter, p -> p.condition(FLOW, IGNORE));//無視用を無視時に
+            //中心オーバーレイ
+            if(hasFlow) {
+                var overlayIgnoreCenter = genPipeModel("block/pipe_overlay_ignore_center", ro);
+                forModel(mb, overlayIgnoreCenter, p -> p.condition(FLOW, IGNORE));//無視用を無視時に
+            }
 
             //管モデル
             var limb = genPipeModel("block/pipe_limb", ro);
             var machine = genPipeModel("block/pipe_machine", ro);
-            var overlayIgnoreLimb = genPipeModel("block/pipe_overlay_ignore_limb", ro);
-            var overlayOneway = genPipeModel("block/pipe_overlay_oneway", ro);
             Direction.stream().forEach(dir -> {
                 forRotatedModel(mb, dir, limb, p -> p.condition(CONNECTIONS.get(dir), PIPE));//管をパイプに向けて
 
                 forRotatedModel(mb, dir, machine, p -> p.condition(CONNECTIONS.get(dir), MACHINE));//機械用管を機械に向けて
-
-                forRotatedModel(mb, dir, overlayIgnoreLimb, p -> p//無視用を
-                        .condition(FLOW, IGNORE)//無視の時
-                        .condition(CONNECTIONS.get(dir), PIPE));//パイプに
-
-                forRotatedModel(mb, dir, overlayOneway, p -> p//一方通行を
-                        .condition(FLOW, Flow.stream().filter(f -> !f.openTo(dir)).toArray(Flow[]::new))//一方通行の時
-                        .condition(CONNECTIONS.get(dir), PIPE));//パイプに
             });
+            //管オーバーレイ
+            if(hasFlow) {
+                var overlayIgnoreLimb = genPipeModel("block/pipe_overlay_ignore_limb", ro);
+                var overlayOneway = genPipeModel("block/pipe_overlay_oneway", ro);
+                Direction.stream().forEach(dir -> {
+                    forRotatedModel(mb, dir, overlayIgnoreLimb, p -> p//無視用を
+                            .condition(FLOW, IGNORE)//無視の時
+                            .condition(CONNECTIONS.get(dir), PIPE));//パイプに
+
+                    forRotatedModel(mb, dir, overlayOneway, p -> p//一方通行を
+                            .condition(FLOW, Flow.stream().filter(f -> !f.openTo(dir)).toArray(Flow[]::new))//一方通行の時
+                            .condition(CONNECTIONS.get(dir), PIPE));//パイプに
+                });
+            }
 
             //インベントリモデル
             var inv = genPipeModel("block/pipe_inv", ro);

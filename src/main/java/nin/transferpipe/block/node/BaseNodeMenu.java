@@ -14,6 +14,9 @@ import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * ノードのGUI上同期の基本部分。検索状況、アップグレードスロットの同期。
+ */
 public abstract class BaseNodeMenu extends BaseBlockMenu {
 
     public final ContainerData searchData;
@@ -49,6 +52,9 @@ public abstract class BaseNodeMenu extends BaseBlockMenu {
     }
 
 
+    /**
+     * アイテムノードのアイテムスロットの同期
+     */
     public static class Item extends BaseNodeMenu {
 
         public Item(RegistryGUIEntityBlock<?> registry, IItemHandler slot, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
@@ -57,6 +63,9 @@ public abstract class BaseNodeMenu extends BaseBlockMenu {
         }
     }
 
+    /**
+     * 液体ノードの液体スロットの同期
+     */
     public static class Liquid extends BaseNodeMenu {
 
         public LiquidInteractiveSlot liquidSlot;
@@ -68,6 +77,9 @@ public abstract class BaseNodeMenu extends BaseBlockMenu {
         }
     }
 
+    /**
+     * エネルギーノードの各種情報と充電スロットの同期
+     */
     public static class Energy extends BaseNodeMenu {
 
         private final ContainerData energyNodeData;

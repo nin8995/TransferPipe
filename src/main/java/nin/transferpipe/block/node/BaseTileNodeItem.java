@@ -19,6 +19,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.stream.IntStream;
 
+/**
+ * アイテムノードのアイテム搬入出部分
+ */
 public abstract class BaseTileNodeItem extends BaseTileNode {
 
     /**

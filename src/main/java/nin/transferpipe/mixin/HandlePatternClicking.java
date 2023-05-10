@@ -26,7 +26,7 @@ public abstract class HandlePatternClicking {
     public abstract ItemStack getCarried();
 
     @Inject(method = "doClick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;isSameItemSameTags(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemStack;)Z"),
-            slice = @Slice(to = @At(value = "INVOKE", target = "Lnet/minecraft/world/inventory/Slot;onSwapCraft(I)V")), remap = false)
+            slice = @Slice(to = @At(value = "INVOKE", target = "Lnet/minecraft/world/inventory/Slot;onSwapCraft(I)V")))
     public void resetOrSwap(int p_150431_, int p_150432_, ClickType p_150433_, Player p_150434_, CallbackInfo ci) {
         Slot slot = slots.get(p_150431_);
         if (slot instanceof PatternSlot pattern)//PatternSlotはmayPlace falseなので実質 } else if (ItemStack.isSameItemSameTags(itemstack10, itemstack11)) { だけに挿入される

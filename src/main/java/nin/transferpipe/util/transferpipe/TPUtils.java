@@ -20,7 +20,7 @@ import nin.transferpipe.block.node.BaseNodeBlock;
 import nin.transferpipe.block.node.BaseTileNode;
 import nin.transferpipe.block.pipe.Connection;
 import nin.transferpipe.block.pipe.Flow;
-import nin.transferpipe.block.pipe.TransferPipe;
+import nin.transferpipe.block.pipe.Pipe;
 import nin.transferpipe.item.filter.PatternSlot;
 import nin.transferpipe.util.java.JavaUtils;
 import nin.transferpipe.util.minecraft.TileHolderEntity;
@@ -29,9 +29,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static nin.transferpipe.block.pipe.TransferPipe.CONNECTIONS;
-import static nin.transferpipe.block.pipe.TransferPipe.FLOW;
+import static nin.transferpipe.block.pipe.Pipe.CONNECTIONS;
+import static nin.transferpipe.block.pipe.Pipe.FLOW;
 
 public interface TPUtils {
 
@@ -40,7 +41,7 @@ public interface TPUtils {
      */
     static BlockState currentState(Level level, BlockPos pos) {
         var bs = level.getBlockState(pos);
-        return bs.getBlock() instanceof TransferPipe
+        return bs.getBlock() instanceof Pipe
                ? bs
                : level.getBlockEntity(pos) instanceof BaseTileNode be
                  ? be.pipeState
@@ -63,7 +64,17 @@ public interface TPUtils {
     }
 
     static Flow flow(BlockState state) {
-        return state.getValue(FLOW);
+        return hasFlow(state) ? state.getValue(FLOW) : Flow.ALL;
+    }
+
+    static BlockState withFlow(BlockState state, Flow flow){
+        return hasFlow(state) ? state.setValue(FLOW, flow) : state;
+    }
+
+    static BlockState withFlow(BlockState state, BlockState flowReference){
+        return hasFlow(state) && hasFlow(flowReference)
+               ? state.setValue(FLOW, flowReference.getValue(FLOW))
+               : state;
     }
 
     @Nullable
@@ -76,12 +87,22 @@ public interface TPUtils {
         return PipeInstance.of(level, pos).map(it -> it.flow).orElse(null);
     }
 
+    static boolean hasFlow(BlockState state) {
+        return state.hasProperty(FLOW);
+    }
+
+    static boolean hasFlow(Block block) {
+        return hasFlow(block.defaultBlockState());
+    }
+
     /**
      * 見た目がキューブ
      */
     Set<BlockState> centers = TPBlocks.PIPES.stream().map(RegistryObject::get)
             .map(Block::defaultBlockState)
-            .flatMap(state -> Flow.stream().map(flow -> state.setValue(FLOW, flow)))
+            .flatMap(state -> TPUtils.hasFlow(state)
+                              ? Flow.stream().map(flow -> state.setValue(FLOW, flow))
+                              : Stream.of(state))
             .collect(Collectors.toSet());
 
     static boolean centerOnly(BlockState bs) {
