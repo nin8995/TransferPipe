@@ -13,16 +13,17 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.util.forge.ForgeUtils;
+import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 import nin.transferpipe.util.java.JavaUtils;
+import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import nin.transferpipe.util.minecraft.MCUtils;
 import org.joml.Vector3f;
 
 public class RetrievalNodeItem extends BaseNodeBlock.Facing<RetrievalNodeItem.Tile> {
 
     @Override
-    public TPBlocks.RegistryGUIEntityBlock<RetrievalNodeItem.Tile> registryWithGUI() {
+    public RegistryGUIEntityBlock<Tile> registryWithGUI() {
         return TPBlocks.RETRIEVAL_NODE_ITEM;
     }
 

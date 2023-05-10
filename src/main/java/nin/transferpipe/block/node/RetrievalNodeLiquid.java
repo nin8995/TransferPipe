@@ -11,14 +11,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.util.forge.ForgeUtils;
+import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
+import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import org.joml.Vector3f;
 
 public class RetrievalNodeLiquid extends BaseNodeBlock.Facing<RetrievalNodeLiquid.Tile> {
 
     @Override
-    public TPBlocks.RegistryGUIEntityBlock<Tile> registryWithGUI() {
+    public RegistryGUIEntityBlock<Tile> registryWithGUI() {
         return TPBlocks.RETRIEVAL_NODE_LIQUID;
     }
 

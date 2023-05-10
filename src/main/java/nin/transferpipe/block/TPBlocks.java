@@ -24,10 +24,12 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.node.*;
 import nin.transferpipe.block.pipe.*;
-import nin.transferpipe.gui.BaseBlockMenu;
-import nin.transferpipe.gui.RegistryGUI;
-import nin.transferpipe.item.SortingUpgrade;
-import nin.transferpipe.item.UpgradeBlockItem;
+import nin.transferpipe.item.upgrade.SortingUpgrade;
+import nin.transferpipe.item.upgrade.UpgradeBlockItem;
+import nin.transferpipe.util.forge.RegistryEntityBlock;
+import nin.transferpipe.util.forge.RegistryGUI;
+import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
+import nin.transferpipe.util.minecraft.BaseBlockMenu;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -104,7 +106,7 @@ public interface TPBlocks {
     RegistryGUIEntityBlock<T> registerPipe(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
                                            IContainerFactory<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
         var registry = registerGUIEntityBlock(id, block, tile, menu, screen);
-        PIPES.add(registry.roBlock);
+        PIPES.add(registry.roBlock());
         return registry;
     }
 
@@ -134,42 +136,6 @@ public interface TPBlocks {
         TILES.register(bus);
         MENUS.register(bus);
         ITEMS.register(bus);
-    }
-
-    //EntityBlockにまつわるRegistryObjectをコード上で取得しやすい用
-    record RegistryGUIEntityBlock<T extends BlockEntity>
-            (RegistryObject<Block> roBlock,
-             RegistryObject<BlockEntityType<T>> roTile, BlockEntityType.BlockEntitySupplier<T> tileSupplier,
-             RegistryObject<MenuType<?>> roMenu, MenuScreens.ScreenConstructor<?, ?> screen) {
-
-        public Block block() {
-            return roBlock.get();
-        }
-
-        public BlockEntityType<T> tile() {
-            return roTile.get();
-        }
-
-        public MenuType<?> menu() {
-            return roMenu.get();
-        }
-
-        public RegistryGUI gui() {
-            return new RegistryGUI(roMenu, screen);
-        }
-    }
-
-    record RegistryEntityBlock<T extends BlockEntity>
-            (RegistryObject<Block> roBlock,
-             RegistryObject<BlockEntityType<T>> roTile, BlockEntityType.BlockEntitySupplier<T> tileSupplier) {
-
-        public Block block() {
-            return roBlock.get();
-        }
-
-        public BlockEntityType<T> tile() {
-            return roTile.get();
-        }
     }
 
     //ここで登録したもののDataGen

@@ -16,14 +16,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.registries.RegistryObject;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.node.BaseNodeBlock;
 import nin.transferpipe.block.node.BaseTileNode;
 import nin.transferpipe.block.pipe.Connection;
 import nin.transferpipe.block.pipe.Flow;
 import nin.transferpipe.block.pipe.TransferPipe;
-import nin.transferpipe.gui.PatternSlot;
+import nin.transferpipe.item.filter.PatternSlot;
 import nin.transferpipe.util.java.JavaUtils;
+import nin.transferpipe.util.minecraft.TileHolderEntity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;

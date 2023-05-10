@@ -15,7 +15,12 @@ import net.minecraftforge.network.IContainerFactory;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import nin.transferpipe.gui.RegistryGUI;
+import nin.transferpipe.item.filter.ItemFilter;
+import nin.transferpipe.item.filter.LiquidFilter;
+import nin.transferpipe.item.filter.SortingFilter;
+import nin.transferpipe.item.upgrade.*;
+import nin.transferpipe.util.forge.RegistryGUI;
+import nin.transferpipe.util.forge.RegistryGUIItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -95,20 +100,6 @@ public interface TPItems {
         MENUS.register(bus);
     }
 
-    record RegistryGUIItem(RegistryObject<Item> roItem, RegistryObject<MenuType<?>> roMenu, MenuScreens.ScreenConstructor<?, ?> screen) {
-
-        public Item item() {
-            return roItem.get();
-        }
-
-        public MenuType<?> menu() {
-            return roMenu.get();
-        }
-
-        public RegistryGUI gui() {
-            return new RegistryGUI(roMenu, screen);
-        }
-    }
 
     class DataGen extends ItemModelProvider {
 

@@ -5,7 +5,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
-import nin.transferpipe.gui.LiquidItemSlot;
+import nin.transferpipe.util.forge.LiquidItemSlot;
 import nin.transferpipe.util.minecraft.MCUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -31,7 +31,7 @@ public class RenderLiquidSlot extends Screen {
         if (slot instanceof LiquidItemSlot liquidItem) {
             var liquid = liquidItem.getLiquid();
             if (!liquid.isEmpty()) {
-                MCUtils.renderLiquid(liquid, p_97800_, slot.x, slot.y, 16);
+                MCUtils.renderLiquid(liquid.getFluid(), p_97800_, slot.x, slot.y, 16);
                 ci.cancel();
             }
         }

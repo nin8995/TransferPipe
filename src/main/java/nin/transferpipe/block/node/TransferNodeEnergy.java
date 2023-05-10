@@ -15,10 +15,11 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.pipe.EnergyReceiverPipe;
-import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.LazyOptionalMap;
+import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 import nin.transferpipe.util.java.ExceptionPredicate;
+import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import nin.transferpipe.util.minecraft.TileMap;
 import nin.transferpipe.util.transferpipe.TPUtils;
 import org.joml.Vector3f;
@@ -29,7 +30,7 @@ import java.util.function.Supplier;
 public class TransferNodeEnergy extends BaseNodeBlock.Energy<TransferNodeEnergy.Tile> {
 
     @Override
-    public TPBlocks.RegistryGUIEntityBlock<TransferNodeEnergy.Tile> registryWithGUI() {
+    public RegistryGUIEntityBlock<Tile> registryWithGUI() {
         return TPBlocks.TRANSFER_NODE_ENERGY;
     }
 

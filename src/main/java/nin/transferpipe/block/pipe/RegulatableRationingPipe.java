@@ -15,12 +15,13 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import nin.transferpipe.block.GUIEntityBlock;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.gui.BaseBlockMenu;
-import nin.transferpipe.gui.BaseRegulatableScreen;
+import nin.transferpipe.item.upgrade.BaseRegulatableScreen;
 import nin.transferpipe.network.BasePacket;
 import nin.transferpipe.network.TPPackets;
+import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
+import nin.transferpipe.util.minecraft.BaseBlockMenu;
+import nin.transferpipe.util.minecraft.GUIEntityBlock;
 
 public class RegulatableRationingPipe extends RationingPipe implements GUIEntityBlock<RegulatableRationingPipe.Tile> {
 
@@ -29,7 +30,7 @@ public class RegulatableRationingPipe extends RationingPipe implements GUIEntity
     }
 
     @Override
-    public TPBlocks.RegistryGUIEntityBlock<Tile> registryWithGUI() {
+    public RegistryGUIEntityBlock<Tile> registryWithGUI() {
         return TPBlocks.REGULATABLE_RATIONING_PIPE;
     }
 
@@ -58,7 +59,7 @@ public class RegulatableRationingPipe extends RationingPipe implements GUIEntity
         });
     }
 
-    public static class Tile extends nin.transferpipe.block.Tile {
+    public static class Tile extends nin.transferpipe.util.minecraft.Tile {
 
         public int item = 64;
         public int liquid = 64 * 250;

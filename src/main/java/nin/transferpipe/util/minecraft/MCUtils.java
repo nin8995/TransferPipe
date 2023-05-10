@@ -24,6 +24,7 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.entity.EntityTypeTest;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -31,7 +32,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.common.CreativeModeTabRegistry;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.ItemHandlerHelper;
 import nin.transferpipe.mixin.AtlasAccessor;
 import nin.transferpipe.util.java.Consumer3;
@@ -100,10 +100,10 @@ public interface MCUtils {
 
     }
 
-    static void renderLiquid(FluidStack liquid, PoseStack pose, int x, int y, int size) {
-        var color = IClientFluidTypeExtensions.of(liquid.getFluid()).getTintColor();
+    static void renderLiquid(Fluid fluid, PoseStack pose, int x, int y, int size) {
+        var color = IClientFluidTypeExtensions.of(fluid).getTintColor();
 
-        renderWithColor(color, () -> forStillFluidSprite(liquid, sprite -> blit(sprite, pose, x, y, size)));
+        renderWithColor(color, () -> forStillFluidSprite(fluid, sprite -> blit(sprite, pose, x, y, size)));
     }
 
     static void renderWithColor(int argb, Runnable renderer) {
@@ -121,10 +121,9 @@ public interface MCUtils {
         RenderSystem.disableBlend();
     }
 
-    static void forStillFluidSprite(FluidStack fluidStack, Consumer<TextureAtlasSprite> func) {
-        var fluid = fluidStack.getFluid();
+    static void forStillFluidSprite(Fluid fluid, Consumer<TextureAtlasSprite> func) {
         var renderProperties = IClientFluidTypeExtensions.of(fluid);
-        var fluidStill = renderProperties.getStillTexture(fluidStack);
+        var fluidStill = renderProperties.getStillTexture();
 
         var sprite = Minecraft.getInstance()
                 .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)

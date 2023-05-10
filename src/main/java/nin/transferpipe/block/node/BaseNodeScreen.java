@@ -3,8 +3,8 @@ package nin.transferpipe.block.node;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import nin.transferpipe.gui.BaseScreen;
 import nin.transferpipe.util.forge.ForgeUtils;
+import nin.transferpipe.util.minecraft.BaseScreen;
 
 public abstract class BaseNodeScreen<T extends BaseNodeMenu> extends BaseScreen<T> {
 

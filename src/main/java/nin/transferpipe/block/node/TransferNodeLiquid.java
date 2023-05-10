@@ -13,15 +13,16 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.gui.BaseBlockMenu;
 import nin.transferpipe.util.forge.ForgeUtils;
+import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
+import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import nin.transferpipe.util.minecraft.MCUtils;
 import org.joml.Vector3f;
 
 public class TransferNodeLiquid extends BaseNodeBlock.Facing<TransferNodeLiquid.Tile> {
 
     @Override
-    public TPBlocks.RegistryGUIEntityBlock<TransferNodeLiquid.Tile> registryWithGUI() {
+    public RegistryGUIEntityBlock<Tile> registryWithGUI() {
         return TPBlocks.TRANSFER_NODE_LIQUID;
     }
 

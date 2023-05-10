@@ -7,12 +7,11 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.gui.BaseBlockMenu;
-import nin.transferpipe.gui.LiquidInteractiveSlot;
-import nin.transferpipe.item.Upgrade;
-import nin.transferpipe.item.UpgradeSlot;
+import nin.transferpipe.item.upgrade.Upgrade;
+import nin.transferpipe.item.upgrade.UpgradeSlot;
 import nin.transferpipe.util.forge.ForgeUtils;
+import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
+import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import org.jetbrains.annotations.NotNull;
 
 public abstract class BaseNodeMenu extends BaseBlockMenu {
@@ -23,7 +22,7 @@ public abstract class BaseNodeMenu extends BaseBlockMenu {
     public int upgradesStart = containerStart;
     public int upgradesEnd = upgradesStart + 5;
 
-    public BaseNodeMenu(IItemHandler upgrades, ContainerData searchData, TPBlocks.RegistryGUIEntityBlock<?> registry, int containerId, Inventory inv) {
+    public BaseNodeMenu(IItemHandler upgrades, ContainerData searchData, RegistryGUIEntityBlock<?> registry, int containerId, Inventory inv) {
         super(registry, containerId, inv, "transfer_node", 225);
         this.searchData = searchData;
         this.addDataSlots(searchData);
@@ -52,7 +51,7 @@ public abstract class BaseNodeMenu extends BaseBlockMenu {
 
     public static class Item extends BaseNodeMenu {
 
-        public Item(TPBlocks.RegistryGUIEntityBlock<?> registry, IItemHandler slot, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
+        public Item(RegistryGUIEntityBlock<?> registry, IItemHandler slot, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
             super(upgrades, searchData, registry, containerId, inv);
             addItemHandler(slot, SlotItemHandler::new, -38 + upgradesY);
         }
@@ -63,7 +62,7 @@ public abstract class BaseNodeMenu extends BaseBlockMenu {
         public LiquidInteractiveSlot liquidSlot;
 
         //server
-        public Liquid(TPBlocks.RegistryGUIEntityBlock<?> registry, IItemHandler dummyLiquidItem, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
+        public Liquid(RegistryGUIEntityBlock<?> registry, IItemHandler dummyLiquidItem, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
             super(upgrades, searchData, registry, containerId, inv);
             this.liquidSlot = addItemHandler(dummyLiquidItem, LiquidInteractiveSlot::new, 83).get(0);
         }
@@ -73,7 +72,7 @@ public abstract class BaseNodeMenu extends BaseBlockMenu {
 
         private final ContainerData energyNodeData;
 
-        public Energy(TPBlocks.RegistryGUIEntityBlock<?> registry, ContainerData energyNodeData, IItemHandler charge, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
+        public Energy(RegistryGUIEntityBlock<?> registry, ContainerData energyNodeData, IItemHandler charge, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
             super(upgrades, searchData, registry, containerId, inv);
             this.energyNodeData = energyNodeData;
             addDataSlots(energyNodeData);

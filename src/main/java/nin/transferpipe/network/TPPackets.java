@@ -9,7 +9,7 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import nin.transferpipe.TPMod;
 import nin.transferpipe.block.pipe.RegulatableRationingPipe;
-import nin.transferpipe.item.RegulatableRationingUpgrade;
+import nin.transferpipe.item.upgrade.RegulatableRationingUpgrade;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;

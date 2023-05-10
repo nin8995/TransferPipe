@@ -2,7 +2,6 @@ package nin.transferpipe.util.minecraft;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import nin.transferpipe.block.Tile;
 import nin.transferpipe.util.java.LoadResult;
 import nin.transferpipe.util.transferpipe.TPUtils;
 

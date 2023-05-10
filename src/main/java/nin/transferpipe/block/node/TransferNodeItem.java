@@ -16,10 +16,10 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.gui.BaseBlockMenu;
-import nin.transferpipe.gui.ReferenceCraftingGrid;
 import nin.transferpipe.util.forge.ForgeUtils;
+import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 import nin.transferpipe.util.java.JavaUtils;
+import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import nin.transferpipe.util.minecraft.MCUtils;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -33,7 +33,7 @@ import java.util.stream.IntStream;
 public class TransferNodeItem extends BaseNodeBlock.Facing<TransferNodeItem.Tile> {
 
     @Override
-    public TPBlocks.RegistryGUIEntityBlock<TransferNodeItem.Tile> registryWithGUI() {
+    public RegistryGUIEntityBlock<Tile> registryWithGUI() {
         return TPBlocks.TRANSFER_NODE_ITEM;
     }
 
