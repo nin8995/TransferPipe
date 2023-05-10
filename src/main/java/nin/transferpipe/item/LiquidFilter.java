@@ -11,11 +11,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.gui.BaseItemMenu;
 import nin.transferpipe.gui.BaseScreen;
-import nin.transferpipe.gui.ItemFilterPattern;
+import nin.transferpipe.gui.LiquidFilterPattern;
 import nin.transferpipe.gui.PatternMenu;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.ObscuredInventory;
@@ -24,22 +25,17 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
 
-public class ItemFilter extends BaseItemFilter implements GUIItem {
+public class LiquidFilter extends BaseLiquidFilter implements GUIItem {
 
     public static String INVERTED = "Inverted";
     public static String IGNORE_NBT = "IgnoreNBT";
-    public static String IGNORE_DURABILITY = "IgnoreDurability";
 
-    public ItemFilter(Properties p_41383_) {
+    public LiquidFilter(Properties p_41383_) {
         super(p_41383_);
     }
 
     public boolean inverted(ItemStack filter) {
         return MCUtils.computeBoolean(filter, INVERTED);
-    }
-
-    public boolean ignoreDurability(ItemStack filter) {
-        return MCUtils.computeBoolean(filter, IGNORE_DURABILITY);
     }
 
     public boolean ignoreNBT(ItemStack filter) {
@@ -50,21 +46,15 @@ public class ItemFilter extends BaseItemFilter implements GUIItem {
         return filter.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve().get();
     }
 
-    public boolean isEmpty(ItemStack itemFilter) {
-        return ForgeUtils.isEmpty(patterns(itemFilter));
-    }
-
     @Override
-    public Predicate<ItemStack> getFilter(ItemStack filter) {
-        return item -> {
+    public Predicate<FluidStack> getFilter(ItemStack filter) {
+        return liquid -> {
             var filtered = ForgeUtils.stream(patterns(filter)).filter(i -> !i.isEmpty()).anyMatch(pattern ->
-                    pattern.getItem() instanceof BaseItemFilter f && !ForgeUtils.isEmpty(patterns(pattern))
-                    ? f.getFilter(pattern).test(item)
+                    pattern.getItem() instanceof BaseLiquidFilter f && !ForgeUtils.isEmpty(patterns(pattern))
+                    ? f.getFilter(pattern).test(liquid)
                     : ignoreNBT(filter)
-                      ? item.is(pattern.getItem())
-                      : ignoreDurability(filter)
-                        ? MCUtils.sameExcept(item, pattern, "Damage")
-                        : MCUtils.same(item, pattern));
+                      ? liquid.getFluid() == ForgeUtils.getFluid(pattern).getFluid()
+                      : liquid.isFluidEqual(ForgeUtils.getFluid(pattern)));
             return inverted(filter) != filtered;
         };
     }
@@ -91,10 +81,10 @@ public class ItemFilter extends BaseItemFilter implements GUIItem {
             this(new ItemStackHandler(9), buf.readInt(), p_38852_, inv);
         }
 
-        public Menu(IItemHandler dummyItems, int slot, int p_38852_, Inventory inv) {
-            super(TPItems.ITEM_FILTER, slot, p_38852_, inv, "item_filter", 131);
+        public Menu(IItemHandler dummyLiquidItems, int slot, int p_38852_, Inventory inv) {
+            super(TPItems.LIQUID_FILTER, slot, p_38852_, inv, "item_filter", 131);
             addInventory();
-            addPatterns(addItemHandler(dummyItems, ItemFilterPattern::new, 18));
+            addPatterns(addItemHandler(dummyLiquidItems, LiquidFilterPattern::new, 18));
         }
     }
 

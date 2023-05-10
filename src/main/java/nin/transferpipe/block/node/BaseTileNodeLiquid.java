@@ -60,8 +60,9 @@ public abstract class BaseTileNodeLiquid extends BaseTileNode {
         return IntStream.range(0, handler.getTanks())
                 .filter(slot -> shouldReceive(handler.getFluidInTank(slot)))
                 .anyMatch(slot -> {
-                    var toDrain = handler.getFluidInTank(slot);
-                    var drained = handler.drain(getExtractableAmount(toDrain, false), SIMULATE);
+                    var liquid = handler.getFluidInTank(slot);
+                    var toDrain = ForgeUtils.copyWithAmount(liquid, getExtractableAmount(liquid, false));
+                    var drained = handler.drain(toDrain, SIMULATE);
                     return drained.getAmount() > 0;
                 });
     }
@@ -70,32 +71,33 @@ public abstract class BaseTileNodeLiquid extends BaseTileNode {
         IntStream.range(0, handler.getTanks())
                 .filter(slot -> shouldReceive(handler.getFluidInTank(slot)))
                 .findFirst().ifPresent(slot -> {
-                    var toDrain = handler.getFluidInTank(slot);
+                    var liquid = handler.getFluidInTank(slot);
+                    var toDrain = ForgeUtils.copyWithAmount(liquid, getExtractableAmount(liquid, false));
                     var drained = handler.drain(getExtractableAmount(toDrain, false), EXECUTE);
                     liquidSlot.receive(drained);
                 });
     }
 
-    public boolean shouldReceive(FluidStack fluid) {
-        return liquidSlot.canStack(fluid);
+    public boolean shouldReceive(FluidStack liquid) {
+        return liquidSlot.canStack(liquid) && liquidFilter.test(liquid);
     }
 
-    public int getExtractableAmount(FluidStack fluid, boolean byWorldInteraction) {
+    public int getExtractableAmount(FluidStack liquid, boolean byWorldInteraction) {
         var pullableAmount = stackMode ? liquidSlot.getCapacity() : baseSpeed;
 
         if (byWorldInteraction)
             pullableAmount = Math.max(pullableAmount, wi());
 
-        return Math.min(pullableAmount, getReceivableAmount(fluid, byWorldInteraction));
+        return Math.min(pullableAmount, getReceivableAmount(liquid, byWorldInteraction));
     }
 
-    public int getReceivableAmount(FluidStack fluid, boolean byWorldInteraction) {
+    public int getReceivableAmount(FluidStack liquid, boolean byWorldInteraction) {
         var receivableAmount = liquidSlot.getCapacity() - liquidSlot.getAmount();
 
         if (byWorldInteraction)
             receivableAmount = Math.max(receivableAmount, wi() - liquidSlot.getAmount());
 
-        return Math.min(fluid.getAmount(), receivableAmount);
+        return Math.min(liquid.getAmount(), receivableAmount);
     }
 
     /**

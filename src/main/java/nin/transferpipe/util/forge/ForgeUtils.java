@@ -8,6 +8,7 @@ import net.minecraft.world.WorldlyContainerHolder;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.CapabilityProvider;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -16,10 +17,12 @@ import net.minecraftforge.common.util.NonNullConsumer;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.wrapper.InvWrapper;
 import net.minecraftforge.items.wrapper.SidedInvWrapper;
+import nin.transferpipe.util.java.ExceptionPredicate;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -28,6 +31,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public interface ForgeUtils {
 
@@ -61,17 +65,20 @@ public interface ForgeUtils {
         }
 
         var container = getContainer(level, pos);
-        return container != null ?
-               container instanceof WorldlyContainer wc ? containerCache.computeIfAbsent(container, it -> SidedInvWrapper.create(wc, dir)[0].cast())
-                                                        : containerCache.computeIfAbsent(container, it -> LazyOptional.of(() -> new InvWrapper(container)))
-                                 : LazyOptional.empty();
+        return container != null
+               ? container instanceof WorldlyContainer wc
+                 ? containerCache.computeIfAbsent(container, it -> SidedInvWrapper.create(wc, dir)[0].cast())
+                 : containerCache.computeIfAbsent(container, it -> LazyOptional.of(() -> new InvWrapper(container)))
+               : LazyOptional.empty();
     }
 
     @Nullable
     static Container getContainer(Level level, BlockPos pos) {
-        return level.getBlockEntity(pos) instanceof Container c ? c
-                                                                : level.getBlockState(pos).getBlock() instanceof WorldlyContainerHolder holder ? holder.getContainer(level.getBlockState(pos), level, pos)
-                                                                                                                                               : null;
+        return level.getBlockEntity(pos) instanceof Container c
+               ? c
+               : level.getBlockState(pos).getBlock() instanceof WorldlyContainerHolder holder
+                 ? holder.getContainer(level.getBlockState(pos), level, pos)
+                 : null;
     }
 
     static void forFirstItemSlot(Level level, BlockPos pos, Direction dir, BiConsumer<IItemHandler, Integer> func) {
@@ -83,50 +90,54 @@ public interface ForgeUtils {
     }
 
     static List<Item> toItemList(IItemHandler inv) {
-        return IntStream.range(0, inv.getSlots())
-                .mapToObj(inv::getStackInSlot)
-                .map(ItemStack::getItem).toList();
+        return stream(inv)
+                .map(ItemStack::getItem)
+                .toList();
     }
 
-    static int countItem(IItemHandler inv, ItemStack item) {
+    static Stream<ItemStack> stream(IItemHandler inv) {
         return IntStream.range(0, inv.getSlots())
-                .filter(slot -> ItemHandlerHelper.canItemStacksStack(inv.getStackInSlot(slot), item))
-                .map(slot -> inv.getStackInSlot(slot).getCount())
+                .mapToObj(inv::getStackInSlot);
+    }
+
+    static int countItem(IItemHandler inv, ItemStack toCount) {
+        return stream(inv)
+                .filter(item -> ItemHandlerHelper.canItemStacksStack(item, toCount))
+                .map(ItemStack::getCount)
                 .reduce(Integer::sum).orElse(0);
     }
 
     static List<ItemStack> filter(IItemHandler inv, Predicate<ItemStack> filter) {
-        return IntStream.range(0, inv.getSlots())
-                .filter(i -> filter.test(inv.getStackInSlot(i)))
-                .mapToObj(inv::getStackInSlot).toList();
+        return stream(inv)
+                .filter(filter)
+                .toList();
     }
 
     static List<IItemHandler> filter(List<IItemHandler> invs, Predicate<ItemStack> filter) {
-        return invs.stream().filter(inv -> !filter(inv, filter).isEmpty()).toList();
+        return invs.stream()
+                .filter(inv -> !filter(inv, filter).isEmpty())
+                .toList();
     }
 
     @Nullable
     static ItemStack findFirst(IItemHandler inv, Predicate<ItemStack> filter) {
-        var oi = IntStream.range(0, inv.getSlots())
-                .filter(i -> !inv.extractItem(i, 1, true).isEmpty() && filter.test(inv.getStackInSlot(i)))
-                .findFirst();
-        return oi.isPresent() ? inv.getStackInSlot(oi.getAsInt()) : null;
+        return stream(inv)
+                .filter(item -> !item.isEmpty() && filter.test(item))
+                .findFirst().orElse(null);
     }
 
     @Nullable
     static ItemStack findFirst(List<IItemHandler> invs, Predicate<ItemStack> filter) {
-        return invs.stream().filter(inv -> findFirst(inv, filter) != null)
-                .findFirst().map(inv -> findFirst(inv, filter))
+        return invs.stream()
+                .filter(inv -> findFirst(inv, filter) != null)
+                .findFirst()
+                .map(inv -> findFirst(inv, filter))
                 .orElse(null);
     }
 
-    @Nullable
-    static ItemStack findLast(IItemHandler inv, Predicate<ItemStack> filter) {
-        var oi = IntStream.range(0, inv.getSlots())
-                .map(i -> inv.getSlots() - 1 - i)
-                .filter(i -> !inv.extractItem(i, 1, true).isEmpty() && filter.test(inv.getStackInSlot(i)))
-                .findFirst();
-        return oi.isPresent() ? inv.getStackInSlot(oi.getAsInt()) : null;
+    static boolean isEmpty(IItemHandler inv) {
+        return stream(inv)
+                .allMatch(ItemStack::isEmpty);
     }
 
     /**
@@ -141,11 +152,13 @@ public interface ForgeUtils {
     }
 
     static IFluidHandler getFluidHandler(CapabilityProvider<?> cap) {
-        return cap.getCapability(ForgeCapabilities.FLUID_HANDLER).resolve().get();
+        return cap instanceof ItemStack
+               ? cap.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).resolve().get()
+               : cap.getCapability(ForgeCapabilities.FLUID_HANDLER).resolve().get();
     }
 
     static boolean hasFluidHandler(CapabilityProvider<?> cap) {
-        return cap.getCapability(ForgeCapabilities.FLUID_HANDLER).isPresent();
+        return ExceptionPredicate.succeeded(() -> getFluidHandler(cap));
     }
 
     static LazyOptional<IFluidHandler> getFluidHandler(Level level, BlockPos pos, Direction dir) {
@@ -199,6 +212,35 @@ public interface ForgeUtils {
         var copy = fluid.copy();
         copy.setAmount(amount);
         return copy;
+    }
+
+    static ItemStack getFluidItem(FluidStack fluid) {
+        if (fluid.isEmpty())
+            return ItemStack.EMPTY;
+
+        var fluidItem = new FluidHandlerItemStack(Items.ENDER_DRAGON_SPAWN_EGG.getDefaultInstance(), Integer.MAX_VALUE);
+        fluidItem.fill(fluid, IFluidHandler.FluidAction.EXECUTE);
+        return fluidItem.getContainer();
+    }
+
+    static ItemStack getFluidItem(ItemStack item) {
+        return getFluidItem(getFluid(item));
+    }
+
+    static FluidStack getFluidFromCapability(ItemStack item) {
+        return getFluidHandler(item).getFluidInTank(0);
+    }
+
+    static FluidStack getNBTFluid(ItemStack fluidItem) {
+        return new FluidHandlerItemStack(fluidItem, Integer.MAX_VALUE).getFluid();
+    }
+
+    static boolean hasFluid(ItemStack item) {
+        return !getFluid(item).isEmpty();
+    }
+
+    static FluidStack getFluid(ItemStack item) {
+        return hasFluidHandler(item) ? getFluidFromCapability(item) : getNBTFluid(item);
     }
 
     /**

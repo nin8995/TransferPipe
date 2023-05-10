@@ -12,6 +12,8 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -46,26 +48,30 @@ public abstract class BaseMenu extends AbstractContainerMenu {
 
     public void addInventory() {
         //hotbar
-        addInventorySlots(0, inv, Slot::new, 58);
+        addInventory(0, inv, Slot::new, 58);
 
         //inventory
         IntStream.rangeClosed(0, 2).forEach(i ->
-                addInventorySlots(9 * (i + 1), inv, Slot::new, i * 18));
+                addInventory(9 * (i + 1), inv, Slot::new, i * 18));
     }
 
-    public <T extends Container> void addInventorySlots(int start, T inv, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
+    public <T extends Container> void addInventory(int start, T inv, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
         addCenteredSlots(start, start + 8, (index, x) -> slotConstructor.apply(inv, index, x, y + getOffsetY()));
     }
 
-    public <T extends IItemHandler> void addItemHandlerSlots(T handler, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
-        addItemHandlerSlots(handler, 0, handler.getSlots() - 1, slotConstructor, y);
+    public <T extends IItemHandler, S extends Slot> List<S> addItemHandler(T handler, Function4<T, Integer, Integer, Integer, S> slotConstructor, int y) {
+        return addItemHandler(handler, 0, handler.getSlots() - 1, slotConstructor, y);
     }
 
-    public <T extends IItemHandler> void addItemHandlerSlots(T handler, int start, int end, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
-        addCenteredSlots(start, end, (index, x) -> slotConstructor.apply(handler, index, x, y));
+    public <T extends IItemHandler, S extends Slot> List<S> addItemHandler(T handler, int start, int end, Function4<T, Integer, Integer, Integer, S> slotConstructor, int y) {
+        return addCenteredSlots(start, end, (index, x) -> slotConstructor.apply(handler, index, x, y));
     }
 
-    public <T extends Container> void addContainerSlots(T container, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
+    public List<LiquidItemSlot> addDummyLiquidItemSlots(IItemHandler handler) {
+        return addItemHandler(handler, LiquidItemSlot::new, /*1145*/14);
+    }
+
+    public <T extends Container> void addContainer(T container, Function4<T, Integer, Integer, Integer, Slot> slotConstructor, int y) {
         addCenteredSlots(0, container.getContainerSize() - 1, (index, x) -> slotConstructor.apply(container, index, x, y));
     }
 
@@ -77,8 +83,9 @@ public abstract class BaseMenu extends AbstractContainerMenu {
     public int containerStart = inventoryEnd + 1;
     public int containerEnd;
 
-    public void addCenteredSlots(int start, int end, BiFunction<Integer, Integer, Slot> slotConstructor) {
+    public <C extends Slot> List<C> addCenteredSlots(int start, int end, BiFunction<Integer, Integer, C> slotConstructor) {
         var slotInfo = slotConstructor.apply(0, 0);
+        var slots = new ArrayList<C>();
 
         var slotAmount = end - start + 1;
         var slotSize = 18;
@@ -89,11 +96,13 @@ public abstract class BaseMenu extends AbstractContainerMenu {
             var x = startX + slotSize * i;
             var slot = slotConstructor.apply(index, x);
 
+            slots.add(slot);
             addSlot(shouldLock(slotInfo, index) ? new LockedSlot(slot) : slot);
         });
 
         if (!(slotInfo.container instanceof Inventory))
             addContainerEnd(slotAmount);
+        return slots;
     }
 
     public void addContainerEnd(int add) {
@@ -114,17 +123,17 @@ public abstract class BaseMenu extends AbstractContainerMenu {
 
     //返り値がEmptyかスロットのものと違う種類になるまで呼ばれ続ける
     @Override
-    public ItemStack quickMoveStack(Player player, int quickMovedSlotIndex) {
-        var quickMovedSlot = this.slots.get(quickMovedSlotIndex);
+    public ItemStack quickMoveStack(Player player, int index) {
+        var quickMovedSlot = this.slots.get(index);
         if (quickMovedSlot.hasItem()) {
             var item = quickMovedSlot.getItem();
 
-            if (containerStart <= quickMovedSlotIndex && quickMovedSlotIndex <= containerEnd) {//コンテナスロットなら
+            if (containerStart <= index && index <= containerEnd) {//コンテナスロットなら
                 if (!moveItemTo(item, hotbarStart, inventoryEnd, true))//インベントリに差して
                     return ItemStack.EMPTY;//差せなければ終わり
                 else
                     sendContentsChanged(Stream.of(quickMovedSlot));//差せたら更新
-            } else if (hotbarStart <= quickMovedSlotIndex && quickMovedSlotIndex <= inventoryEnd) {//インベントリスロットなら
+            } else if (hotbarStart <= index && index <= inventoryEnd) {//インベントリスロットなら
                 //まず優先度の高いコンテナスロットに差してから
                 var highPriorities = getHighPriorityContainerSlots(item);
                 var slotChanged = false;
@@ -134,7 +143,7 @@ public abstract class BaseMenu extends AbstractContainerMenu {
                 //普通にコンテナに差す
                 if (!moveItemTo(item, containerStart, containerEnd, false)) {
                     //コンテナに空きなければインベントリ<=>ホットバーで差しあう
-                    if (quickMovedSlotIndex <= hotbarEnd) {
+                    if (index <= hotbarEnd) {
                         if (!moveItemTo(item, inventoryStart, inventoryEnd, false) && !slotChanged)
                             return ItemStack.EMPTY;//それでも空きがなくて、高優先度スロットでも変化が無ければ
                     } else if (!moveItemTo(item, hotbarStart, hotbarEnd, false) && !slotChanged)
@@ -153,6 +162,14 @@ public abstract class BaseMenu extends AbstractContainerMenu {
         return ItemStack.EMPTY;//一回の動作で終わらす
     }
 
+    public void moveAmongInventory(int index) {
+        var item = getSlot(index).getItem();
+        if (index <= hotbarEnd)
+            moveItemTo(item, inventoryStart, inventoryEnd, false);
+        else
+            moveItemTo(item, hotbarStart, hotbarEnd, false);
+    }
+
     //少しでも挿入できたか
     public boolean moveItemTo(ItemStack item, int minSlot, int maxSlot, boolean fillMaxToMin) {
         var slotsChanged = moveItemStackTo(item, minSlot, maxSlot + 1, fillMaxToMin);//safeInsertはしないけどmayPlaceは見て入れる
@@ -161,6 +178,10 @@ public abstract class BaseMenu extends AbstractContainerMenu {
             sendContentsChanged(IntStream.rangeClosed(minSlot, maxSlot).mapToObj(slots::get));
 
         return slotsChanged;
+    }
+
+    public boolean moveItemTo(ItemStack item, int slot) {
+        return moveItemTo(item, slot, slot, false);
     }
 
     public void sendContentsChanged(Stream<Slot> slot) {

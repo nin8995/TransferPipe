@@ -5,7 +5,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import nin.transferpipe.gui.BaseScreen;
 import nin.transferpipe.util.forge.ForgeUtils;
-import nin.transferpipe.util.minecraft.MCUtils;
 
 public abstract class BaseNodeScreen<T extends BaseNodeMenu> extends BaseScreen<T> {
 
@@ -61,22 +60,13 @@ public abstract class BaseNodeScreen<T extends BaseNodeMenu> extends BaseScreen<
         }
 
         @Override
-        protected void renderLabels(PoseStack pose, int p_97809_, int p_97810_) {
-            super.renderLabels(pose, p_97809_, p_97810_);
-            var liquid = menu.getLiquid();
-
-            if (!liquid.isEmpty())
-                MCUtils.renderLiquid(liquid, pose, 80, -38 + BaseNodeMenu.upgradesY, 16);
-        }
-
-        @Override
         public String getSearchMsg() {
             return "gui.transferpipe.searching_liquid";
         }
 
         @Override
         public void drawCenteredTexts(PoseStack pose) {
-            var liquid = menu.getLiquid();
+            var liquid = menu.liquidSlot.getLiquid();
             if (!liquid.isEmpty())
                 drawCentered(pose, Component.translatable("gui.transferpipe.liquid_amount",
                         ForgeUtils.toMilliBucket(liquid.getAmount()), liquid.getDisplayName()));

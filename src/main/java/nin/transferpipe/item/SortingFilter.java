@@ -7,17 +7,19 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.pipe.SortingPipe;
 import nin.transferpipe.gui.BaseItemMenu;
 import nin.transferpipe.gui.BaseScreen;
-import nin.transferpipe.gui.PatternSlot;
+import nin.transferpipe.gui.ItemFilterPattern;
+import nin.transferpipe.gui.PatternMenu;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.ObscuredInventory;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
-import java.util.stream.IntStream;
 
 public class SortingFilter extends BaseItemFilter implements GUIItem {
 
@@ -44,8 +45,8 @@ public class SortingFilter extends BaseItemFilter implements GUIItem {
     }
 
 
-    public ObscuredInventory sortingItems(ItemStack filter) {
-        return (ObscuredInventory) filter.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve().get();
+    public IItemHandler patterns(ItemStack filter) {
+        return filter.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve().get();
     }
 
     @Nullable
@@ -60,8 +61,8 @@ public class SortingFilter extends BaseItemFilter implements GUIItem {
     @Override
     public Predicate<ItemStack> getFilter(ItemStack filter) {
         return item -> {
-            var sortingFunc = getSortingFunc(sortingItems(filter).getStackInSlot(0));
-            var list = new ArrayList<>(ForgeUtils.toItemList(sortingItems(filter)));
+            var sortingFunc = getSortingFunc(patterns(filter).getStackInSlot(0));
+            var list = new ArrayList<>(ForgeUtils.toItemList(patterns(filter)));
             list.remove(0);
             return sortingFunc == null || sortingFunc.test(list, item.getItem());
         };
@@ -69,7 +70,7 @@ public class SortingFilter extends BaseItemFilter implements GUIItem {
 
     @Override
     public BaseItemMenu menu(ItemStack item, Player player, int slot, int id, Inventory inv) {
-        return new Menu(sortingItems(item), slot, id, inv);
+        return new Menu(patterns(item), slot, id, inv);
     }
 
     @Override
@@ -78,63 +79,29 @@ public class SortingFilter extends BaseItemFilter implements GUIItem {
     }
 
 
-    public static class Menu extends BaseItemMenu {
+    public static class Menu extends PatternMenu {
 
         public Menu(int p_38852_, Inventory inv, FriendlyByteBuf buf) {
-            this(new ObscuredInventory(10), buf.readInt(), p_38852_, inv);
+            this(new ItemStackHandler(10), buf.readInt(), p_38852_, inv);
         }
 
-        public Menu(ObscuredInventory filteringItems, int slot, int p_38852_, Inventory inv) {
+        public Menu(IItemHandler dummyItems, int slot, int p_38852_, Inventory inv) {
             super(TPItems.SORTING_FILTER, slot, p_38852_, inv, "sorting_filter", 143);
             addInventory();
-            addItemHandlerSlots(filteringItems, 0, 0, SortingPatternSlot::new, 8);
-            addItemHandlerSlots(filteringItems, 1, 9, PatternSlot::new, 30);
+            addPatterns(addItemHandler(dummyItems, 0, 0, SorterPattern::new, 8));
+            addPatterns(addItemHandler(dummyItems, 1, 9, ItemFilterPattern::new, 30));
         }
 
-        public static class SortingPatternSlot extends PatternSlot {
+        public static class SorterPattern extends ItemFilterPattern {
 
-            public SortingPatternSlot(ObscuredInventory itemHandler, int index, int xPosition, int yPosition) {
-                super(itemHandler, index, xPosition, yPosition);
+            public SorterPattern(IItemHandler inv, int index, int xPosition, int yPosition) {
+                super(inv, index, xPosition, yPosition);
             }
 
             @Override
-            public ItemStack safeInsert(ItemStack item, int p_150658_) {
-                if (getSortingFunc(item) != null)
-                    set(item.copyWithCount(1));
-                return item;
+            public boolean shouldSet(ItemStack item) {
+                return super.shouldSet(item) && getSortingFunc(item) != null;
             }
-        }
-
-        @Override
-        public ItemStack quickMoveStack(Player player, int quickMovedSlotIndex) {
-            var quickMovedSlot = this.slots.get(quickMovedSlotIndex);
-            if (quickMovedSlot.hasItem()) {
-                var item = quickMovedSlot.getItem();
-                if (hotbarStart <= quickMovedSlotIndex && quickMovedSlotIndex <= inventoryEnd) {
-                    if (!slots.get(containerStart).hasItem() && getSortingFunc(item) != null)
-                        slots.get(containerStart).safeInsert(item);
-                    else {
-                        //一つだけフィルターに登録する
-                        var filteringItems = IntStream.rangeClosed(containerStart + 1, containerEnd)
-                                .mapToObj(this::getSlot)
-                                .filter(Slot::hasItem).toList();
-                        var emptySlot = IntStream.rangeClosed(containerStart + 1, containerEnd)
-                                .mapToObj(this::getSlot)
-                                .filter(s -> !s.hasItem()).findFirst();
-                        if (emptySlot.isPresent() && filteringItems.stream().noneMatch(s -> s.getItem().is(item.getItem())))
-                            emptySlot.get().safeInsert(item);
-                        else {
-                            //インベントリ<=>ホットバーで差しあう
-                            if (quickMovedSlotIndex <= hotbarEnd)
-                                moveItemTo(item, inventoryStart, inventoryEnd, false);
-                            else
-                                moveItemTo(item, hotbarStart, hotbarEnd, false);
-                        }
-                    }
-                } else
-                    quickMovedSlot.set(ItemStack.EMPTY);
-            }
-            return ItemStack.EMPTY;
         }
     }
 

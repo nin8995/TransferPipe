@@ -116,7 +116,7 @@ public class TransferNodeItem extends BaseNodeBlock.Facing<TransferNodeItem.Tile
             var invEntities = MCUtils.getMappableMappedEntities(level, box, ForgeUtils::getItemHandler);
             var toExtract = itemSlot.hasItem()
                             ? itemSlot.getItem()
-                            : ForgeUtils.findFirst(invEntities, filteringFunc);
+                            : ForgeUtils.findFirst(invEntities, itemFilter);
             if (!invEntities.isEmpty() && toExtract != null) {
                 var remainingExtractionPower = getExtractionSpeed(toExtract, true);
                 for (IItemHandler inv : JavaUtils.filter(invEntities, inv -> canExtract(inv, toExtract, true))) {

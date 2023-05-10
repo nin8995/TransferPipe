@@ -16,20 +16,20 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(AbstractContainerMenu.class)
-public class BanSwapForRestrictedSlot {
+public class BanRestrictedSwapping {
 
     @Shadow
     @Final
     public NonNullList<Slot> slots;
 
     /**
-     * @param swapTarget ホットバースロット上なら0~9、オフハンドなら４０。インヴェントリ上での番号であり、スロットの追加順になどなっていないので注意！
+     * @param swapTo ホットバースロット上なら0~9、オフハンドなら４０。インヴェントリ上での番号であり、スロットの追加順になどなっていないので注意！
      */
     @Inject(method = "doClick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Inventory;getItem(I)Lnet/minecraft/world/item/ItemStack;"), cancellable = true)
-    public void ban(int clicked, int swapTarget, ClickType p_150433_, Player player, CallbackInfo ci) {
+    public void ban(int clicked, int swapTo, ClickType p_150433_, Player player, CallbackInfo ci) {
         if ((Object) this instanceof BaseMenu menu) {
-            if ((swapTarget != 40 && (slots.get(clicked) instanceof SwapRestricted || slots.get(swapTarget) instanceof SwapRestricted))
-                    || (swapTarget == 40 && menu instanceof BaseItemMenu itemMenu && itemMenu.shouldLock() && itemMenu.slot == 40))
+            if (slots.get(clicked) instanceof SwapRestricted
+                    || (swapTo == 40 && menu instanceof BaseItemMenu itemMenu && itemMenu.shouldLock() && itemMenu.slot == 40))
                 ci.cancel();
         }
     }

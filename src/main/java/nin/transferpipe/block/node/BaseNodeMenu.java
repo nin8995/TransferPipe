@@ -3,15 +3,13 @@ package nin.transferpipe.block.node;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.gui.BaseBlockMenu;
+import nin.transferpipe.gui.LiquidInteractiveSlot;
 import nin.transferpipe.item.Upgrade;
 import nin.transferpipe.item.UpgradeSlot;
 import nin.transferpipe.util.forge.ForgeUtils;
@@ -30,7 +28,7 @@ public abstract class BaseNodeMenu extends BaseBlockMenu {
         this.searchData = searchData;
         this.addDataSlots(searchData);
         addInventory();
-        addItemHandlerSlots(upgrades, UpgradeSlot::new, upgradesY);
+        addItemHandler(upgrades, UpgradeSlot::new, upgradesY);
     }
 
     @Override
@@ -56,41 +54,18 @@ public abstract class BaseNodeMenu extends BaseBlockMenu {
 
         public Item(TPBlocks.RegistryGUIEntityBlock<?> registry, IItemHandler slot, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
             super(upgrades, searchData, registry, containerId, inv);
-            addItemHandlerSlots(slot, SlotItemHandler::new, -38 + upgradesY);
+            addItemHandler(slot, SlotItemHandler::new, -38 + upgradesY);
         }
     }
 
     public static class Liquid extends BaseNodeMenu {
 
-        private final IItemHandler dummyLiquidItem;
+        public LiquidInteractiveSlot liquidSlot;
 
         //server
         public Liquid(TPBlocks.RegistryGUIEntityBlock<?> registry, IItemHandler dummyLiquidItem, IItemHandler upgrades, ContainerData searchData, int containerId, Inventory inv) {
             super(upgrades, searchData, registry, containerId, inv);
-            this.dummyLiquidItem = dummyLiquidItem;
-            addSlot(new DummyItemSlot(dummyLiquidItem, 0, 114514, 0));
-        }
-
-        public static class DummyItemSlot extends SlotItemHandler {
-
-            public DummyItemSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
-                super(itemHandler, index, xPosition, yPosition);
-            }
-
-            @Override
-            public boolean mayPlace(@NotNull ItemStack stack) {
-                return false;
-            }
-
-            @Override
-            public boolean mayPickup(Player playerIn) {
-                return false;
-            }
-        }
-
-        public FluidStack getLiquid() {
-            var a = dummyLiquidItem.getStackInSlot(0);
-            return new FluidHandlerItemStack(a, Integer.MAX_VALUE).getFluid();
+            this.liquidSlot = addItemHandler(dummyLiquidItem, LiquidInteractiveSlot::new, 83).get(0);
         }
     }
 
@@ -102,7 +77,7 @@ public abstract class BaseNodeMenu extends BaseBlockMenu {
             super(upgrades, searchData, registry, containerId, inv);
             this.energyNodeData = energyNodeData;
             addDataSlots(energyNodeData);
-            addItemHandlerSlots(charge, ChargeSlot::new, -38 + upgradesY);
+            addItemHandler(charge, ChargeSlot::new, -38 + upgradesY);
         }
 
         @Override

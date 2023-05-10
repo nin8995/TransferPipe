@@ -20,6 +20,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.fluids.FluidStack;
 import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.TileHolderEntity;
 import nin.transferpipe.block.pipe.Connection;
@@ -102,7 +103,8 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
     public int itemRation;
     public int liquidRation;
     public BiPredicate<List<Item>, Item> sortingFunc;
-    public Predicate<ItemStack> filteringFunc;
+    public Predicate<ItemStack> itemFilter;
+    public Predicate<FluidStack> liquidFilter;
 
     public void calcUpgrades() {
         coolRate = 2;
@@ -118,8 +120,9 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
         redstoneBehavior = RedstoneBehavior.ACTIVE_LOW;
         itemRation = Integer.MAX_VALUE;
         liquidRation = Integer.MAX_VALUE;
-        sortingFunc = (l, i) -> true;
-        filteringFunc = i -> true;
+        sortingFunc = (is, i) -> true;
+        itemFilter = i -> true;
+        liquidFilter = l -> true;
         var pipeUpgrade = new AtomicReference<>(TPBlocks.TRANSFER_PIPE.get());
 
         upgrades.forEachItem(upgrade -> {
@@ -160,7 +163,9 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
             } else if (upgrade.getItem() instanceof SortingUpgrade sorter)
                 sortingFunc = sorter.sortingFunc;
             else if (upgrade.getItem() instanceof BaseItemFilter filter)
-                filteringFunc = filter.getFilter(upgrade);
+                itemFilter = filter.getFilter(upgrade);
+            else if (upgrade.getItem() instanceof BaseLiquidFilter filter)
+                liquidFilter = filter.getFilter(upgrade);
             if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof TransferPipe pipe)
                 pipeUpgrade.set(pipe);
         });

@@ -2,7 +2,8 @@ package nin.transferpipe.util.forge;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.items.ItemHandlerHelper;
+import nin.transferpipe.util.java.JavaUtils;
+import nin.transferpipe.util.minecraft.MCUtils;
 
 public class TileItemSlot<T extends BlockEntity> extends TileItemHandler<T> {
 
@@ -55,6 +56,7 @@ public class TileItemSlot<T extends BlockEntity> extends TileItemHandler<T> {
     }
 
     public boolean canStack(ItemStack item) {
-        return (getItem().isEmpty() && !item.isEmpty()) || ItemHandlerHelper.canItemStacksStack(item, getItem());
+        return JavaUtils.fork(getItem().isEmpty(),
+                !item.isEmpty(), MCUtils.same(item, getItem()));
     }
 }

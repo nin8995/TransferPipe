@@ -1,11 +1,10 @@
 package nin.transferpipe.util.forge;
 
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.ItemStackHandler;
+import nin.transferpipe.util.java.JavaUtils;
 
 public class TileLiquidSlot<T extends BlockEntity> extends FluidTank {
 
@@ -34,13 +33,12 @@ public class TileLiquidSlot<T extends BlockEntity> extends FluidTank {
     }
 
     public void refreshItemFluid() {
-        var fluidItem = new FluidHandlerItemStack(Items.ENDER_DRAGON_SPAWN_EGG.getDefaultInstance(), Integer.MAX_VALUE);
-        fluidItem.fill(getFluid(), FluidAction.EXECUTE);
-        dummyLiquidItem.setStackInSlot(0, fluidItem.getContainer());
+        dummyLiquidItem.setStackInSlot(0, ForgeUtils.getFluidItem(getFluid()));
     }
 
     public boolean canStack(FluidStack fluid) {
-        return (getFluid().isEmpty() && !fluid.isEmpty()) || fluid.isFluidEqual(getFluid());
+        return JavaUtils.fork(getFluid().isEmpty(),
+                !fluid.isEmpty(), fluid.isFluidEqual(getFluid()));
     }
 
     public int getAmount() {

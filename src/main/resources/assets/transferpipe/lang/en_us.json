@@ -43,6 +43,7 @@
   "item.transferpipe.common_class_sorting_upgrade": "Common Class Sorting Upgrade",
   "_comment": "Other Item",
   "item.transferpipe.item_filter": "Item Filter",
+  "item.transferpipe.liquid_filter": "Liquid Filter",
   "item.transferpipe.sorting_filter": "Sorting Filter",
   "_comment": "GUI",
   "itemGroup.transferpipe": "Transfer Pipe",

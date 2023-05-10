@@ -32,6 +32,7 @@ import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.common.CreativeModeTabRegistry;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.items.ItemHandlerHelper;
 import nin.transferpipe.mixin.AtlasAccessor;
 import nin.transferpipe.util.java.Consumer3;
 import nin.transferpipe.util.java.ExceptionPredicate;
@@ -244,13 +245,8 @@ public interface MCUtils {
     /**
      * Tag
      */
-    static boolean sameItemSameTagExcept(ItemStack item, ItemStack filteringItem, String tagKey) {
-        var noDamageItem = item.copy();
-        removeTag(noDamageItem, tagKey);
-        var noDamageFilteringItem = filteringItem.copy();
-        removeTag(noDamageFilteringItem, tagKey);
-
-        return ItemStack.isSameItemSameTags(noDamageItem, noDamageFilteringItem);
+    static boolean sameExcept(ItemStack a, ItemStack b, String tagKey) {
+        return same(copyWithRmv(a, tagKey), copyWithRmv(b, tagKey));
     }
 
     static void removeTag(ItemStack item, String key) {
@@ -319,6 +315,16 @@ public interface MCUtils {
             putter.accept(tag, key, initialValue);
 
         return getter.apply(tag, key);
+    }
+
+    static boolean same(ItemStack a, ItemStack b) {
+        return (a.isEmpty() && b.isEmpty()) || ItemHandlerHelper.canItemStacksStack(a, b);
+    }
+
+    static ItemStack copyWithRmv(ItemStack item, String tagKey) {
+        var copy = item.copy();
+        removeTag(copy, tagKey);
+        return copy;
     }
 
     /**

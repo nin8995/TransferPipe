@@ -13,6 +13,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.TileItemSlot;
+import nin.transferpipe.util.minecraft.MCUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,7 +47,7 @@ public abstract class BaseTileNodeItem extends BaseTileNode {
      */
     public boolean canExtract(IItemHandler inv) {
         var toExtract = itemSlot.isEmpty()
-                        ? ForgeUtils.findFirst(inv, filteringFunc)
+                        ? ForgeUtils.findFirst(inv, itemFilter)
                         : itemSlot.getItem();
         return toExtract != null && canExtract(inv, toExtract, false);
     }
@@ -55,7 +56,7 @@ public abstract class BaseTileNodeItem extends BaseTileNode {
         var extractionSpeed = getExtractionSpeed(toExtract, byWorldInteraction);
 
         return IntStream.range(0, inv.getSlots())
-                .filter(slot -> ItemHandlerHelper.canItemStacksStack(inv.getStackInSlot(slot), toExtract))
+                .filter(slot -> MCUtils.same(inv.getStackInSlot(slot), toExtract))
                 .anyMatch(slot -> {
                     var item = inv.getStackInSlot(slot);
                     var extraction = Math.min(getExtractableAmount(item, byWorldInteraction), extractionSpeed);
@@ -65,17 +66,15 @@ public abstract class BaseTileNodeItem extends BaseTileNode {
 
     public void tryExtract(IItemHandler inv) {
         var toExtract = itemSlot.isEmpty()
-                        ? ForgeUtils.findFirst(inv, filteringFunc)
+                        ? ForgeUtils.findFirst(inv, itemFilter)
                         : itemSlot.getItem();
-        if (toExtract != null) {
-            var remainingExtractionPower = getExtractionSpeed(toExtract, false);
-            tryExtract(inv, toExtract, remainingExtractionPower, false);
-        }
+        if (toExtract != null)
+            tryExtract(inv, toExtract, getExtractionSpeed(toExtract, false), false);
     }
 
     public int tryExtract(IItemHandler inv, ItemStack toExtract, int remainingExtractionPower, boolean byWorldInteraction) {
         for (int slot : IntStream.range(0, inv.getSlots())
-                .filter(slot -> ItemHandlerHelper.canItemStacksStack(inv.getStackInSlot(slot), toExtract))
+                .filter(slot -> MCUtils.same(inv.getStackInSlot(slot), toExtract))
                 .toArray()) {
 
             var item = inv.getStackInSlot(slot);
@@ -89,7 +88,7 @@ public abstract class BaseTileNodeItem extends BaseTileNode {
     }
 
     public boolean shouldReceive(ItemStack item) {
-        return itemSlot.canStack(item) && filteringFunc.test(item);
+        return itemSlot.canStack(item) && itemFilter.test(item);
     }
 
     public int getExtractableAmount(ItemStack toExtract, boolean byWorldInteraction) {

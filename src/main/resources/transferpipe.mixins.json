@@ -5,11 +5,13 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "transferpipe.refmap.json",
   "mixins": [
-    "BanSwapForRestrictedSlot",
-    "HopperBlockEntityInvoker"
+    "BanRestrictedSwapping",
+    ,
+    "HandlePatternClicking"
   ],
   "client": [
-    "AtlasAccessor"
+    "AtlasAccessor",
+    "RenderLiquidSlot"
   ],
   "injectors": {
     "defaultRequire": 1

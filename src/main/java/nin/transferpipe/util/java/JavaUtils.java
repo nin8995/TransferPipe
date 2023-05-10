@@ -139,4 +139,8 @@ public interface JavaUtils {
     static <V, Y> Set<Y> map(Stream<V> stream, Function<V, Y> mapper) {
         return stream.map(mapper).collect(Collectors.toSet());
     }
+
+    static void printStackTrace() {
+        Arrays.stream(Thread.currentThread().getStackTrace()).forEach(System.out::println);
+    }
 }

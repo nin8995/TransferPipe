@@ -43,6 +43,8 @@ public interface TPItems {
 
     RegistryGUIItem ITEM_FILTER = registerGUIItem("item_filter",
             ItemFilter::new, ItemFilter.Menu::new, ItemFilter.Screen::new);
+    RegistryGUIItem LIQUID_FILTER = registerGUIItem("liquid_filter",
+            LiquidFilter::new, LiquidFilter.Menu::new, LiquidFilter.Screen::new);
     RegistryGUIItem SORTING_FILTER = registerGUIItem("sorting_filter",
             SortingFilter::new, SortingFilter.Menu::new, SortingFilter.Screen::new);
 
@@ -94,6 +96,10 @@ public interface TPItems {
     }
 
     record RegistryGUIItem(RegistryObject<Item> roItem, RegistryObject<MenuType<?>> roMenu, MenuScreens.ScreenConstructor<?, ?> screen) {
+
+        public Item item() {
+            return roItem.get();
+        }
 
         public MenuType<?> menu() {
             return roMenu.get();
