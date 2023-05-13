@@ -8,10 +8,10 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import org.joml.Vector3f;
@@ -53,16 +53,6 @@ public class RetrievalNodeLiquid extends BaseNodeBlock.Facing<RetrievalNodeLiqui
         }
 
         @Override
-        public boolean shouldSearch() {
-            return liquidSlot.hasFreeSpace();
-        }
-
-        @Override
-        public Vector3f getColor() {
-            return new Vector3f(0, 1, 1);
-        }
-
-        @Override
         public void calcUpgrades() {
             super.calcUpgrades();
             pseudoRoundRobin = true;
@@ -70,19 +60,38 @@ public class RetrievalNodeLiquid extends BaseNodeBlock.Facing<RetrievalNodeLiqui
         }
 
         @Override
-        public void facing(BlockPos pos, Direction dir) {
-            if (liquidSlot.hasLiquid())
-                ForgeUtils.forFluidHandler(level, pos, dir, this::tryInsert);
+        public boolean shouldSearch() {
+            return liquidSlot.hasFreeSpace();
         }
 
         @Override
-        public boolean canWork(BlockPos pos, Direction d) {
-            return ForgeUtils.getFluidHandler(level, pos, d).filter(this::canExtract).isPresent();
+        public boolean canFacingWork() {
+            return liquidSlot.hasLiquid();
         }
 
         @Override
-        public void work(BlockPos pos, Direction dir) {
-            ForgeUtils.forFluidHandler(level, pos, dir, this::tryExtract);
+        public void facingWork(BlockPos pos, Direction dir, IFluidHandler inv) {
+            tryInsert(inv);
+        }
+
+        @Override
+        public void tryWorldInteraction(BlockPos pos, Direction dir) {
+            tryEntityInteraction(pos, dir.getOpposite(), this::tryInsert);
+        }
+
+        @Override
+        public boolean canWork(IFluidHandler inv) {
+            return canExtract(inv);
+        }
+
+        @Override
+        public void work(BlockPos pos, Direction dir, IFluidHandler inv) {
+            tryExtract(inv);
+        }
+
+        @Override
+        public Vector3f getColor() {
+            return new Vector3f(0, 1, 1);
         }
     }
 }

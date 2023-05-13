@@ -1,6 +1,7 @@
 package nin.transferpipe.block.node;
 
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.Containers;
 import net.minecraft.world.inventory.CraftingContainer;
@@ -9,6 +10,7 @@ import net.minecraftforge.items.IItemHandler;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.minecraft.DummyMenu;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,20 +21,22 @@ import java.util.stream.IntStream;
  */
 public class ReferenceCraftingGrid extends CraftingContainer {
 
-    private final Map<Integer, Pair<IItemHandler, Integer>> inventoryReferences = new HashMap<>();
-    private final TransferNodeItem.Tile node;
+    public Map<Integer, Pair<IItemHandler, Integer>> inventoryReferences = new HashMap<>();
+    public List<BlockPos> itemPositions = new ArrayList<>();
+    public TransferNodeItem.Tile node;
 
     public ReferenceCraftingGrid(TransferNodeItem.Tile referencer) {
         super(new DummyMenu(), 3, 3);
         this.node = referencer;
     }
 
-    public void setItem(int gridSlot, IItemHandler inventory, int inventorySlot) {
-        setItem(gridSlot, inventory.getStackInSlot(inventorySlot));
-        inventoryReferences.put(gridSlot, Pair.of(inventory, inventorySlot));
+    public void setItem(int gridNumber, IItemHandler inventory, int inventorySlot, BlockPos pos) {
+        setItem(gridNumber, inventory.getStackInSlot(inventorySlot));
+        inventoryReferences.put(gridNumber, Pair.of(inventory, inventorySlot));
+        itemPositions.add(pos);
     }
 
-    public int getMinAmount() {
+    public int getMinCount() {
         return inventoryReferences.values().stream()
                 .map(pair -> pair.getFirst().getStackInSlot(pair.getSecond()).getCount())
                 .min(Integer::compareTo)
@@ -55,13 +59,14 @@ public class ReferenceCraftingGrid extends CraftingContainer {
     public void clear() {
         IntStream.range(0, getContainerSize()).forEach(i -> setItem(i, ItemStack.EMPTY));
         inventoryReferences.clear();
+        itemPositions.clear();
     }
 
     public boolean hasInvalidInventories() {
         return inventoryReferences.entrySet().stream().anyMatch(e -> {
             var gridNumber = e.getKey();
             var inventory = e.getValue().getFirst();
-            return ForgeUtils.getItemHandler(node.getLevel(), node.inventoryPozzes.get(gridNumber), node.FACING).map(inv -> inv != inventory).orElse(true);
+            return ForgeUtils.getItemHandler(node.getLevel(), node.inventoryPozzes.get(gridNumber), node.facing).map(inv -> inv != inventory).orElse(true);
         });
     }
 }

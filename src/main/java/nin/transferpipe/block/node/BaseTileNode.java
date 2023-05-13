@@ -1,6 +1,7 @@
 package nin.transferpipe.block.node;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.datafixers.util.Function3;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -13,17 +14,21 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.block.pipe.Pipe;
 import nin.transferpipe.block.pipe.Connection;
+import nin.transferpipe.block.pipe.Pipe;
 import nin.transferpipe.item.TPItems;
 import nin.transferpipe.item.filter.BaseItemFilter;
 import nin.transferpipe.item.filter.BaseLiquidFilter;
@@ -32,6 +37,7 @@ import nin.transferpipe.item.upgrade.SortingUpgrade;
 import nin.transferpipe.item.upgrade.UpgradeBlockItem;
 import nin.transferpipe.item.upgrade.UpgradeHandler;
 import nin.transferpipe.particle.TPParticles;
+import nin.transferpipe.util.java.JavaUtils;
 import nin.transferpipe.util.java.UtilSetMap;
 import nin.transferpipe.util.minecraft.MCUtils;
 import nin.transferpipe.util.minecraft.TileHolderEntity;
@@ -43,32 +49,38 @@ import org.joml.Vector3f;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Predicate;
-
-import static nin.transferpipe.block.pipe.Pipe.FLOW;
 
 /**
  * ノードの基本部分。アップグレード、毎tick処理、探索、レンダー。
  */
-public abstract class BaseTileNode extends TileHolderEntity implements Searcher, TPItems {
+public abstract class BaseTileNode<T> extends TileHolderEntity implements Searcher, TPItems {
 
     /**
      * 初期化処理
      */
-    public BlockPos pos;
-    @Nullable
-    public Direction FACING;
-    public BlockPos FACING_POS;
     public SearchInstance searchManager;
-    public final UpgradeHandler upgrades;
+    public UpgradeHandler upgrades;
     public BlockState pipeState = TPBlocks.TRANSFER_PIPE.get().defaultBlockState();
 
-    public BaseTileNode(BlockEntityType<? extends BaseTileNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
+    public BlockPos pos;
+    @Nullable
+    public Direction facing;
+    public BlockPos facingPos;
+    public Function3<Level, BlockPos, Direction, LazyOptional<T>> blockHandlerLOSup;
+    public Function<Entity, T> entityHandlerSup;
+
+    public BaseTileNode(BlockEntityType<? extends BaseTileNode> p_155228_, BlockPos p_155229_, BlockState p_155230_,
+                        Function3<Level, BlockPos, Direction, LazyOptional<T>> blockHandlerLOSup,
+                        Function<Entity, T> entityHandlerSup) {
         super(p_155228_, p_155229_, p_155230_);
         pos = this.worldPosition;
         updateFacing();
         searchManager = new SearchInstance(this);
         upgrades = new UpgradeHandler(6, this);
+        this.blockHandlerLOSup = blockHandlerLOSup;
+        this.entityHandlerSup = entityHandlerSup;
     }
 
     @Override
@@ -79,8 +91,8 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
 
     public void updateFacing() {
         if (getBlockState().getBlock() instanceof BaseNodeBlock.Facing<?> node) {
-            FACING = node.facing(getBlockState());
-            FACING_POS = pos.relative(FACING);
+            facing = node.facing(getBlockState());
+            facingPos = pos.relative(facing);
             onUpdateFacing();
         }
     }
@@ -180,12 +192,21 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
         });
 
         if (pipeUpgrade.get() != pipeState.getBlock()) {
-            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, TPUtils.withFlow(pipeUpgrade.get().defaultBlockState(), pipeState), FACING));
+            setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, TPUtils.withFlow(pipeUpgrade.get().defaultBlockState(), pipeState), facing));
         }
     }
 
     public int wi() {
         return (int) worldInteraction;
+    }
+
+    public void tryEntityInteraction(BlockPos pos, Direction boxDir, Function<List<T>, Boolean> func) {
+        var boxSize = 1 + 2 * JavaUtils.log(2, worldInteraction);
+        var boxCenter = MCUtils.relative(pos, boxDir, boxSize / 2);
+        var box = AABB.ofSize(boxCenter, boxSize, boxSize, boxSize);
+        var entities = MCUtils.getMappableMappedEntities(level, box, entityHandlerSup);
+        if (func.apply(entities) && addParticle)
+            addEdges(boxCenter, (float) boxSize / 2);
     }
 
     /**
@@ -197,18 +218,18 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
     @Override
     public final void tick() {
         super.tick();
-        if (!redstoneBehavior.isActive(level.getBestNeighborSignal(pos)))
+        if (!redstoneBehavior.isActive(level, pos))
             return;
 
         beforeTick();
         cooltime -= coolRate;
         for (; cooltime <= 0; cooltime += 20) {
-            isSearching = shouldSearch() && !(getBlockEntity(searchManager.getNextPos()) == this && !shouldRenderPipe());
+            isSearching = shouldSearch() && JavaUtils.extraCondition(getBlockEntity(searchManager.getNextPos()) == this, shouldRenderPipe());
             if (isSearching)
                 searchManager.proceed();
 
-            if (FACING != null)
-                facing(FACING_POS, FACING.getOpposite());
+            if (facing != null)
+                facing(facingPos, facing.getOpposite());
             else
                 Direction.stream().forEach(d -> facing(pos.relative(d), d.getOpposite()));
         }
@@ -223,7 +244,26 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
 
     public abstract boolean shouldSearch();
 
-    public abstract void facing(BlockPos pos, Direction dir);
+    public boolean byWorldInteraction;
+
+    public void facing(BlockPos pos, Direction dir) {
+        if (canFacingWork()) {
+            var handlerLO = blockHandlerLOSup.apply(level, pos, dir);
+            if (handlerLO.isPresent())
+                handlerLO.ifPresent(inv -> facingWork(pos, dir, inv));
+            else if (worldInteraction > 0) {
+                byWorldInteraction = true;
+                tryWorldInteraction(pos, dir);
+                byWorldInteraction = false;
+            }
+        }
+    }
+
+    public abstract boolean canFacingWork();
+
+    public abstract void facingWork(BlockPos pos, Direction dir, T inv);
+
+    public abstract void tryWorldInteraction(BlockPos pos, Direction dir);
 
     /**
      * 検索
@@ -235,26 +275,26 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
 
     @Override
     public Direction initialNonValidDir() {
-        return FACING;
+        return facing;
     }
 
     @Override
     public boolean isDest(BlockPos pos, Direction dir, BlockPos relativePos, Direction workDir) {
         return TPUtils.currentConnection(level, pos, dir) == Connection.MACHINE
-                && canWork(relativePos, workDir);
+                && blockHandlerLOSup.apply(level, relativePos, workDir).filter(this::canWork).isPresent();
     }
 
-    public abstract boolean canWork(BlockPos pos, Direction d);
+    public abstract boolean canWork(T inv);
 
     @Override
     public void onFind(BlockPos pos, Direction dir) {
-        work(pos, dir);
+        blockHandlerLOSup.apply(level, pos, dir).ifPresent(inv -> work(pos, dir, inv));
 
         if (addParticle)
             addBlockParticle(pos);
     }
 
-    public abstract void work(BlockPos pos, Direction dir);
+    public abstract void work(BlockPos pos, Direction dir, T inv);
 
     @Override
     public boolean canProceed(BlockPos pos, Direction dir, BlockPos relativePos, Direction workDir) {
@@ -382,7 +422,7 @@ public abstract class BaseTileNode extends TileHolderEntity implements Searcher,
     @Override
     public void onFirstTick() {
         super.onFirstTick();
-        setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipeState, FACING));
+        setPipeStateAndUpdate(PipeInstance.precalcState(level, pos, pipeState, facing));
         searchManager.reset();
     }
 

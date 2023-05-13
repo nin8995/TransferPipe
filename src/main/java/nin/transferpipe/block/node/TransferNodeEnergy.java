@@ -9,7 +9,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
@@ -19,11 +18,13 @@ import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.LazyOptionalMap;
 import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 import nin.transferpipe.util.java.ExceptionPredicate;
+import nin.transferpipe.util.java.JavaUtils;
 import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import nin.transferpipe.util.minecraft.TileMap;
 import nin.transferpipe.util.transferpipe.TPUtils;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -87,18 +88,22 @@ public class TransferNodeEnergy extends BaseNodeBlock.Energy<TransferNodeEnergy.
         public final LazyOptionalMap<IEnergyStorage> bothLOs = loMap.get();
 
         @Override
-        public void facing(BlockPos pos, Direction dir) {
-            if (canWork(pos, dir))
-                tryEstablishConnection(pos, dir);
+        public boolean canFacingWork() {
+            return true;
         }
 
         @Override
-        public boolean canWork(BlockPos pos, Direction d) {
-            return ForgeUtils.hasEnergyStorage(level, pos, d);
+        public void facingWork(BlockPos pos, Direction dir, IEnergyStorage inv) {
+            tryEstablishConnection(pos, dir);
         }
 
         @Override
-        public void work(BlockPos pos, Direction dir) {
+        public boolean canWork(IEnergyStorage inv) {
+            return true;
+        }
+
+        @Override
+        public void work(BlockPos pos, Direction dir, IEnergyStorage inv) {
             tryEstablishConnection(pos, dir);
         }
 
@@ -152,6 +157,10 @@ public class TransferNodeEnergy extends BaseNodeBlock.Energy<TransferNodeEnergy.
             energyReceiverPipes.reset();
         }
 
+        @Override
+        public void tryWorldInteraction(BlockPos pos, Direction dir) {
+        }
+
         /**
          * エネルギー管理
          */
@@ -167,7 +176,18 @@ public class TransferNodeEnergy extends BaseNodeBlock.Energy<TransferNodeEnergy.
 
             extractFrom(extract);
             extractFrom(both);
-            chargeSlot.getItem().getCapability(ForgeCapabilities.ENERGY).ifPresent(this::insertTo);
+            ForgeUtils.forEnergyStorage(chargeSlot.getItem(), this::insertTo);
+            if (worldInteraction > 0) {
+                var entities = new ArrayList<IEnergyStorage>();
+                Direction.stream().forEach(dir -> tryEntityInteraction(pos, dir, entities::addAll));
+                var cap = energySlot.getCapacity();
+                energySlot.setCapacity(Math.max(cap, wi()));
+                extractFrom(JavaUtils.filter(entities, IEnergyStorage::canExtract));
+                extractFrom(JavaUtils.filter(entities, ForgeUtils::canBoth));
+                insertTo(JavaUtils.filter(entities, ForgeUtils::canBoth));
+                insertTo(JavaUtils.filter(entities, IEnergyStorage::canReceive));
+                energySlot.setCapacity(cap);
+            }
             insertTo(receive);
             insertTo(both);
         }

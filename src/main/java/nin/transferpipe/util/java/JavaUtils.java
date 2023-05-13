@@ -3,8 +3,7 @@ package nin.transferpipe.util.java;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -142,5 +141,48 @@ public interface JavaUtils {
 
     static void printStackTrace() {
         Arrays.stream(Thread.currentThread().getStackTrace()).forEach(System.out::println);
+    }
+
+    static <T> int recursion(Collection<T> looper, int initial, BiFunction<T, Integer, Integer> func) {
+        var i = initial;
+        for (T t : looper) {
+            if (i <= 0)
+                break;
+
+            i = func.apply(t, i);
+        }
+        return i;
+    }
+
+    static <T> int decrementRecursion(Collection<T> looper, int initial, BiFunction<T, Integer, Integer> decrementGetter, BiConsumer<T, Integer> func) {
+        var i = initial;
+        for (T t : looper) {
+            if (i <= 0)
+                break;
+            var decrement = decrementGetter.apply(t, i);
+            if (decrement <= 0)
+                break;
+
+            func.accept(t, decrement);
+            i -= decrement;
+        }
+        return i;
+    }
+
+    static <T> void forEach(Collection<T> looper, Supplier<Boolean> breaker, Consumer<T> func) {
+        for (T t : looper) {
+            if (breaker.get())
+                break;
+            func.accept(t);
+        }
+    }
+
+    static <T> boolean isPresentAndThen(Optional<T> optional, Consumer<T> andThen) {
+        optional.ifPresent(andThen);
+        return optional.isPresent();
+    }
+
+    static boolean extraCondition(boolean premise, boolean extra) {
+        return !(premise && !extra);
     }
 }

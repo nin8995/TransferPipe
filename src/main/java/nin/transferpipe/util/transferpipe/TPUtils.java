@@ -67,11 +67,11 @@ public interface TPUtils {
         return hasFlow(state) ? state.getValue(FLOW) : Flow.ALL;
     }
 
-    static BlockState withFlow(BlockState state, Flow flow){
+    static BlockState withFlow(BlockState state, Flow flow) {
         return hasFlow(state) ? state.setValue(FLOW, flow) : state;
     }
 
-    static BlockState withFlow(BlockState state, BlockState flowReference){
+    static BlockState withFlow(BlockState state, BlockState flowReference) {
         return hasFlow(state) && hasFlow(flowReference)
                ? state.setValue(FLOW, flowReference.getValue(FLOW))
                : state;

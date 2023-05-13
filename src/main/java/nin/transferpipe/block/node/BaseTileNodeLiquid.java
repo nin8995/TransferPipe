@@ -13,10 +13,13 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.TileLiquidSlot;
+import nin.transferpipe.util.java.JavaUtils;
+import nin.transferpipe.util.java.OptionalStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.stream.IntStream;
+import java.util.List;
+import java.util.Optional;
 
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE;
@@ -24,7 +27,7 @@ import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIM
 /**
  * 液体ノードの搬入出部分
  */
-public abstract class BaseTileNodeLiquid extends BaseTileNode {
+public abstract class BaseTileNodeLiquid extends BaseTileNode<IFluidHandler> {
 
     /**
      * 初期化
@@ -35,7 +38,7 @@ public abstract class BaseTileNodeLiquid extends BaseTileNode {
     public final int baseCapacity = 16000;
 
     public BaseTileNodeLiquid(BlockEntityType<? extends BaseTileNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
-        super(p_155228_, p_155229_, p_155230_);
+        super(p_155228_, p_155229_, p_155230_, ForgeUtils::getFluidHandler, ForgeUtils::getFluidHandler);
         dummyLiquidItem = new ItemStackHandler();
         liquidSlot = new TileLiquidSlot<>(baseCapacity, this, dummyLiquidItem);
     }
@@ -59,82 +62,135 @@ public abstract class BaseTileNodeLiquid extends BaseTileNode {
     /**
      * 液体搬出
      */
-    public boolean canExtract(IFluidHandler handler) {
-        return IntStream.range(0, handler.getTanks())
-                .filter(slot -> shouldReceive(handler.getFluidInTank(slot)))
-                .anyMatch(slot -> {
-                    var liquid = handler.getFluidInTank(slot);
-                    var toDrain = ForgeUtils.copyWithAmount(liquid, getExtractableAmount(liquid, false));
-                    var drained = handler.drain(toDrain, SIMULATE);
-                    return drained.getAmount() > 0;
-                });
+    public boolean canExtract(IFluidHandler inv) {
+        return toExtract(inv).isPresent();
     }
 
-    public void tryExtract(IFluidHandler handler) {
-        IntStream.range(0, handler.getTanks())
-                .filter(slot -> shouldReceive(handler.getFluidInTank(slot)))
-                .findFirst().ifPresent(slot -> {
-                    var liquid = handler.getFluidInTank(slot);
-                    var toDrain = ForgeUtils.copyWithAmount(liquid, getExtractableAmount(liquid, false));
-                    var drained = handler.drain(getExtractableAmount(toDrain, false), EXECUTE);
-                    liquidSlot.receive(drained);
-                });
+    public boolean tryExtract(IFluidHandler inv) {
+        return JavaUtils.isPresentAndThen(toExtract(inv), it -> extract(inv, it, getExtractionPower(it)));
     }
 
-    public boolean shouldReceive(FluidStack liquid) {
-        return liquidSlot.canStack(liquid) && liquidFilter.test(liquid);
+    public boolean canExtract(List<IFluidHandler> invs) {
+        return toExtract(invs).isPresent();
     }
 
-    public int getExtractableAmount(FluidStack liquid, boolean byWorldInteraction) {
-        var pullableAmount = stackMode ? liquidSlot.getCapacity() : baseSpeed;
+    public boolean tryExtract(List<IFluidHandler> invs) {
+        return JavaUtils.isPresentAndThen(toExtract(invs), item -> extract(invs, item, getExtractionPower(item)));
+    }
 
+    public boolean shouldReceive(FluidStack fluid) {
+        return liquidSlot.canStack(fluid) && liquidFilter.test(fluid);
+    }
+
+    public int getExtractableAmount(FluidStack liquid) {
+        return Math.min(getExtractionPower(liquid), getReceivableAmount(liquid));
+    }
+
+    public int getExtractionPower(FluidStack liquid) {
+        if (!shouldReceive(liquid))
+            return 0;
+
+        var extractionPower = stackMode ? liquidSlot.getCapacity() : baseSpeed;
         if (byWorldInteraction)
-            pullableAmount = Math.max(pullableAmount, wi());
+            extractionPower = Math.max(extractionPower, wi());
 
-        return Math.min(pullableAmount, getReceivableAmount(liquid, byWorldInteraction));
+        return extractionPower;
     }
 
-    public int getReceivableAmount(FluidStack liquid, boolean byWorldInteraction) {
-        var receivableAmount = liquidSlot.getCapacity() - liquidSlot.getAmount();
+    public int getReceivableAmount(FluidStack liquid) {
+        return Math.min(getFreeSpace(liquid), liquid.getAmount());
+    }
 
+    public int getFreeSpace(FluidStack liquid) {
+        if (!shouldReceive(liquid))
+            return 0;
+
+        var capacity = liquidSlot.getCapacity();
         if (byWorldInteraction)
-            receivableAmount = Math.max(receivableAmount, wi() - liquidSlot.getAmount());
+            capacity = Math.max(capacity, wi());
 
-        return Math.min(liquid.getAmount(), receivableAmount);
+        return liquidSlot.getFreeSpace(capacity);
+    }
+
+    private Optional<FluidStack> toExtract(IFluidHandler inv) {
+        return Optional.ofNullable(
+                liquidSlot.hasLiquid()
+                ? canExtract(inv, liquidSlot.getFluid())
+                  ? liquidSlot.getFluid()
+                  : null
+                : ForgeUtils.findFirstLiquid(inv, this::shouldReceive));
+    }
+
+    private boolean canExtract(IFluidHandler inv, FluidStack fluid) {
+        return getExtractableAmount(fluid) > 0 && ForgeUtils.contains(inv, fluid);
+    }
+
+    private int extract(IFluidHandler inv, FluidStack fluid, int extractionPower) {
+        return JavaUtils.decrementRecursion(
+                ForgeUtils.containingSlots(inv, fluid),
+                extractionPower,
+                (slot, i) -> Math.min(getExtractableAmount(inv.getFluidInTank(slot)), i),
+                (slot, i) -> liquidSlot.fill(inv.drain(ForgeUtils.copyWithAmount(inv.getFluidInTank(slot), i), EXECUTE), EXECUTE));
+    }
+
+    private Optional<FluidStack> toExtract(List<IFluidHandler> invs) {
+        return OptionalStream.of(invs, this::toExtract).findFirst();
+    }
+
+    private int extract(List<IFluidHandler> invs, FluidStack fluid, int extractionPower) {
+        return JavaUtils.recursion(
+                invs,
+                extractionPower,
+                (inv, i) -> extract(inv, fluid, i));
     }
 
     /**
      * 液体搬入
      */
-    public boolean canInsert(IFluidHandler handler) {
-        return liquidSlot.getFluid() != insert(handler, SIMULATE);
+    public boolean canInsert(IFluidHandler inv) {
+        return toInsert(inv).isPresent();
     }
 
-    public void tryInsert(IFluidHandler handler) {
-        if (canInsert(handler))
-            liquidSlot.setFluid(insert(handler, EXECUTE));
+    public boolean tryInsert(IFluidHandler inv) {
+        return JavaUtils.isPresentAndThen(toInsert(inv), fluid -> insert(inv, fluid));
     }
 
-    public FluidStack insert(IFluidHandler tanks, IFluidHandler.FluidAction action) {
+    public boolean tryInsert(List<IFluidHandler> invs) {
+        invs = JavaUtils.filter(invs, this::canInsert);
+        if (!invs.isEmpty()) {
+
+            JavaUtils.forEach(invs, liquidSlot::isEmpty, this::tryInsert);
+            return true;
+        }
+        return false;
+    }
+
+    private void insert(IFluidHandler inv, FluidStack fluid) {
+        if (!fluid.isFluidEqual(liquidSlot.getFluid()) || fluid.getAmount() > liquidSlot.getAmount())
+            return;
+
+        var remainder = inv.drain(fluid, SIMULATE);
+        liquidSlot.extract(ForgeUtils.copyWithSub(fluid, remainder));
+    }
+
+    private Optional<FluidStack> toInsert(IFluidHandler inv) {
         var self = liquidSlot.getFluid();
-        var fluidToInsert = getInsertableFluid(tanks, self);
-        if (fluidToInsert.isEmpty())
-            return self;
-
-        var remainder = fluidToInsert.getAmount() - tanks.fill(fluidToInsert, action);
-        if (remainder == fluidToInsert.getAmount())
-            return self;
-
-        var filteredAmount = self.getAmount() - fluidToInsert.getAmount();
-        return ForgeUtils.copyWithAmount(self, filteredAmount + remainder);
-    }
-
-    public FluidStack getInsertableFluid(IFluidHandler handler, FluidStack self) {
         if (self.isEmpty())
-            return FluidStack.EMPTY;
+            return Optional.empty();
 
-        var ration = liquidRation - ForgeUtils.countFluid(handler, self);
-        return ForgeUtils.copyWithAmount(self, Math.min(ration, self.getAmount()));
+        //ration
+        var ration = liquidRation - ForgeUtils.countLiquid(inv, self);
+        if (ration <= 0)
+            return Optional.empty();
+
+        //insertable amount
+        var toInsert = ForgeUtils.copyWithAmount(self, Math.min(ration, self.getAmount()));
+        var remainder = inv.fill(toInsert, SIMULATE);
+        toInsert = ForgeUtils.copyWithSub(toInsert, remainder);
+        if (toInsert.isEmpty())
+            return Optional.empty();
+
+        return Optional.of(toInsert);
     }
 
     /**

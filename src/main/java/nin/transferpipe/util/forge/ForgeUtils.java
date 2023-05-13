@@ -23,6 +23,7 @@ import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.wrapper.InvWrapper;
 import net.minecraftforge.items.wrapper.SidedInvWrapper;
 import nin.transferpipe.util.java.ExceptionPredicate;
+import nin.transferpipe.util.minecraft.MCUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -100,9 +101,9 @@ public interface ForgeUtils {
                 .mapToObj(inv::getStackInSlot);
     }
 
-    static int countItem(IItemHandler inv, ItemStack toCount) {
+    static int countItem(IItemHandler inv, ItemStack sample) {
         return stream(inv)
-                .filter(item -> ItemHandlerHelper.canItemStacksStack(item, toCount))
+                .filter(item -> ItemHandlerHelper.canItemStacksStack(item, sample))
                 .map(ItemStack::getCount)
                 .reduce(Integer::sum).orElse(0);
     }
@@ -113,25 +114,39 @@ public interface ForgeUtils {
                 .toList();
     }
 
-    static List<IItemHandler> filter(List<IItemHandler> invs, Predicate<ItemStack> filter) {
+    static Stream<IItemHandler> filter(List<IItemHandler> invs, Predicate<ItemStack> filter) {
         return invs.stream()
-                .filter(inv -> !filter(inv, filter).isEmpty())
-                .toList();
+                .filter(inv -> anyMatch(inv, filter));
+    }
+
+    static boolean anyMatch(IItemHandler inv, Predicate<ItemStack> filter) {
+        return stream(inv)
+                .anyMatch(filter);
+    }
+
+    static boolean contains(IItemHandler inv, ItemStack value) {
+        return anyMatch(inv, item -> MCUtils.same(item, value));
+    }
+
+    static List<Integer> containingSlots(IItemHandler inv, ItemStack value) {
+        return IntStream.range(0, inv.getSlots())
+                .filter(slot -> MCUtils.same(inv.getStackInSlot(slot), value))
+                .boxed().toList();
     }
 
     @Nullable
-    static ItemStack findFirst(IItemHandler inv, Predicate<ItemStack> filter) {
+    static ItemStack findFirstItem(IItemHandler inv, Predicate<ItemStack> filter) {
         return stream(inv)
                 .filter(item -> !item.isEmpty() && filter.test(item))
                 .findFirst().orElse(null);
     }
 
     @Nullable
-    static ItemStack findFirst(List<IItemHandler> invs, Predicate<ItemStack> filter) {
+    static ItemStack findFirstItem(List<IItemHandler> invs, Predicate<ItemStack> filter) {
         return invs.stream()
-                .filter(inv -> findFirst(inv, filter) != null)
+                .filter(inv -> findFirstItem(inv, filter) != null)
                 .findFirst()
-                .map(inv -> findFirst(inv, filter))
+                .map(inv -> findFirstItem(inv, filter))
                 .orElse(null);
     }
 
@@ -173,6 +188,49 @@ public interface ForgeUtils {
                 .reduce(Integer::sum).orElse(0);
     }
 
+    static Stream<FluidStack> stream(IFluidHandler inv) {
+        return IntStream.range(0, inv.getTanks())
+                .mapToObj(inv::getFluidInTank);
+    }
+
+    @Nullable
+    static FluidStack findFirstLiquid(IFluidHandler inv, Predicate<FluidStack> filter) {
+        return stream(inv)
+                .filter(liquid -> !liquid.isEmpty() && filter.test(liquid))
+                .findFirst().orElse(null);
+    }
+
+    @Nullable
+    static FluidStack findFirstLiquid(List<IFluidHandler> invs, Predicate<FluidStack> filter) {
+        return invs.stream()
+                .filter(inv -> findFirstLiquid(inv, filter) != null)
+                .findFirst()
+                .map(inv -> findFirstLiquid(inv, filter))
+                .orElse(null);
+    }
+
+    static boolean anyMatch(IFluidHandler inv, Predicate<FluidStack> filter) {
+        return stream(inv)
+                .anyMatch(filter);
+    }
+
+    static boolean contains(IFluidHandler inv, FluidStack value) {
+        return anyMatch(inv, fluid -> fluid.isFluidEqual(value));
+    }
+
+    static List<Integer> containingSlots(IFluidHandler inv, FluidStack value) {
+        return IntStream.range(0, inv.getTanks())
+                .filter(slot -> inv.getFluidInTank(slot).isFluidEqual(value))
+                .boxed().toList();
+    }
+
+    static int countLiquid(IFluidHandler inv, FluidStack sample) {
+        return stream(inv)
+                .filter(fluid -> fluid.isFluidEqual(sample))
+                .map(FluidStack::getAmount)
+                .reduce(Integer::sum).orElse(0);
+    }
+
     /**
      * EnergyStorage
      */
@@ -184,7 +242,12 @@ public interface ForgeUtils {
         return getEnergyStorage(level, pos, dir).isPresent();
     }
 
-    static IEnergyStorage getEnergyHandler(CapabilityProvider<?> cap) {
+    static LazyOptional<IEnergyStorage> getEnergyStorage(Level level, BlockPos pos, Direction dir) {
+        var be = level.getBlockEntity(pos);
+        return be != null ? be.getCapability(ForgeCapabilities.ENERGY, dir) : LazyOptional.empty();
+    }
+
+    static IEnergyStorage getEnergyStorage(CapabilityProvider<?> cap) {
         return cap.getCapability(ForgeCapabilities.ENERGY).resolve().get();
     }
 
@@ -192,9 +255,8 @@ public interface ForgeUtils {
         return cap.getCapability(ForgeCapabilities.ENERGY).isPresent();
     }
 
-    static LazyOptional<IEnergyStorage> getEnergyStorage(Level level, BlockPos pos, Direction dir) {
-        var be = level.getBlockEntity(pos);
-        return be != null ? be.getCapability(ForgeCapabilities.ENERGY, dir) : LazyOptional.empty();
+    static void forEnergyStorage(CapabilityProvider<?> cap, NonNullConsumer<? super IEnergyStorage> func) {
+        cap.getCapability(ForgeCapabilities.ENERGY).ifPresent(func);
     }
 
     static boolean canBoth(IEnergyStorage energy) {
@@ -204,8 +266,16 @@ public interface ForgeUtils {
     /**
      * FluidStack
      */
-    static FluidStack copyWithAddition(FluidStack fluid, int addition) {
+    static FluidStack copyWithAdd(FluidStack fluid, int addition) {
         return copyWithAmount(fluid, fluid.getAmount() + addition);
+    }
+
+    static FluidStack copyWithSub(FluidStack fluid, FluidStack sub) {
+        return copyWithSub(fluid, sub.getAmount());
+    }
+
+    static FluidStack copyWithSub(FluidStack fluid, int sub) {
+        return copyWithAmount(fluid, fluid.getAmount() - sub);
     }
 
     static FluidStack copyWithAmount(FluidStack fluid, int amount) {

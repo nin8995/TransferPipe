@@ -13,16 +13,19 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.TileItemSlot;
+import nin.transferpipe.util.java.JavaUtils;
+import nin.transferpipe.util.java.OptionalStream;
 import nin.transferpipe.util.minecraft.MCUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.stream.IntStream;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * アイテムノードのアイテム搬入出部分
  */
-public abstract class BaseTileNodeItem extends BaseTileNode {
+public abstract class BaseTileNodeItem extends BaseTileNode<IItemHandler> {
 
     /**
      * 初期化
@@ -30,7 +33,7 @@ public abstract class BaseTileNodeItem extends BaseTileNode {
     public final TileItemSlot<BaseTileNodeItem> itemSlot;
 
     public BaseTileNodeItem(BlockEntityType<? extends BaseTileNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
-        super(p_155228_, p_155229_, p_155230_);
+        super(p_155228_, p_155229_, p_155230_, ForgeUtils::getItemHandler, ForgeUtils::getItemHandler);
         itemSlot = new TileItemSlot<>(this);
     }
 
@@ -49,108 +52,138 @@ public abstract class BaseTileNodeItem extends BaseTileNode {
      * アイテム搬出
      */
     public boolean canExtract(IItemHandler inv) {
-        var toExtract = itemSlot.isEmpty()
-                        ? ForgeUtils.findFirst(inv, itemFilter)
-                        : itemSlot.getItem();
-        return toExtract != null && canExtract(inv, toExtract, false);
+        return toExtract(inv).isPresent();
     }
 
-    public boolean canExtract(IItemHandler inv, ItemStack toExtract, boolean byWorldInteraction) {
-        var extractionSpeed = getExtractionSpeed(toExtract, byWorldInteraction);
-
-        return IntStream.range(0, inv.getSlots())
-                .filter(slot -> MCUtils.same(inv.getStackInSlot(slot), toExtract))
-                .anyMatch(slot -> {
-                    var item = inv.getStackInSlot(slot);
-                    var extraction = Math.min(getExtractableAmount(item, byWorldInteraction), extractionSpeed);
-                    return extraction > 0;
-                });
+    public boolean tryExtract(IItemHandler inv) {
+        return JavaUtils.isPresentAndThen(toExtract(inv), it -> extract(inv, it, getExtractionPower(it)));
     }
 
-    public void tryExtract(IItemHandler inv) {
-        var toExtract = itemSlot.isEmpty()
-                        ? ForgeUtils.findFirst(inv, itemFilter)
-                        : itemSlot.getItem();
-        if (toExtract != null)
-            tryExtract(inv, toExtract, getExtractionSpeed(toExtract, false), false);
+    public boolean canExtract(List<IItemHandler> invs) {
+        return toExtract(invs).isPresent();
     }
 
-    public int tryExtract(IItemHandler inv, ItemStack toExtract, int remainingExtractionPower, boolean byWorldInteraction) {
-        for (int slot : IntStream.range(0, inv.getSlots())
-                .filter(slot -> MCUtils.same(inv.getStackInSlot(slot), toExtract))
-                .toArray()) {
-
-            var item = inv.getStackInSlot(slot);
-            var extraction = Math.min(getExtractableAmount(item, byWorldInteraction), remainingExtractionPower);
-            if (extraction <= 0)
-                break;
-            remainingExtractionPower -= extraction;
-            itemSlot.receive(inv.extractItem(slot, extraction, false));
-        }
-        return remainingExtractionPower;
+    public boolean tryExtract(List<IItemHandler> invs) {
+        return JavaUtils.isPresentAndThen(toExtract(invs), item -> extract(invs, item, getExtractionPower(item)));
     }
 
     public boolean shouldReceive(ItemStack item) {
         return itemSlot.canStack(item) && itemFilter.test(item);
     }
 
-    public int getExtractableAmount(ItemStack toExtract, boolean byWorldInteraction) {
-        return Math.min(getExtractionSpeed(toExtract, byWorldInteraction), getReceivableAmount(toExtract, byWorldInteraction));
+    public int getExtractableCount(ItemStack item) {
+        return Math.min(getExtractionPower(item), getReceivableCount(item));
     }
 
-    public int getExtractionSpeed(ItemStack toExtract, boolean byWorldInteraction) {
-        var extractionSpeed = stackMode ? (int) (toExtract.getMaxStackSize() * capacityRate) : 1;
-        if (byWorldInteraction)
-            extractionSpeed = Math.max(extractionSpeed, wi());
+    public int getExtractionPower(ItemStack item) {
+        if (!shouldReceive(item))
+            return 0;
 
-        return extractionSpeed;
+        var extractionPower = stackMode ? (int) (item.getMaxStackSize() * capacityRate) : 1;
+        if (byWorldInteraction)
+            extractionPower = Math.max(extractionPower, wi());
+
+        return extractionPower;
     }
 
-    public int getReceivableAmount(ItemStack toReceive, boolean byWorldInteraction) {
-        var freeSpace = itemSlot.getFreeSpace();
-        if (byWorldInteraction)
-            freeSpace = Math.max(freeSpace, itemSlot.getFreeSpace(wi()));
+    public int getReceivableCount(ItemStack item) {
+        return Math.min(getFreeSpace(item), item.getCount());
+    }
 
-        return Math.min(toReceive.getCount(), freeSpace);
+    public int getFreeSpace(ItemStack item) {
+        if (!shouldReceive(item))
+            return 0;
+
+        var maxStackSize = (int) (item.getMaxStackSize() * capacityRate);
+        if (byWorldInteraction)
+            maxStackSize = Math.max(maxStackSize, wi());
+
+        return itemSlot.getFreeSpace(maxStackSize);
+    }
+
+    private Optional<ItemStack> toExtract(IItemHandler inv) {
+        return Optional.ofNullable(
+                itemSlot.hasItem()
+                ? canExtract(inv, itemSlot.getItem())
+                  ? itemSlot.getItem()
+                  : null
+                : ForgeUtils.findFirstItem(inv, this::shouldReceive));
+    }
+
+    private boolean canExtract(IItemHandler inv, ItemStack item) {
+        return getExtractableCount(item) > 0 && ForgeUtils.contains(inv, item);
+    }
+
+    private int extract(IItemHandler inv, ItemStack item, int extractionPower) {
+        return JavaUtils.decrementRecursion(
+                ForgeUtils.containingSlots(inv, item),
+                extractionPower,
+                (slot, i) -> Math.min(getExtractableCount(inv.getStackInSlot(slot)), i),
+                (slot, i) -> itemSlot.insert(inv.extractItem(slot, i, false)));
+    }
+
+    private Optional<ItemStack> toExtract(List<IItemHandler> invs) {
+        return OptionalStream.of(invs, this::toExtract).findFirst();
+    }
+
+    private int extract(List<IItemHandler> invs, ItemStack item, int extractionPower) {
+        return JavaUtils.recursion(
+                invs,
+                extractionPower,
+                (inv, i) -> extract(inv, item, i));
     }
 
     /**
      * アイテム搬入
      */
     public boolean canInsert(IItemHandler inv) {
-        return itemSlot.getItem() != insert(inv, true);
+        return toInsert(inv).isPresent();
     }
 
-    public void tryInsert(IItemHandler inv) {
-        if (canInsert(inv))
-            itemSlot.setItem(insert(inv, false));
+    public boolean tryInsert(IItemHandler inv) {
+        return JavaUtils.isPresentAndThen(toInsert(inv), item -> insert(inv, item));
     }
 
-    public ItemStack insert(IItemHandler inv, boolean simulate) {
+    public boolean tryInsert(List<IItemHandler> invs) {
+        invs = JavaUtils.filter(invs, this::canInsert);
+        if (!invs.isEmpty()) {
+
+            JavaUtils.forEach(invs, itemSlot::isEmpty, this::tryInsert);
+            return true;
+        }
+        return false;
+    }
+
+    private void insert(IItemHandler inv, ItemStack item) {
+        if (!MCUtils.same(item, itemSlot.getItem()) || item.getCount() > itemSlot.getCount())
+            return;
+
+        var remainder = ItemHandlerHelper.insertItemStacked(inv, item, false);
+        itemSlot.extract(MCUtils.copyWithSub(item, remainder));
+    }
+
+    private Optional<ItemStack> toInsert(IItemHandler inv) {
         var self = itemSlot.getItem();
-        var itemToInsert = getInsertableItem(inv, self);
-        if (itemToInsert.isEmpty())
-            return self;//failed
-
-        var remainder = ItemHandlerHelper.insertItemStacked(inv, itemToInsert, simulate);
-        if (itemToInsert == remainder)
-            return self;//failed
-
-        var filteredAmount = self.getCount() - itemToInsert.getCount();
-        return self.copyWithCount(filteredAmount + remainder.getCount());//succeeded and return remainder
-    }
-
-    public ItemStack getInsertableItem(IItemHandler inv, ItemStack self) {
         if (self.isEmpty())
-            return ItemStack.EMPTY;
+            return Optional.empty();
 
-        //test sort
+        //sort
         if (!sortingFunc.test(ForgeUtils.toItemList(inv), self.getItem()))
-            return ItemStack.EMPTY;
+            return Optional.empty();
 
-        //consider ration
+        //ration
         var ration = itemRation - ForgeUtils.countItem(inv, self);
-        return self.copyWithCount(Math.min(ration, self.getCount()));
+        if (ration <= 0)
+            return Optional.empty();
+
+        //insertable amount
+        var toInsert = self.copyWithCount(Math.min(ration, self.getCount()));
+        var remainder = ItemHandlerHelper.insertItemStacked(inv, toInsert, true);
+        toInsert = MCUtils.copyWithSub(toInsert, remainder);
+        if (toInsert.isEmpty())
+            return Optional.empty();
+
+        return Optional.of(toInsert);
     }
 
     /**

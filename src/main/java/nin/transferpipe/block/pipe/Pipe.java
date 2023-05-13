@@ -51,8 +51,8 @@ public class Pipe extends LightingBlock {
         super(BlockBehaviour.Properties.of(Material.STONE));
 
         var defaultState = stateDefinition.any();
-        if(allPipeHasFlow)
-         defaultState = defaultState.setValue(FLOW, Flow.ALL);
+        if (allPipeHasFlow)
+            defaultState = defaultState.setValue(FLOW, Flow.ALL);
         defaultState = Connection.map(defaultState, d -> Connection.NONE);
         registerDefaultState(defaultState);
     }
@@ -60,7 +60,7 @@ public class Pipe extends LightingBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         CONNECTIONS.values().forEach(builder::add);
-        if(allPipeHasFlow)
+        if (allPipeHasFlow)
             builder.add(FLOW);
     }
 

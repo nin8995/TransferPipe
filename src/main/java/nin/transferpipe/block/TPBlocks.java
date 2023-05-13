@@ -164,7 +164,7 @@ public interface TPBlocks {
             var center = genPipeModel("block/pipe_center", ro);
             forModel(mb, center, p -> p);//中心を無条件で
             //中心オーバーレイ
-            if(hasFlow) {
+            if (hasFlow) {
                 var overlayIgnoreCenter = genPipeModel("block/pipe_overlay_ignore_center", ro);
                 forModel(mb, overlayIgnoreCenter, p -> p.condition(FLOW, IGNORE));//無視用を無視時に
             }
@@ -178,7 +178,7 @@ public interface TPBlocks {
                 forRotatedModel(mb, dir, machine, p -> p.condition(CONNECTIONS.get(dir), MACHINE));//機械用管を機械に向けて
             });
             //管オーバーレイ
-            if(hasFlow) {
+            if (hasFlow) {
                 var overlayIgnoreLimb = genPipeModel("block/pipe_overlay_ignore_limb", ro);
                 var overlayOneway = genPipeModel("block/pipe_overlay_oneway", ro);
                 Direction.stream().forEach(dir -> {

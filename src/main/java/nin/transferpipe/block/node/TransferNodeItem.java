@@ -7,12 +7,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
@@ -21,12 +20,12 @@ import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 import nin.transferpipe.util.java.JavaUtils;
 import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import nin.transferpipe.util.minecraft.MCUtils;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -74,63 +73,55 @@ public class TransferNodeItem extends BaseNodeBlock.Facing<TransferNodeItem.Tile
         }
 
         @Override
+        public boolean canFacingWork() {
+            return itemSlot.hasFreeSpace();
+        }
+
+        @Override
+        public void facingWork(BlockPos pos, Direction dir, IItemHandler inv) {
+            tryExtract(inv);
+        }
+
+        @Override
+        public void tryWorldInteraction(BlockPos pos, Direction dir) {
+            if (isCrafter(pos))
+                tryAutoCraft();
+            else if (isProduct(pos))
+                tryGenLiquidReactionProduct(pos, dir);
+            else
+                tryEntityInteraction(pos, dir.getOpposite(), this::tryExtract);
+        }
+
+        @Override
+        public boolean canWork(IItemHandler inv) {
+            return canInsert(inv);
+        }
+
+        @Override
+        public void work(BlockPos pos, Direction dir, IItemHandler inv) {
+            tryInsert(inv);
+        }
+
+        @Override
         public Vector3f getColor() {
             return new Vector3f(1, 0, 0);
         }
 
-        @Override
-        public void facing(BlockPos pos, Direction dir) {
-            if (itemSlot.hasFreeSpace())
-                if (ForgeUtils.hasItemHandler(level, pos, dir))
-                    ForgeUtils.forItemHandler(level, pos, dir, this::tryExtract);
-                else if (worldInteraction > 0)
-                    tryWorldInteraction(pos, dir);
-        }
-
-        @Override
-        public boolean canWork(BlockPos pos, Direction d) {
-            return ForgeUtils.getItemHandler(level, pos, d).filter(this::canInsert).isPresent();
-        }
-
-        @Override
-        public void work(BlockPos pos, Direction dir) {
-            ForgeUtils.forItemHandler(level, pos, dir, this::tryInsert);
-        }
-
         /**
-         * World Interaction
+         * 自動クラフト
          */
-        public void tryWorldInteraction(BlockPos pos, Direction dir) {
-            if (getBlock(pos) == Blocks.AIR)
-                tryExtract(pos, dir.getOpposite());
-            else if (isAutoCraftMode())
-                tryAutoCraft();
-            else if (isProduct(pos))
-                tryGenLiquidReactionProduct(pos, dir);
-        }
-
-        public void tryExtract(BlockPos pos, Direction boxDir) {
-            var boxSize = 1 + 2 * JavaUtils.log(2, worldInteraction);
-            var boxCenter = MCUtils.relative(pos, boxDir, boxSize / 2);
-            var box = AABB.ofSize(boxCenter, boxSize, boxSize, boxSize);
-            var invEntities = MCUtils.getMappableMappedEntities(level, box, ForgeUtils::getItemHandler);
-            var toExtract = itemSlot.hasItem()
-                            ? itemSlot.getItem()
-                            : ForgeUtils.findFirst(invEntities, itemFilter);
-            if (!invEntities.isEmpty() && toExtract != null) {
-                var remainingExtractionPower = getExtractionSpeed(toExtract, true);
-                for (IItemHandler inv : JavaUtils.filter(invEntities, inv -> canExtract(inv, toExtract, true))) {
-                    if (remainingExtractionPower <= 0)
-                        break;
-                    remainingExtractionPower = tryExtract(inv, toExtract, remainingExtractionPower, true);
-                }
-
-                if (addParticle)
-                    addEdges(boxCenter, (float) boxSize / 2);
-            }
+        public boolean isCrafter(BlockPos pos) {
+            return getBlock(pos) == Blocks.CRAFTING_TABLE;
         }
 
         public List<BlockPos> inventoryPozzes = new ArrayList<>();
+        public static final Supplier<List<Vector3f>> north = () -> IntStream.rangeClosed(-1, 1).map(i -> -i).boxed().flatMap(y -> IntStream.rangeClosed(-1, 1).boxed().map(x ->
+                new Vector3f(x, y, -1))).toList();
+        public static final Map<Direction, List<BlockPos>> relativeInventoryPositions = MCUtils.dirMap(d ->
+                north.get().stream()
+                        .map(v -> MCUtils.rotation(d).transform(v))
+                        .map(MCUtils::toPos)
+                        .toList());
 
         @Override
         public void onUpdateFacing() {
@@ -140,76 +131,81 @@ public class TransferNodeItem extends BaseNodeBlock.Facing<TransferNodeItem.Tile
                 updateRecipe();
         }
 
-        public static final Supplier<List<Vector3f>> north = () -> IntStream.rangeClosed(-1, 1).map(i -> -i).boxed().flatMap(y -> IntStream.rangeClosed(-1, 1).boxed().map(x ->
-                new Vector3f(x, y, -1))).toList();
-        public static final Map<Direction, List<BlockPos>> relativeInventoryPositions = MCUtils.dirMap(d ->
-                north.get().stream()
-                        .map(v -> MCUtils.rotation(d).transform(v))
-                        .map(MCUtils::toPos)
-                        .toList());
-
         public void updateInventoryPozzes() {
-            inventoryPozzes = relativeInventoryPositions.get(FACING).stream().map(FACING_POS::offset).toList();
+            inventoryPozzes = relativeInventoryPositions.get(facing).stream().map(facingPos::offset).toList();
         }
 
-        public ReferenceCraftingGrid craftSlots = new ReferenceCraftingGrid(this);
-        public List<BlockPos> itemPositions = new ArrayList<>();
-        @Nullable
-        public CraftingRecipe recipe = null;
+        public ReferenceCraftingGrid craftGrid = new ReferenceCraftingGrid(this);
+        public Optional<CraftingRecipe> recipeOP = Optional.empty();
 
         @Override
         public void beforeTick() {
             if (worldInteraction > 0)
-                if (isAutoCraftMode() && JavaUtils.fork(recipe == null, shouldUpdate(), craftSlots.hasInvalidInventories()))
+                if (isAutoCraftMode() &&
+                        JavaUtils.fork(recipeOP.isEmpty(),
+                                shouldUpdate(), craftGrid.hasInvalidInventories()))
                     updateRecipe();
         }
 
         public boolean isAutoCraftMode() {
-            return getBlock(FACING_POS) == Blocks.CRAFTING_TABLE;
+            return isCrafter(facingPos);
         }
 
         public boolean shouldUpdate() {
             return (level.getGameTime() & 0xF) == 0;
         }
 
-        public CraftingRecipe updateRecipe() {
-            craftSlots.clear();
-            itemPositions.clear();
-
+        public Optional<CraftingRecipe> updateRecipe() {
             if (inventoryPozzes.size() == 0)
                 updateInventoryPozzes();//な　ぜ　か　本当になぜか　上で初期化してるのに、初期化前の状態で来る。どうして？？？
 
-            IntStream.range(0, craftSlots.getContainerSize()).forEach(i ->
-                    ForgeUtils.forFirstItemSlot(level, inventoryPozzes.get(i), FACING, (inventory, slot) -> {
-                        craftSlots.setItem(i, inventory, slot);
-                        if (addParticle)
-                            itemPositions.add(inventoryPozzes.get(i));
-                    }));
-            recipe = level.getServer().getRecipeManager()
-                    .getRecipesFor(RecipeType.CRAFTING, craftSlots, level).stream()
-                    .filter(recipe -> shouldReceive(recipe.assemble(craftSlots, level.registryAccess())))
-                    .findFirst()
-                    .orElse(null);
-            return recipe;
+            craftGrid.clear();
+            IntStream.range(0, craftGrid.getContainerSize()).forEach(i ->
+                    ForgeUtils.forFirstItemSlot(level, inventoryPozzes.get(i), facing, (inv, slot) ->
+                            craftGrid.setItem(i, inv, slot, inventoryPozzes.get(i))));
+
+            recipeOP = level.getServer().getRecipeManager()
+                    .getRecipesFor(RecipeType.CRAFTING, craftGrid, level).stream()
+                    .filter(this::canAutoCraft)
+                    .findFirst();
+            return recipeOP;
+        }
+
+        public boolean canAutoCraft(CraftingRecipe recipe) {
+            var item = recipe.assemble(craftGrid, level.registryAccess());
+            return shouldReceive(item) && getCraftTimes(item) > 0;
         }
 
         public void tryAutoCraft() {
-            if (recipe != null && !(craftSlots.getMinAmount() <= 0 && updateRecipe() == null)) {
-                var item = recipe.assemble(craftSlots, level.registryAccess());
-                var craftableTimes = Math.min(craftSlots.getMinAmount(), wi());
-                var craftableItems = MCUtils.copyWithScale(item, craftableTimes);
-                var receivableTimes = getReceivableAmount(craftableItems, true) / item.getCount();
-                if (receivableTimes > 0) {
-                    var receivableItems = MCUtils.copyWithScale(item, receivableTimes);
-                    var remainders = MCUtils.scaleItems(recipe.getRemainingItems(craftSlots), receivableTimes);
-
-                    itemSlot.receive(receivableItems);
-                    craftSlots.consume(receivableTimes, remainders);
-                    itemPositions.forEach(this::addBlockParticle);
-                }
-            }
+            if (craftGrid.getMinCount() <= 0)
+                updateRecipe();
+            recipeOP = recipeOP.filter(this::canAutoCraft);
+            recipeOP.ifPresent(recipe -> autoCraft(recipe, getCraftTimes(recipe)));
         }
 
+        private int getCraftTimes(ItemStack item) {
+            var craftableTimes = Math.min(craftGrid.getMinCount(), wi());
+            var craftableItems = MCUtils.copyWithScale(item, craftableTimes);
+            return getReceivableCount(craftableItems) / item.getCount();
+        }
+
+        private int getCraftTimes(CraftingRecipe recipe) {
+            return getCraftTimes(recipe.assemble(craftGrid, level.registryAccess()));
+        }
+
+        private void autoCraft(CraftingRecipe recipe, int craftTimes) {
+            var craftItem = MCUtils.copyWithScale(recipe.assemble(craftGrid, level.registryAccess()), craftTimes);
+            var remainders = MCUtils.scaleItems(recipe.getRemainingItems(craftGrid), craftTimes);
+
+            itemSlot.insert(craftItem);
+            craftGrid.consume(craftTimes, remainders);
+            if (addParticle)
+                craftGrid.itemPositions.forEach(this::addBlockParticle);
+        }
+
+        /**
+         * 無限生産
+         */
         public boolean isProduct(BlockPos pos) {
             return getBlock(pos) == Blocks.COBBLESTONE || getBlock(pos) == Blocks.STONE;
         }
@@ -218,11 +214,11 @@ public class TransferNodeItem extends BaseNodeBlock.Facing<TransferNodeItem.Tile
             var block = getBlock(pos);
             var item = block.asItem().getDefaultInstance();
             if (shouldReceive(item))//TODO 一般の液体生成物について
-                if (block == Blocks.COBBLESTONE && canGenerateCobbleStone(pos, dir)
-                        || block == Blocks.STONE && canGenerateStone(pos, dir)) {
+                if ((block == Blocks.COBBLESTONE && canGenerateCobbleStone(pos, dir))
+                        || (block == Blocks.STONE && canGenerateStone(pos, dir))) {
                     var generatableItems = item.copyWithCount(wi());
-                    var receivableItems = item.copyWithCount(getReceivableAmount(generatableItems, true));
-                    itemSlot.receive(receivableItems);
+                    var receivableItems = item.copyWithCount(getReceivableCount(generatableItems));
+                    itemSlot.insert(receivableItems);
                 }
         }
 
@@ -234,11 +230,6 @@ public class TransferNodeItem extends BaseNodeBlock.Facing<TransferNodeItem.Tile
         public boolean canGenerateStone(BlockPos pos, Direction dir) {
             return getBlock(pos.relative(Direction.UP)) == Blocks.LAVA
                     && MCUtils.horizontalDirectionsExcept(dir).map(pos::relative).map(this::getBlock).anyMatch(b -> b == Blocks.WATER);
-        }
-
-        public boolean isBetween(BlockPos pos, Block b1, Block b2) {
-            return Direction.stream().anyMatch(dir ->
-                    getBlockState(pos.relative(dir)).is(b1) && getBlockState(pos.relative(dir.getOpposite())).is(b2));
         }
     }
 }

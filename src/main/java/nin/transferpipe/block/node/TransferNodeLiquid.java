@@ -10,6 +10,7 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
@@ -61,19 +62,36 @@ public class TransferNodeLiquid extends BaseNodeBlock.Facing<TransferNodeLiquid.
         }
 
         @Override
-        public Vector3f getColor() {
-            return new Vector3f(0, 0, 1);
+        public boolean canFacingWork() {
+            return liquidSlot.hasFreeSpace();
         }
 
         @Override
-        public void facing(BlockPos pos, Direction dir) {
-            if (liquidSlot.hasFreeSpace())
-                if (ForgeUtils.hasItemHandler(level, pos, dir))
-                    ForgeUtils.forFluidHandler(level, pos, dir, this::tryExtract);
-                else if (worldInteraction > 0) {
-                    if (isInfiniteLiquid(pos))
-                        tryGenInfiniteLiquid(pos);
-                }
+        public void facingWork(BlockPos pos, Direction dir, IFluidHandler inv) {
+            tryExtract(inv);
+        }
+
+        @Override
+        public void tryWorldInteraction(BlockPos pos, Direction dir) {
+            if (isInfiniteLiquid(pos))
+                tryGenInfiniteLiquid(pos);
+            else
+                tryEntityInteraction(pos, dir.getOpposite(), this::tryExtract);
+        }
+
+        @Override
+        public boolean canWork(IFluidHandler inv) {
+            return canInsert(inv);
+        }
+
+        @Override
+        public void work(BlockPos pos, Direction dir, IFluidHandler inv) {
+            tryInsert(inv);
+        }
+
+        @Override
+        public Vector3f getColor() {
+            return new Vector3f(0, 0, 1);
         }
 
         public boolean isInfiniteLiquid(BlockPos pos) {
@@ -84,21 +102,11 @@ public class TransferNodeLiquid extends BaseNodeBlock.Facing<TransferNodeLiquid.
             var fluid = getFluid(pos);
             var stack = new FluidStack(fluid, wi());
             if (shouldReceive(stack) && hasTwoNeighbor(pos, fluid))
-                liquidSlot.receive(ForgeUtils.copyWithAmount(stack, getExtractableAmount(stack, true)));
+                liquidSlot.insert(ForgeUtils.copyWithAmount(stack, getExtractableAmount(stack)));
         }
 
         public boolean hasTwoNeighbor(BlockPos pos, Fluid fluid) {
             return MCUtils.horizontals.stream().filter(d -> level.getFluidState(pos).isSourceOfType(fluid)).count() >= 2;
-        }
-
-        @Override
-        public boolean canWork(BlockPos pos, Direction d) {
-            return ForgeUtils.getFluidHandler(level, pos, d).filter(this::canInsert).isPresent();
-        }
-
-        @Override
-        public void work(BlockPos pos, Direction dir) {
-            ForgeUtils.forFluidHandler(level, pos, dir, this::tryInsert);
         }
     }
 }

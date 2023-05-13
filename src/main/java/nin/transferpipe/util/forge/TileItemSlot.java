@@ -19,8 +19,12 @@ public class TileItemSlot<T extends BlockEntity> extends TileItemHandler<T> {
         setStackInSlot(0, item);
     }
 
-    public void receive(ItemStack item) {
-        setItem(getItem().isEmpty() ? item : item.copyWithCount(item.getCount() + getItem().getCount()));
+    public void insert(ItemStack item) {
+        setItem(getItem().isEmpty() ? item : MCUtils.copyWithAdd(getItem(), item));
+    }
+
+    public void extract(ItemStack item) {
+        setItem(MCUtils.copyWithSub(getItem(), item));
     }
 
     public int getCount() {

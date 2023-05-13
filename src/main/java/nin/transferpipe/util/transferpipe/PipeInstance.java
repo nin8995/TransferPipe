@@ -4,9 +4,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import nin.transferpipe.block.pipe.Pipe;
 import nin.transferpipe.block.pipe.Connection;
 import nin.transferpipe.block.pipe.Flow;
+import nin.transferpipe.block.pipe.Pipe;
 import nin.transferpipe.util.java.JavaUtils;
 import nin.transferpipe.util.minecraft.MCUtils;
 import org.jetbrains.annotations.Nullable;
@@ -128,7 +128,7 @@ public class PipeInstance {
     }
 
     public PipeInstance setFlow(Flow flow) {
-        if(TPUtils.hasFlow(state)) {
+        if (TPUtils.hasFlow(state)) {
             this.flow = flow;
             state = state.setValue(FLOW, flow);
         }

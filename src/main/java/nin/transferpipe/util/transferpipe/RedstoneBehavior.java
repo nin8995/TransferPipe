@@ -1,5 +1,8 @@
 package nin.transferpipe.util.transferpipe;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+
 public enum RedstoneBehavior {
     ACTIVE_LOW,
     ACTIVE_HIGH,
@@ -13,5 +16,9 @@ public enum RedstoneBehavior {
             case ALWAYS -> true;
             case NEVER -> false;
         };
+    }
+
+    public boolean isActive(Level level, BlockPos pos) {
+        return isActive(level.getBestNeighborSignal(pos));
     }
 }

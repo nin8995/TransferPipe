@@ -9,6 +9,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
+import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.TileEnergySlot;
 import nin.transferpipe.util.forge.TileItemSlot;
 import nin.transferpipe.util.java.JavaUtils;
@@ -25,7 +26,7 @@ import java.util.function.Predicate;
 /**
  * エネルギーノードの搬入出部分
  */
-public abstract class BaseTileNodeEnergy extends BaseTileNode {
+public abstract class BaseTileNodeEnergy extends BaseTileNode<IEnergyStorage> {
 
     /**
      * 初期化
@@ -35,7 +36,7 @@ public abstract class BaseTileNodeEnergy extends BaseTileNode {
     public final int baseCapacity = 10000;
 
     public BaseTileNodeEnergy(BlockEntityType<? extends BaseTileNode> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
-        super(p_155228_, p_155229_, p_155230_);
+        super(p_155228_, p_155229_, p_155230_, ForgeUtils::getEnergyStorage, ForgeUtils::getEnergyStorage);
         this.energySlot = new TileEnergySlot<>(baseCapacity, Integer.MAX_VALUE, Integer.MAX_VALUE, this);
         this.chargeSlot = new TileItemSlot<>(this);
     }
@@ -52,6 +53,11 @@ public abstract class BaseTileNodeEnergy extends BaseTileNode {
         breadthFirst = true;
         searchMemory = true;
         energySlot.setCapacity((int) (baseCapacity * capacityRate));
+    }
+
+    @Override
+    public int wi() {
+        return (int) (worldInteraction * baseCapacity);
     }
 
     /**

@@ -49,6 +49,10 @@ public class TileLiquidSlot<T extends BlockEntity> extends FluidTank {
         return getCapacity() - getAmount();
     }
 
+    public int getFreeSpace(int capacity) {
+        return capacity - getAmount();
+    }
+
     public boolean hasFreeSpace() {
         return getFreeSpace() > 0;
     }
@@ -61,11 +65,15 @@ public class TileLiquidSlot<T extends BlockEntity> extends FluidTank {
         return !isEmpty();
     }
 
-    public void receive(FluidStack fluid) {
+    public void insert(FluidStack fluid) {
         if (isEmpty())
             setFluid(fluid);
         else
-            setFluid(ForgeUtils.copyWithAddition(getFluid(), fluid.getAmount()));
+            setFluid(ForgeUtils.copyWithAdd(getFluid(), fluid.getAmount()));
+    }
+
+    public void extract(FluidStack fluid) {
+        setFluid(ForgeUtils.copyWithAdd(getFluid(), fluid.getAmount()));
     }
 
     public float capacityRate = 1;

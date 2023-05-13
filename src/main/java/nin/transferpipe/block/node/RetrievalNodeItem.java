@@ -7,17 +7,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.TPBlocks;
-import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
-import nin.transferpipe.util.java.JavaUtils;
 import nin.transferpipe.util.minecraft.BaseBlockMenu;
-import nin.transferpipe.util.minecraft.MCUtils;
 import org.joml.Vector3f;
 
 public class RetrievalNodeItem extends BaseNodeBlock.Facing<RetrievalNodeItem.Tile> {
@@ -64,16 +59,6 @@ public class RetrievalNodeItem extends BaseNodeBlock.Facing<RetrievalNodeItem.Ti
         }
 
         @Override
-        public boolean shouldSearch() {
-            return itemSlot.hasFreeSpace();
-        }
-
-        @Override
-        public Vector3f getColor() {
-            return new Vector3f(0, 1, 0);
-        }
-
-        @Override
         public void calcUpgrades() {
             super.calcUpgrades();
             pseudoRoundRobin = true;
@@ -81,41 +66,38 @@ public class RetrievalNodeItem extends BaseNodeBlock.Facing<RetrievalNodeItem.Ti
         }
 
         @Override
-        public void facing(BlockPos pos, Direction dir) {
-            if (itemSlot.hasItem())
-                if (ForgeUtils.hasItemHandler(level, pos, dir))
-                    ForgeUtils.forItemHandler(level, pos, dir, this::tryInsert);
-                else if (worldInteraction > 0) {
-                    if (getBlock(pos) == Blocks.AIR)
-                        tryInsert(pos, dir.getOpposite());
-                }
-        }
-
-        public void tryInsert(BlockPos pos, Direction boxDir) {
-            var boxSize = 1 + 2 * JavaUtils.log(2, worldInteraction);
-            var boxCenter = MCUtils.relative(pos, boxDir, boxSize / 2);
-            var box = AABB.ofSize(boxCenter, boxSize, boxSize, boxSize);
-            var invEntities = JavaUtils.filter(MCUtils.getMappableMappedEntities(level, box, ForgeUtils::getItemHandler), this::canInsert);
-            if (!invEntities.isEmpty()) {
-                for (IItemHandler inv : invEntities) {
-                    if (itemSlot.isEmpty())
-                        break;
-                    tryInsert(inv);
-                }
-
-                if (addParticle)
-                    addEdges(boxCenter, (float) boxSize / 2);
-            }
+        public boolean shouldSearch() {
+            return itemSlot.hasFreeSpace();
         }
 
         @Override
-        public boolean canWork(BlockPos pos, Direction d) {
-            return ForgeUtils.getItemHandler(level, pos, d).filter(this::canExtract).isPresent();
+        public boolean canFacingWork() {
+            return itemSlot.hasItem();
         }
 
         @Override
-        public void work(BlockPos pos, Direction dir) {
-            ForgeUtils.forItemHandler(level, pos, dir, this::tryExtract);
+        public void facingWork(BlockPos pos, Direction dir, IItemHandler inv) {
+            tryInsert(inv);
+        }
+
+        @Override
+        public void tryWorldInteraction(BlockPos pos, Direction dir) {
+            tryEntityInteraction(pos, dir.getOpposite(), this::tryInsert);
+        }
+
+        @Override
+        public boolean canWork(IItemHandler inv) {
+            return canExtract(inv);
+        }
+
+        @Override
+        public void work(BlockPos pos, Direction dir, IItemHandler inv) {
+            tryExtract(inv);
+        }
+
+        @Override
+        public Vector3f getColor() {
+            return new Vector3f(0, 1, 0);
         }
     }
 }
