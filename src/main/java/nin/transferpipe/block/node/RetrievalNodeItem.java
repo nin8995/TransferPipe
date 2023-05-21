@@ -22,11 +22,6 @@ public class RetrievalNodeItem extends BaseNodeBlock.Facing<RetrievalNodeItem.Ti
         return TPBlocks.RETRIEVAL_NODE_ITEM;
     }
 
-    @Override
-    public BaseBlockMenu menu(Tile tile, int id, Inventory inv) {
-        return new Menu(tile.itemSlot, tile.upgrades, tile.searchData, id, inv);
-    }
-
     public static class Menu extends BaseNodeMenu.Item {
 
         //client
@@ -56,6 +51,11 @@ public class RetrievalNodeItem extends BaseNodeBlock.Facing<RetrievalNodeItem.Ti
 
         public Tile(BlockPos p_155229_, BlockState p_155230_) {
             super(TPBlocks.RETRIEVAL_NODE_ITEM.tile(), p_155229_, p_155230_);
+        }
+
+        @Override
+        public BaseBlockMenu menu(int id, Inventory inv) {
+            return new Menu(itemSlot, upgrades, searchData, id, inv);
         }
 
         @Override

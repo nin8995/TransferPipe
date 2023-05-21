@@ -20,14 +20,14 @@ public class SortingPipe extends Pipe implements FunctionChanger {
     }
 
     @Override
-    public Object storeAndChange(BlockPos pos, BaseTileNode node) {
+    public Object storeAndChange(BlockPos pos, BaseTileNode<?> node) {
         var cache = node.sortingFunc;
         node.sortingFunc = sortingFunc;
         return cache;
     }
 
     @Override
-    public void restore(Object cache, BaseTileNode node) {
+    public void restore(Object cache, BaseTileNode<?> node) {
         node.sortingFunc = (BiPredicate<List<Item>, Item>) cache;
     }
 

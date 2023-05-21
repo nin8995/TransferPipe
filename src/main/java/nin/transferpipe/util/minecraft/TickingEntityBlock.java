@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import nin.transferpipe.util.forge.RegistryEntityBlock;
+import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.Nullable;
 
 public interface TickingEntityBlock<T extends Tile> extends EntityBlock {
@@ -32,7 +33,11 @@ public interface TickingEntityBlock<T extends Tile> extends EntityBlock {
 
     RegistryEntityBlock<T> registry();
 
-    default T getTile(Level level, BlockPos pos) {
-        return (T) level.getBlockEntity(pos);
+    default T getOuterTile(Level level, BlockPos pos) {
+        return (T) TPUtils.getOuterTile(level, pos);
+    }
+
+    default T getInnerTile(Level level, BlockPos pos) {
+        return (T) TPUtils.getInnerTile(level, pos);
     }
 }

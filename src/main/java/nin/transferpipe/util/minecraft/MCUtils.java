@@ -26,6 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -327,7 +328,7 @@ public interface MCUtils {
     }
 
     /**
-     * Random
+     * その他
      */
     static <T> T getRandomlyFrom(Collection<T> c, RandomSource rand) {
         if (c.isEmpty())
@@ -354,5 +355,26 @@ public interface MCUtils {
     static <T> List<T> getMappableMappedEntities(Level level, AABB box, Function<Entity, T> throwableMapper) {
         return getEntities(level, box, ExceptionPredicate.succeeded(throwableMapper::apply))
                 .stream().map(throwableMapper).toList();
+    }
+
+    static Vec3 toVec3(BlockPos pos) {
+        return new Vec3(pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    static Vec3 relativeLocation(BlockHitResult hit, BlockPos pos) {
+        return hit.getLocation().subtract(MCUtils.toVec3(pos));
+    }
+
+    static boolean contains(VoxelShape shape, Vec3 point) {
+        return shape.toAabbs().stream().anyMatch(aabb -> contains(aabb, point));
+    }
+
+    /**
+     * AABB#containsは上に開いてて使えん
+     */
+    static boolean contains(AABB aabb, Vec3 point) {
+        return aabb.minX <= point.x && point.x <= aabb.maxX
+                && aabb.minY <= point.y && point.y <= aabb.maxY
+                && aabb.minZ <= point.z && point.z <= aabb.maxZ;
     }
 }

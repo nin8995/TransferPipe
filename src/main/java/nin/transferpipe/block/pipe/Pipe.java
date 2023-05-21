@@ -45,13 +45,13 @@ public class Pipe extends LightingBlock {
             d -> EnumProperty.create(d.getName(), Connection.class)));
     public static final EnumProperty<Flow> FLOW = EnumProperty.create("flow", Flow.class);
 
-    public static boolean allPipeHasFlow = false;
+    public static boolean allPipesHaveFlow = false;
 
     public Pipe() {
         super(BlockBehaviour.Properties.of(Material.STONE));
 
         var defaultState = stateDefinition.any();
-        if (allPipeHasFlow)
+        if (allPipesHaveFlow)
             defaultState = defaultState.setValue(FLOW, Flow.ALL);
         defaultState = Connection.map(defaultState, d -> Connection.NONE);
         registerDefaultState(defaultState);
@@ -60,7 +60,7 @@ public class Pipe extends LightingBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         CONNECTIONS.values().forEach(builder::add);
-        if (allPipeHasFlow)
+        if (allPipesHaveFlow)
             builder.add(FLOW);
     }
 
@@ -122,7 +122,7 @@ public class Pipe extends LightingBlock {
 
     @Override
     public InteractionResult use(BlockState p_60503_, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
-        if (allPipeHasFlow && TPUtils.usingWrench(player, hand)) {
+        if (allPipesHaveFlow && TPUtils.usingWrench(player, hand)) {
             if (!level.isClientSide)
                 level.setBlockAndUpdate(pos, PipeInstance.cycleAndCalcState(level, pos));
             return InteractionResult.sidedSuccess(level.isClientSide);

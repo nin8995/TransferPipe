@@ -27,16 +27,15 @@ import nin.transferpipe.util.transferpipe.PipeInstance;
 import nin.transferpipe.util.transferpipe.TPUtils;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 /**
  * ノードのブロック部分。中のパイプの更新。
  */
-public abstract class BaseNodeBlock<T extends BaseTileNode> extends LightingBlock implements GUIEntityBlock<T> {
+public abstract class BaseNodeBlock<T extends BaseTileNode<?>> extends LightingBlock implements GUIEntityBlock<T> {
 
     public BaseNodeBlock() {
-        super(BlockBehaviour.Properties.of(Material.STONE));
+        super(BlockBehaviour.Properties.of(Material.STONE).dynamicShape());
     }
 
     /**
@@ -44,7 +43,7 @@ public abstract class BaseNodeBlock<T extends BaseTileNode> extends LightingBloc
      */
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean p_60514_) {
-        if (level.getBlockEntity(pos) instanceof BaseTileNode node) {
+        if (level.getBlockEntity(pos) instanceof BaseTileNode<?> node) {
             var prevState = node.pipeState;
             var currentState = PipeInstance.recalcState(level, pos);
             if (prevState != currentState)
@@ -55,24 +54,39 @@ public abstract class BaseNodeBlock<T extends BaseTileNode> extends LightingBloc
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
-        if (level.getBlockEntity(pos) instanceof BaseTileNode node) {
-            if (TPUtils.usingWrench(player, hand)) {
-                if (!level.isClientSide)
-                    node.setPipeStateAndUpdate(PipeInstance.cycleAndCalcState(level, pos/*, player.isShiftKeyDown() shift右クリックはブロックからは検知できない*/));
-                return InteractionResult.sidedSuccess(level.isClientSide);
-            }
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        var node = getOuterTile(level, pos);
 
-            return openMenu(level, pos, player, (T) node);
+        //レンチ
+        if (TPUtils.usingWrench(player, hand)) {
+            if (!level.isClientSide)
+                node.setPipeStateAndUpdate(PipeInstance.cycleAndCalcState(level, pos/*, player.isShiftKeyDown() アイテム持ちながらのshift右クリックはmixinしないと検知できない*/));
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
-        return InteractionResult.PASS;
+        //パイプGUIを開く
+        if (!MCUtils.contains(nodeShape(state), MCUtils.relativeLocation(hit, pos))
+                && node.hasHoldingTileMenu())
+            return node.openHoldingTileMenu(player);
+
+        //ノードGUIを開く
+        return node.openMenu(player);
     }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter blockGetter, BlockPos pos, CollisionContext context) {
+        return Shapes.or(nodeShape(state), blockGetter.getBlockEntity(pos, getType())
+                .filter(BaseTileNode::shouldRenderPipe)
+                .map(node -> Pipe.getShape(node.pipeState))
+                .orElse(Shapes.empty()));
+    }
+
+    public abstract VoxelShape nodeShape(BlockState state);
 
     /**
      * 面を持つノードの初期化と当たり判定
      */
-    public abstract static class Facing<T extends BaseTileNode> extends BaseNodeBlock<T> {
+    public abstract static class Facing<T extends BaseTileNode<?>> extends BaseNodeBlock<T> {
 
         public static DirectionProperty FACING = BlockStateProperties.FACING;
 
@@ -98,14 +112,8 @@ public abstract class BaseNodeBlock<T extends BaseTileNode> extends LightingBloc
         ).reduce(Shapes::or).get());
 
         @Override
-        public VoxelShape getShape(BlockState state, BlockGetter blockGetter, BlockPos pos, CollisionContext context) {
-            var shape = new AtomicReference<>(ROTATED_NODES.get(state.getValue(FACING)));
-            blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
-                if (be.shouldRenderPipe())
-                    shape.set(Shapes.or(shape.get(), Pipe.getShape(be.pipeState)));
-            });
-
-            return shape.get();
+        public VoxelShape nodeShape(BlockState state) {
+            return ROTATED_NODES.get(state.getValue(FACING));
         }
 
         public Direction facing(Level level, BlockPos pos) {
@@ -120,7 +128,7 @@ public abstract class BaseNodeBlock<T extends BaseTileNode> extends LightingBloc
     /**
      * エネルギーノード型の当たり判定
      */
-    public abstract static class Energy<T extends BaseTileNode> extends BaseNodeBlock<T> {
+    public abstract static class Energy<T extends BaseTileNode<?>> extends BaseNodeBlock<T> {
 
         public static final VoxelShape ENERGY_NODE = Stream.of(
                 Block.box(5, 3, 5, 11, 13, 11),
@@ -130,14 +138,8 @@ public abstract class BaseNodeBlock<T extends BaseTileNode> extends LightingBloc
         ).reduce(Shapes::or).get();
 
         @Override
-        public VoxelShape getShape(BlockState state, BlockGetter blockGetter, BlockPos pos, CollisionContext context) {
-            var shape = new AtomicReference<>(ENERGY_NODE);
-            blockGetter.getBlockEntity(pos, getType()).ifPresent(be -> {
-                if (be.shouldRenderPipe())
-                    shape.set(Shapes.or(shape.get(), Pipe.getShape(be.pipeState)));
-            });
-
-            return shape.get();
+        public VoxelShape nodeShape(BlockState state) {
+            return ENERGY_NODE;
         }
     }
 }

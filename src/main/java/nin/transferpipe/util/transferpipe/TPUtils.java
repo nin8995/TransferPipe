@@ -23,7 +23,7 @@ import nin.transferpipe.block.pipe.Flow;
 import nin.transferpipe.block.pipe.Pipe;
 import nin.transferpipe.item.filter.PatternSlot;
 import nin.transferpipe.util.java.JavaUtils;
-import nin.transferpipe.util.minecraft.TileHolderEntity;
+import nin.transferpipe.util.minecraft.TileHolder;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -43,7 +43,7 @@ public interface TPUtils {
         var bs = level.getBlockState(pos);
         return bs.getBlock() instanceof Pipe
                ? bs
-               : level.getBlockEntity(pos) instanceof BaseTileNode be
+               : level.getBlockEntity(pos) instanceof BaseTileNode<?> be
                  ? be.pipeState
                  : null;//PipeStateを得得ないときにnull
     }
@@ -122,12 +122,15 @@ public interface TPUtils {
     /**
      * TileHolderを考慮したlevel#getBlockEntity
      */
-    static BlockEntity getTile(Level level, BlockPos pos) {
-        return level.getBlockEntity(pos) instanceof TileHolderEntity tileHolder
+    static BlockEntity getInnerTile(Level level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof TileHolder tileHolder
                ? tileHolder.holdingTile
                : level.getBlockEntity(pos);
     }
 
+    static BlockEntity getOuterTile(Level level, BlockPos pos) {
+        return level.getBlockEntity(pos);
+    }
 
     /**
      * 同じ種類のパターン一つだけを登録

@@ -5,7 +5,7 @@ import nin.transferpipe.block.node.BaseTileNode;
 
 public interface FunctionChanger {
 
-    Object storeAndChange(BlockPos pos, BaseTileNode node);
+    Object storeAndChange(BlockPos pos, BaseTileNode<?> node);
 
-    void restore(Object cache, BaseTileNode node);
+    void restore(Object cache, BaseTileNode<?> node);
 }

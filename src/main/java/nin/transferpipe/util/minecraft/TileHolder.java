@@ -5,6 +5,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -13,7 +15,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class TileHolderEntity extends Tile {
+public abstract class TileHolder extends Tile {
 
     @Nullable
     public Tile holdingTile = null;
@@ -22,7 +24,7 @@ public abstract class TileHolderEntity extends Tile {
     public static String STATE = "TileState";
     public static String DATA = "TileData";
 
-    public TileHolderEntity(BlockEntityType<?> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
+    public TileHolder(BlockEntityType<?> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
         super(p_155228_, p_155229_, p_155230_);
     }
 
@@ -78,5 +80,15 @@ public abstract class TileHolderEntity extends Tile {
         super.onRemove();
         if (holdingTile != null)
             holdingTile.onRemove();
+    }
+
+    public boolean hasHoldingTileMenu() {
+        return holdingTile instanceof GUITile;
+    }
+
+    public InteractionResult openHoldingTileMenu(Player player) {
+        if (holdingTile instanceof GUITile guiTile)
+            return guiTile.openMenu(player);
+        return InteractionResult.PASS;
     }
 }

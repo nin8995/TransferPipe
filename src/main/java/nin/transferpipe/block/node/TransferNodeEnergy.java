@@ -35,11 +35,6 @@ public class TransferNodeEnergy extends BaseNodeBlock.Energy<TransferNodeEnergy.
         return TPBlocks.TRANSFER_NODE_ENERGY;
     }
 
-    @Override
-    public BaseBlockMenu menu(TransferNodeEnergy.Tile tile, int id, Inventory inv) {
-        return new Menu(tile.energyData, tile.chargeSlot, tile.upgrades, tile.searchData, id, inv);
-    }
-
     public static class Menu extends BaseNodeMenu.Energy {
 
         public Menu(int containerId, Inventory inv, FriendlyByteBuf buf) {
@@ -62,6 +57,11 @@ public class TransferNodeEnergy extends BaseNodeBlock.Energy<TransferNodeEnergy.
 
         public Tile(BlockPos p_155229_, BlockState p_155230_) {
             super(TPBlocks.TRANSFER_NODE_ENERGY.tile(), p_155229_, p_155230_);
+        }
+
+        @Override
+        public BaseBlockMenu menu(int id, Inventory inv) {
+            return new Menu(energyData, chargeSlot, upgrades, searchData, id, inv);
         }
 
         @Override
@@ -134,7 +134,7 @@ public class TransferNodeEnergy extends BaseNodeBlock.Energy<TransferNodeEnergy.
         @Override
         public void onSearchProceed(BlockPos pos) {
             super.onSearchProceed(pos);
-            if (TPUtils.getTile(level, pos) instanceof EnergyReceiverPipe.Tile receiver) {
+            if (TPUtils.getInnerTile(level, pos) instanceof EnergyReceiverPipe.Tile receiver) {
                 if (receiver.node != this)
                     receiver.connect(this);
                 energyReceiverPipes.putMarked(pos, receiver);
@@ -166,30 +166,35 @@ public class TransferNodeEnergy extends BaseNodeBlock.Energy<TransferNodeEnergy.
          */
         @Override
         public void afterTick() {
+            //refresh
             refreshConnection(extractLOs, IEnergyStorage::canExtract);
             refreshConnection(insertLOs, IEnergyStorage::canReceive);
             refreshConnection(bothLOs, ForgeUtils::canBoth);
 
+            //box to energy storages
             var extract = extractLOs.forceGetValues();
             var receive = insertLOs.forceGetValues();
             var both = bothLOs.forceGetValues();
+            var entities = new ArrayList<IEnergyStorage>();
 
+            //extract
             extractFrom(extract);
-            extractFrom(both);
-            ForgeUtils.forEnergyStorage(chargeSlot.getItem(), this::insertTo);
             if (worldInteraction > 0) {
-                var entities = new ArrayList<IEnergyStorage>();
-                Direction.stream().forEach(dir -> tryEntityInteraction(pos, dir, entities::addAll));
+                tryEntityInteraction(pos, entities::addAll);
                 var cap = energySlot.getCapacity();
                 energySlot.setCapacity(Math.max(cap, wi()));
                 extractFrom(JavaUtils.filter(entities, IEnergyStorage::canExtract));
                 extractFrom(JavaUtils.filter(entities, ForgeUtils::canBoth));
-                insertTo(JavaUtils.filter(entities, ForgeUtils::canBoth));
-                insertTo(JavaUtils.filter(entities, IEnergyStorage::canReceive));
                 energySlot.setCapacity(cap);
             }
+            extractFrom(both);
+
+            //insert
+            ForgeUtils.forEnergyStorage(chargeSlot.getItem(), this::insertTo);
             insertTo(receive);
+            insertTo(JavaUtils.filter(entities, IEnergyStorage::canReceive));
             insertTo(both);
+            insertTo(JavaUtils.filter(entities, ForgeUtils::canBoth));
         }
 
         public void refreshConnection(LazyOptionalMap<IEnergyStorage> loEnergyMap, Predicate<IEnergyStorage> shouldSustain) {

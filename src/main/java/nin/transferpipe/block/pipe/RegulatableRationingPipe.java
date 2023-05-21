@@ -22,6 +22,8 @@ import nin.transferpipe.network.TPPackets;
 import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 import nin.transferpipe.util.minecraft.BaseBlockMenu;
 import nin.transferpipe.util.minecraft.GUIEntityBlock;
+import nin.transferpipe.util.minecraft.GUITile;
+import nin.transferpipe.util.transferpipe.TPUtils;
 
 public class RegulatableRationingPipe extends RationingPipe implements GUIEntityBlock<RegulatableRationingPipe.Tile> {
 
@@ -30,36 +32,26 @@ public class RegulatableRationingPipe extends RationingPipe implements GUIEntity
     }
 
     @Override
+    public int getItemRation(Level level, BlockPos pos) {
+        return getInnerTile(level, pos).item;
+    }
+
+    @Override
+    public int getLiquidRation(Level level, BlockPos pos) {
+        return getInnerTile(level, pos).liquid;
+    }
+
+    @Override
     public RegistryGUIEntityBlock<Tile> registryWithGUI() {
         return TPBlocks.REGULATABLE_RATIONING_PIPE;
     }
 
     @Override
-    public BaseBlockMenu menu(Tile tile, int id, Inventory inv) {
-        return new Menu(tile.getBlockPos(), tile.ration, id, inv);
-    }
-
-    @Override
-    public int getItemRation(Level level, BlockPos pos) {
-        return getTile(level, pos).item;
-    }
-
-    @Override
-    public int getLiquidRation(Level level, BlockPos pos) {
-        return getTile(level, pos).liquid;
-    }
-
-    @Override
     public InteractionResult use(BlockState p_60503_, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
-        var tile = getTile(level, pos);
-        return openMenu(level, pos, player, tile, buf -> {
-            buf.writeBlockPos(tile.getBlockPos());
-            buf.writeInt(tile.item);
-            buf.writeInt(tile.liquid);
-        });
+        return openMenu(level, pos, player);
     }
 
-    public static class Tile extends nin.transferpipe.util.minecraft.Tile {
+    public static class Tile extends nin.transferpipe.util.minecraft.Tile implements GUITile {
 
         public int item = 64;
         public int liquid = 64 * 250;
@@ -73,6 +65,21 @@ public class RegulatableRationingPipe extends RationingPipe implements GUIEntity
             this.liquid = liquid;
             setChanged();
         }
+
+        @Override
+        public InteractionResult openMenu(Player player) {
+            return openMenu(level, getBlockPos(), player, buf -> {
+                buf.writeBlockPos(getBlockPos());
+                buf.writeInt(item);
+                buf.writeInt(liquid);
+            });
+        }
+
+        @Override
+        public BaseBlockMenu menu(int id, Inventory inv) {
+            return new Menu(getBlockPos(), ration, id, inv);
+        }
+
 
         public static String ITEM = "Item";
         public static String LIQUID = "Liquid";
@@ -213,7 +220,7 @@ public class RegulatableRationingPipe extends RationingPipe implements GUIEntity
 
         @Override
         public void handleOnServer(ServerPlayer sp) {
-            if (sp.getLevel().getBlockEntity(pos) instanceof Tile tile)
+            if (TPUtils.getInnerTile(sp.getLevel(), pos) instanceof Tile tile)
                 tile.setRation(item, liquid);
         }
     }

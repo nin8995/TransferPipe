@@ -23,11 +23,6 @@ public class RetrievalNodeLiquid extends BaseNodeBlock.Facing<RetrievalNodeLiqui
         return TPBlocks.RETRIEVAL_NODE_LIQUID;
     }
 
-    @Override
-    public BaseBlockMenu menu(Tile tile, int id, Inventory inv) {
-        return new Menu(tile.dummyLiquidItem, tile.upgrades, tile.searchData, id, inv);
-    }
-
     public static class Menu extends BaseNodeMenu.Liquid {
 
         public Menu(int containerId, Inventory inv, FriendlyByteBuf buf) {
@@ -50,6 +45,11 @@ public class RetrievalNodeLiquid extends BaseNodeBlock.Facing<RetrievalNodeLiqui
 
         public Tile(BlockPos p_155229_, BlockState p_155230_) {
             super(TPBlocks.RETRIEVAL_NODE_LIQUID.tile(), p_155229_, p_155230_);
+        }
+
+        @Override
+        public BaseBlockMenu menu(int id, Inventory inv) {
+            return new Menu(dummyLiquidItem, upgrades, searchData, id, inv);
         }
 
         @Override

@@ -29,12 +29,15 @@ public class TransferPipe extends Pipe {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        if (!allPipeHasFlow)
+        if (!allPipesHaveFlow)
             builder.add(FLOW);
     }
 
     @Override
     public InteractionResult use(BlockState p_60503_, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult p_60508_) {
+        //素手の時だけuse呼ばれて、そのときにシフトかどうかを下で判断できる
+        //System.out.println(player.isCrouching());
+
         if (TPUtils.usingWrench(player, hand)) {
             if (!level.isClientSide)
                 level.setBlockAndUpdate(pos, PipeInstance.cycleAndCalcState(level, pos));

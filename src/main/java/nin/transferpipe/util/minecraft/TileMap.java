@@ -24,8 +24,8 @@ public class TileMap<V extends Tile> extends PosMap<V> {
     public void tryLoadCache(Level level, BiConsumer<BlockPos, V> loadFunc) {
         tryLoadCache(pos ->
                 level.isLoaded(pos)
-                ? beClass.isAssignableFrom(TPUtils.getTile(level, pos).getClass())
-                  ? LoadResult.a((V) TPUtils.getTile(level, pos))
+                ? beClass.isAssignableFrom(TPUtils.getInnerTile(level, pos).getClass())
+                  ? LoadResult.a((V) TPUtils.getInnerTile(level, pos))
                   : LoadResult.na()
                 : LoadResult.nl(), loadFunc);
     }

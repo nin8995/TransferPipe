@@ -31,7 +31,7 @@ public class RationingPipe extends Pipe implements FunctionChanger {
     }
 
     @Override
-    public Object storeAndChange(BlockPos pos, BaseTileNode node) {
+    public Object storeAndChange(BlockPos pos, BaseTileNode<?> node) {
         var cache = Pair.of(node.itemRation, node.liquidRation);
         node.itemRation = getItemRation(node.level, pos);
         node.liquidRation = getLiquidRation(node.level, pos);
@@ -39,7 +39,7 @@ public class RationingPipe extends Pipe implements FunctionChanger {
     }
 
     @Override
-    public void restore(Object cache, BaseTileNode node) {
+    public void restore(Object cache, BaseTileNode<?> node) {
         var pair = (Pair<Integer, Integer>) cache;
         node.itemRation = pair.first();
         node.liquidRation = pair.second();

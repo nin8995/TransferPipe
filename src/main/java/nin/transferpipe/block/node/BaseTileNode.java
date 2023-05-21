@@ -14,7 +14,9 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -39,8 +41,9 @@ import nin.transferpipe.item.upgrade.UpgradeHandler;
 import nin.transferpipe.particle.TPParticles;
 import nin.transferpipe.util.java.JavaUtils;
 import nin.transferpipe.util.java.UtilSetMap;
+import nin.transferpipe.util.minecraft.GUITile;
 import nin.transferpipe.util.minecraft.MCUtils;
-import nin.transferpipe.util.minecraft.TileHolderEntity;
+import nin.transferpipe.util.minecraft.TileHolder;
 import nin.transferpipe.util.transferpipe.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,7 +58,7 @@ import java.util.function.Predicate;
 /**
  * ノードの基本部分。アップグレード、毎tick処理、探索、レンダー。
  */
-public abstract class BaseTileNode<T> extends TileHolderEntity implements Searcher, TPItems {
+public abstract class BaseTileNode<T> extends TileHolder implements GUITile, Searcher, TPItems {
 
     /**
      * 初期化処理
@@ -105,6 +108,11 @@ public abstract class BaseTileNode<T> extends TileHolderEntity implements Search
         updateTile(state);
         setChanged();//タイルエンティティ更新時の処理
         level.markAndNotifyBlock(getBlockPos(), level.getChunkAt(getBlockPos()), getBlockState(), getBlockState(), 3, 512);//ブロック更新時の処理
+    }
+
+    @Override
+    public InteractionResult openMenu(Player player) {
+        return openMenu(level, pos, player, this);
     }
 
     /**
@@ -201,12 +209,24 @@ public abstract class BaseTileNode<T> extends TileHolderEntity implements Search
     }
 
     public void tryEntityInteraction(BlockPos pos, Direction boxDir, Function<List<T>, Boolean> func) {
-        var boxSize = 1 + 2 * JavaUtils.log(2, worldInteraction);
+        var boxSize = getBoxSize();
         var boxCenter = MCUtils.relative(pos, boxDir, boxSize / 2);
+        tryEntityInteraction(boxSize, boxCenter, func);
+    }
+
+    public double getBoxSize() {
+        return 1 + 2 * JavaUtils.log(2, worldInteraction);
+    }
+
+    public void tryEntityInteraction(double boxSize, Vec3 boxCenter, Function<List<T>, Boolean> func) {
         var box = AABB.ofSize(boxCenter, boxSize, boxSize, boxSize);
         var entities = MCUtils.getMappableMappedEntities(level, box, entityHandlerSup);
         if (func.apply(entities) && addParticle)
             addEdges(boxCenter, (float) boxSize / 2);
+    }
+
+    public void tryEntityInteraction(BlockPos pos, Function<List<T>, Boolean> func) {
+        tryEntityInteraction(getBoxSize(), pos.getCenter(), func);
     }
 
     /**

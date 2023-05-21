@@ -10,16 +10,20 @@ import org.jetbrains.annotations.NotNull;
 
 public abstract class BaseBlockMenu extends BaseMenu {
 
-    private ContainerLevelAccess access;
-    private final Block block;
+    public ContainerLevelAccess access;
+    public Block block;
 
     public BaseBlockMenu(RegistryGUIEntityBlock<?> registry, int id, Inventory inv, String bg, int bgHeight) {
         super(registry.gui(), id, inv, bg, bgHeight);
-        this.block = registry.block();
     }
 
     public BaseBlockMenu setAccess(ContainerLevelAccess access) {
         this.access = access;
+        return this;
+    }
+
+    public BaseBlockMenu setBlock(Block block) {
+        this.block = block;
         return this;
     }
 
