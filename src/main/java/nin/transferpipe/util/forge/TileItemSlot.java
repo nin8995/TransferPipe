@@ -1,14 +1,15 @@
 package nin.transferpipe.util.forge;
 
+import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import nin.transferpipe.util.java.JavaUtils;
+import nin.transferpipe.util.minecraft.BaseTile;
 import nin.transferpipe.util.minecraft.MCUtils;
 
-public class TileItemSlot<T extends BlockEntity> extends TileItemHandler<T> {
+public class TileItemSlot<T extends BaseTile> extends TileItemHandler<T> {
 
-    public TileItemSlot(T be) {
-        super(1, be);
+    public TileItemSlot(T tile) {
+        super(1, tile);
     }
 
     public ItemStack getItem() {
@@ -62,5 +63,10 @@ public class TileItemSlot<T extends BlockEntity> extends TileItemHandler<T> {
     public boolean canStack(ItemStack item) {
         return JavaUtils.fork(getItem().isEmpty(),
                 !item.isEmpty(), MCUtils.same(item, getItem()));
+    }
+
+    public void drop() {
+        tile.drop(NonNullList.of(getItem()));
+        setItem(ItemStack.EMPTY);
     }
 }

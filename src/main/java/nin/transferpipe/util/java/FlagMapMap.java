@@ -24,7 +24,7 @@ public class FlagMapMap<K1, K2, V> extends UtilMapMap<K1, K2, V> {
     public void add(K1 k1, K2 k2, V v, boolean marked) {
         add(k1, k2, v);
         if (marked)
-            marks.add(k1, k2);
+            marks.addValue(k1, k2);
     }
 
     public void reset() {

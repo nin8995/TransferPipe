@@ -15,6 +15,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.item.TPItems;
+import nin.transferpipe.item.upgrade.UpgradeItem;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.ObscuredInventory;
 import nin.transferpipe.util.minecraft.BaseItemMenu;
@@ -25,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
 
-public class LiquidFilter extends BaseLiquidFilter implements GUIItem {
+public class LiquidFilter extends UpgradeItem implements ILiquidFilter, GUIItem {
 
     public static String INVERTED = "Inverted";
     public static String IGNORE_NBT = "IgnoreNBT";
@@ -50,7 +51,7 @@ public class LiquidFilter extends BaseLiquidFilter implements GUIItem {
     public Predicate<FluidStack> getFilter(ItemStack filter) {
         return liquid -> {
             var filtered = ForgeUtils.stream(patterns(filter)).filter(i -> !i.isEmpty()).anyMatch(pattern ->
-                    pattern.getItem() instanceof BaseLiquidFilter f && !ForgeUtils.isEmpty(patterns(pattern))
+                    pattern.getItem() instanceof ILiquidFilter f && !ForgeUtils.isEmpty(patterns(pattern))
                     ? f.getFilter(pattern).test(liquid)
                     : ignoreNBT(filter)
                       ? liquid.getFluid() == ForgeUtils.getFluid(pattern).getFluid()

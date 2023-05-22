@@ -3,11 +3,11 @@ package nin.transferpipe.network;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 public abstract class BasePacket {
@@ -35,8 +35,8 @@ public abstract class BasePacket {
         TPPackets.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sp), this);
     }
 
-    public void toClients(PlayerList sps) {
-        sps.getPlayers().forEach(sp -> TPPackets.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sp), this));
+    public void toClients(List<ServerPlayer> sps) {
+        sps.forEach(sp -> TPPackets.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sp), this));
     }
 
     public void toServer() {

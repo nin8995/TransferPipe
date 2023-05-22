@@ -12,6 +12,6 @@ public class UpgradeHandler extends TileItemHandler<BaseTileNode<?>> {
     @Override
     protected void onContentsChanged(int slot) {
         super.onContentsChanged(slot);
-        be.calcUpgrades();
+        tile.calcUpgrades();
     }
 }

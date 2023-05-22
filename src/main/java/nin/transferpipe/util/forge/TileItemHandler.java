@@ -2,24 +2,24 @@ package nin.transferpipe.util.forge;
 
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.ItemStackHandler;
+import nin.transferpipe.util.minecraft.BaseTile;
 
 import java.util.function.Consumer;
 
-public class TileItemHandler<T extends BlockEntity> extends ItemStackHandler {
+public class TileItemHandler<T extends BaseTile> extends ItemStackHandler {
 
-    public final T be;
+    public final T tile;
 
-    public TileItemHandler(int size, T be) {
+    public TileItemHandler(int size, T tile) {
         stacks = NonNullList.withSize(size, ItemStack.EMPTY);
-        this.be = be;
+        this.tile = tile;
     }
 
     @Override
     protected void onContentsChanged(int slot) {
         super.onContentsChanged(slot);
-        be.setChanged();
+        tile.setChanged();
     }
 
     public float capacityRate = 1;

@@ -32,8 +32,8 @@ import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.pipe.Connection;
 import nin.transferpipe.block.pipe.Pipe;
 import nin.transferpipe.item.TPItems;
-import nin.transferpipe.item.filter.BaseItemFilter;
-import nin.transferpipe.item.filter.BaseLiquidFilter;
+import nin.transferpipe.item.filter.IItemFilter;
+import nin.transferpipe.item.filter.ILiquidFilter;
 import nin.transferpipe.item.upgrade.RationingUpgrade;
 import nin.transferpipe.item.upgrade.SortingUpgrade;
 import nin.transferpipe.item.upgrade.UpgradeBlockItem;
@@ -191,9 +191,9 @@ public abstract class BaseTileNode<T> extends TileHolder implements GUITile, Sea
                 liquidRation = rationing.getLiquidRation(upgrade);
             } else if (upgrade.getItem() instanceof SortingUpgrade sorter)
                 sortingFunc = sorter.sortingFunc;
-            else if (upgrade.getItem() instanceof BaseItemFilter filter)
+            else if (upgrade.getItem() instanceof IItemFilter filter)
                 itemFilter = filter.getFilter(upgrade);
-            else if (upgrade.getItem() instanceof BaseLiquidFilter filter)
+            else if (upgrade.getItem() instanceof ILiquidFilter filter)
                 liquidFilter = filter.getFilter(upgrade);
             if (upgrade.getItem() instanceof UpgradeBlockItem bi && bi.getBlock() instanceof Pipe pipe)
                 pipeUpgrade.set(pipe);
@@ -364,6 +364,7 @@ public abstract class BaseTileNode<T> extends TileHolder implements GUITile, Sea
         }
 
         // TODO ノード本体が視界外になるだけでPipeStateが表示されなくなる
+        // ↑ BlockPropertyのdynamicShape trueにしたら治った
         // TODO 重い
         @Override
         public void render(BaseTileNode be, float p_112308_, @NotNull PoseStack pose, @NotNull MultiBufferSource mbs, int p_112311_, int overlay) {

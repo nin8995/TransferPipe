@@ -11,12 +11,12 @@ import nin.transferpipe.util.forge.RegistryEntityBlock;
 import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.Nullable;
 
-public interface TickingEntityBlock<T extends Tile> extends EntityBlock {
+public interface ITickingEntityBlock<T extends BaseTile> extends EntityBlock {
 
     @Override
     default <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return type == getType() ? (Level l, BlockPos p, BlockState bs, T t) -> {
-            if (!level.isClientSide && t instanceof Tile be)
+            if (!level.isClientSide && t instanceof BaseTile be)
                 be.tick();
         } : null;
     }

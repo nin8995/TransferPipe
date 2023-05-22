@@ -7,7 +7,7 @@ import nin.transferpipe.util.transferpipe.TPUtils;
 
 import java.util.function.BiConsumer;
 
-public class TileMap<V extends Tile> extends PosMap<V> {
+public class TileMap<V extends BaseTile> extends PosMap<V> {
 
     private final Class<V> beClass;
 

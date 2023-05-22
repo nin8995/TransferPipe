@@ -18,7 +18,7 @@ public class LiquidFilterPattern extends LiquidItemSlot implements PatternSlot {
 
     @Override
     public boolean shouldSet(ItemStack item) {
-        return ForgeUtils.hasFluidHandler(item) || item.getItem() instanceof BaseLiquidFilter;
+        return ForgeUtils.hasFluidHandler(item) || item.getItem() instanceof ILiquidFilter;
     }
 
     @Override

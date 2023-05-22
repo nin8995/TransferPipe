@@ -1,5 +1,7 @@
 package nin.transferpipe.util.java;
 
+import net.minecraft.util.RandomSource;
+import nin.transferpipe.util.minecraft.MCUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -184,5 +186,16 @@ public interface JavaUtils {
 
     static boolean extraCondition(boolean premise, boolean extra) {
         return !(premise && !extra);
+    }
+
+    static <T> void forEachRandomly(Collection<T> looper, RandomSource random, Function<T, Boolean> breaker, Consumer<T> func) {
+        var list = new ArrayList<>(looper);
+        while (!list.isEmpty()) {
+            var t = MCUtils.random(list, random);
+            if (breaker.apply(t))
+                break;
+            func.accept(t);
+            list.remove(t);
+        }
     }
 }

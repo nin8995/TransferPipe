@@ -1,7 +1,10 @@
 package nin.transferpipe.util.minecraft;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.Containers;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -9,9 +12,9 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
-public abstract class Tile extends BlockEntity {
+public abstract class BaseTile extends BlockEntity {
 
-    public Tile(BlockEntityType<?> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
+    public BaseTile(BlockEntityType<?> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
         super(p_155228_, p_155229_, p_155230_);
     }
 
@@ -90,5 +93,9 @@ public abstract class Tile extends BlockEntity {
 
     public Fluid getFluid(BlockPos pos) {
         return level.getFluidState(pos).getType();
+    }
+
+    public void drop(NonNullList<ItemStack> items) {
+        Containers.dropContents(level, worldPosition, items);
     }
 }

@@ -37,6 +37,7 @@ import net.minecraftforge.items.ItemHandlerHelper;
 import nin.transferpipe.mixin.AtlasAccessor;
 import nin.transferpipe.util.java.Consumer3;
 import nin.transferpipe.util.java.ExceptionPredicate;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -335,6 +336,11 @@ public interface MCUtils {
             return null;
 
         var list = new ArrayList<>(c);
+        return list.get((int) (rand.nextFloat() * list.size()));//0<nextFloat<1のため配列の範囲外エラーは起きない
+    }
+
+    @NotNull
+    static <T> T random(List<T> list, RandomSource rand) {
         return list.get((int) (rand.nextFloat() * list.size()));//0<nextFloat<1のため配列の範囲外エラーは起きない
     }
 

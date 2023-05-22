@@ -15,10 +15,10 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class TileHolder extends Tile {
+public abstract class TileHolder extends BaseTile {
 
     @Nullable
-    public Tile holdingTile = null;
+    public BaseTile holdingTile = null;
 
     public static String POS = "TilePos";
     public static String STATE = "TileState";
@@ -44,7 +44,7 @@ public abstract class TileHolder extends Tile {
         if (tag.contains(POS)) {
             var pos = NbtUtils.readBlockPos(tag.getCompound(POS));
             var state = NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), tag.getCompound(STATE));
-            holdingTile = (Tile) BlockEntity.loadStatic(pos, state, tag.getCompound(DATA));
+            holdingTile = (BaseTile) BlockEntity.loadStatic(pos, state, tag.getCompound(DATA));
         }
     }
 
@@ -67,7 +67,7 @@ public abstract class TileHolder extends Tile {
     public void updateTile(BlockState state) {
         if (holdingTile != null && holdingTile.getBlockState().getBlock() == state.getBlock())
             holdingTile.setBlockState(state);
-        else if (state.getBlock() instanceof EntityBlock entityBlock && entityBlock.newBlockEntity(worldPosition, state) instanceof Tile tile)
+        else if (state.getBlock() instanceof EntityBlock entityBlock && entityBlock.newBlockEntity(worldPosition, state) instanceof BaseTile tile)
             holdingTile = tile;
         else
             holdingTile = null;

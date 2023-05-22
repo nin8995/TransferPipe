@@ -21,6 +21,7 @@ import nin.transferpipe.network.BasePacket;
 import nin.transferpipe.network.TPPackets;
 import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 import nin.transferpipe.util.minecraft.BaseBlockMenu;
+import nin.transferpipe.util.minecraft.BaseTile;
 import nin.transferpipe.util.minecraft.GUIEntityBlock;
 import nin.transferpipe.util.minecraft.GUITile;
 import nin.transferpipe.util.transferpipe.TPUtils;
@@ -51,7 +52,7 @@ public class RegulatableRationingPipe extends RationingPipe implements GUIEntity
         return openMenu(level, pos, player);
     }
 
-    public static class Tile extends nin.transferpipe.util.minecraft.Tile implements GUITile {
+    public static class Tile extends BaseTile implements GUITile {
 
         public int item = 64;
         public int liquid = 64 * 250;

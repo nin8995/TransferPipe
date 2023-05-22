@@ -151,7 +151,7 @@ public class SearchInstance implements INBTSerializable<CompoundTag> {
     }
 
     public void addQueue(BlockPos pos, @Nullable Direction dir) {
-        queue.add(pos, dir);
+        queue.addValue(pos, dir);
         if (searcher.useMemory())
             memory.add(pos.asLong());
     }

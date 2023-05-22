@@ -11,7 +11,7 @@ public class UtilSetMap<K, V> extends UtilMap<K, Set<V>> {
     /**
      * SetMapの取り扱い
      */
-    public void add(K key, @Nullable V value) {
+    public void addValue(K key, @Nullable V value) {
         if (containsKey(key)) {
             if (value != null)
                 get(key).add(value);
@@ -25,9 +25,9 @@ public class UtilSetMap<K, V> extends UtilMap<K, Set<V>> {
 
     public void addAll(K key, Collection<V> values) {
         if (values.isEmpty())
-            add(key, null);
+            addValue(key, null);
         else
-            values.forEach(v -> add(key, v));
+            values.forEach(v -> addValue(key, v));
     }
 
     @SafeVarargs
@@ -45,6 +45,11 @@ public class UtilSetMap<K, V> extends UtilMap<K, Set<V>> {
 
     public boolean contains(K k, V v) {
         return containsKey(k) && get(k).contains(v);
+    }
+
+    @Override
+    public Set<V> get(Object key) {
+        return getOrDefault(key, new HashSet<>());
     }
 
     /**

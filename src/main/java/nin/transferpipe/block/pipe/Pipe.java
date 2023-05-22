@@ -53,7 +53,7 @@ public class Pipe extends LightingBlock {
         var defaultState = stateDefinition.any();
         if (allPipesHaveFlow)
             defaultState = defaultState.setValue(FLOW, Flow.ALL);
-        defaultState = Connection.map(defaultState, d -> Connection.NONE);
+        defaultState = Connection.map(defaultState, d -> Connection.MACHINE);
         registerDefaultState(defaultState);
     }
 

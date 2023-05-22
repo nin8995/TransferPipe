@@ -18,6 +18,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.block.pipe.SortingPipe;
 import nin.transferpipe.item.TPItems;
 import nin.transferpipe.item.upgrade.SortingUpgrade;
+import nin.transferpipe.item.upgrade.UpgradeItem;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.ObscuredInventory;
 import nin.transferpipe.util.minecraft.BaseItemMenu;
@@ -30,7 +31,7 @@ import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
-public class SortingFilter extends BaseItemFilter implements GUIItem {
+public class SortingFilter extends UpgradeItem implements IItemFilter, GUIItem {
 
     public SortingFilter(Properties p_41383_) {
         super(p_41383_);

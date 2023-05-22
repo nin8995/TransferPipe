@@ -114,8 +114,11 @@ public interface TPUtils {
      */
     TagKey<Item> WRENCH_TAG = TagKey.create(Registries.ITEM, new ResourceLocation("forge", "tools/wrench"));
 
-    static boolean usingWrench(Player pl, InteractionHand hand) {
-        var item = pl.getItemInHand(hand);
+    static boolean usingWrench(Player player, InteractionHand hand) {
+        return isWrench(player.getItemInHand(hand));
+    }
+
+    static boolean isWrench(ItemStack item) {
         return item.is(Items.STICK) || item.is(WRENCH_TAG);
     }
 

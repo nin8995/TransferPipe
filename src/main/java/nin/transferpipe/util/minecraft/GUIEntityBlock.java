@@ -7,7 +7,7 @@ import net.minecraft.world.level.Level;
 import nin.transferpipe.util.forge.RegistryEntityBlock;
 import nin.transferpipe.util.forge.RegistryGUIEntityBlock;
 
-public interface GUIEntityBlock<T extends Tile & GUITile> extends TickingEntityBlock<T> {
+public interface GUIEntityBlock<T extends BaseTile & GUITile> extends ITickingEntityBlock<T> {
 
     @Override
     default RegistryEntityBlock<T> registry() {

@@ -61,7 +61,7 @@ public class UtilMapMap<K1, K2, V> extends UtilMap<K1, Map<K2, V>> {
         var toRemove = new UtilSetMap<K1, K2>();
         flatForEach((k1, k2, v) -> {
             if (shouldRemove.test(k1, k2, v))
-                toRemove.add(k1, k2);
+                toRemove.addValue(k1, k2);
         });
 
         toRemove.flatForEach(this::removeValue);

@@ -10,19 +10,20 @@ import nin.transferpipe.block.TPBlocks;
 import nin.transferpipe.block.node.TransferNodeEnergy;
 import nin.transferpipe.util.forge.ReferenceEnergyStorage;
 import nin.transferpipe.util.forge.RegistryEntityBlock;
-import nin.transferpipe.util.minecraft.TickingEntityBlock;
+import nin.transferpipe.util.minecraft.BaseTile;
+import nin.transferpipe.util.minecraft.ITickingEntityBlock;
 import nin.transferpipe.util.transferpipe.TPUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class EnergyReceiverPipe extends EnergyPipe implements TickingEntityBlock<EnergyReceiverPipe.Tile> {
+public class EnergyReceiverPipe extends EnergyPipe implements ITickingEntityBlock<EnergyReceiverPipe.Tile> {
 
     @Override
     public RegistryEntityBlock<Tile> registry() {
         return TPBlocks.ENERGY_RECEIVER_PIPE;
     }
 
-    public static class Tile extends nin.transferpipe.util.minecraft.Tile {
+    public static class Tile extends BaseTile {
 
         @Nullable
         public TransferNodeEnergy.Tile node;

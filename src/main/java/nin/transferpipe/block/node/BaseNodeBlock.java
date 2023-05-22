@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 public abstract class BaseNodeBlock<T extends BaseTileNode<?>> extends LightingBlock implements GUIEntityBlock<T> {
 
     public BaseNodeBlock() {
-        super(BlockBehaviour.Properties.of(Material.STONE).dynamicShape());
+        super(BlockBehaviour.Properties.of(Material.STONE));
     }
 
     /**

@@ -25,6 +25,7 @@ public interface TPPackets {
 
     static void init() {
         //load static
+        register(CurveParticlePacket::new);
     }
 
     static <T extends BasePacket> Supplier<T> register(Supplier<T> packetSup) {

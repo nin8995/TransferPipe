@@ -11,6 +11,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
 import net.minecraftforge.client.model.generators.ConfiguredModel;
 import net.minecraftforge.client.model.generators.ModelFile;
@@ -51,6 +52,7 @@ public interface TPBlocks {
 
     Set<RegistryObject<Block>> PIPES = new HashSet<>();
     Set<RegistryGUIEntityBlock<? extends BaseTileNode<?>>> NODES = new HashSet<>();
+    Set<RegistryObject<Block>> OTHERS = new HashSet<>();
 
     DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     DeferredRegister<BlockEntityType<?>> TILES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
@@ -87,6 +89,10 @@ public interface TPBlocks {
     RegistryGUIEntityBlock<RetrievalNodeLiquid.Tile> RETRIEVAL_NODE_LIQUID = registerNode("retrieval_node_liquid",
             RetrievalNodeLiquid::new, RetrievalNodeLiquid.Tile::new, RetrievalNodeLiquid.Menu::new, RetrievalNodeLiquid.Screen::new);
 
+    //Others
+    RegistryEntityBlock<EnderCollector.Tile> ENDER_COLLECTOR = registerSimpleModel("ender_collector",
+            EnderCollector::new, EnderCollector.Tile::new);
+
     static RegistryObject<Block> registerPipe(String id, Supplier<Block> block) {
         var ro = BLOCKS.register(id, block);
         ITEMS.register(id, () -> new UpgradeBlockItem(ro.get(), new Item.Properties()));
@@ -100,6 +106,12 @@ public interface TPBlocks {
         var registry = new RegistryEntityBlock<>(roBlock, roEntity, tile);
         ITEMS.register(id, () -> new UpgradeBlockItem(registry.block(), new Item.Properties()));
         PIPES.add(roBlock);
+        return registry;
+    }
+
+    static <T extends BlockEntity> RegistryEntityBlock<T> registerSimpleModel(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile) {
+        var registry = registerEntityBlock(id, block, tile);
+        OTHERS.add(registry.roBlock());
         return registry;
     }
 
@@ -128,6 +140,14 @@ public interface TPBlocks {
         return registry;
     }
 
+    static <T extends BlockEntity> RegistryEntityBlock<T> registerEntityBlock(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile) {
+        var roBlock = BLOCKS.register(id, block);
+        var roEntity = TILES.register(id, () -> BlockEntityType.Builder.of(tile, roBlock.get()).build(null));
+        var registry = new RegistryEntityBlock<>(roBlock, roEntity, tile);
+        ITEMS.register(id, () -> new BlockItem(registry.block(), new Item.Properties()));
+        return registry;
+    }
+
     static <T extends BlockEntity, M extends BaseBlockMenu, U extends Screen & MenuAccess<M>>
     RegistryGUIEntityBlock<T> registerGUIEntityBlockOnly(String id, Supplier<Block> block, BlockEntityType.BlockEntitySupplier<T> tile,
                                                          IContainerFactory<M> menu, MenuScreens.ScreenConstructor<M, U> screen) {
@@ -138,7 +158,6 @@ public interface TPBlocks {
         GUI.add(registry.gui());
         return registry;
     }
-
 
     static void init(IEventBus bus) {
         BLOCKS.register(bus);
@@ -161,6 +180,7 @@ public interface TPBlocks {
         protected void registerStatesAndModels() {
             PIPES.forEach(this::pipe);
             NODES.stream().map(RegistryGUIEntityBlock::roBlock).forEach(this::node);
+            OTHERS.forEach(this::other);
         }
 
         private void pipe(RegistryObject<Block> ro) {
@@ -207,7 +227,6 @@ public interface TPBlocks {
 
         private void node(RegistryObject<Block> ro) {
             var block = ro.get();
-
             if (block instanceof BaseNodeBlock.Facing) {
                 var mb = getMultipartBuilder(block);
 
@@ -218,7 +237,22 @@ public interface TPBlocks {
                 var inv = genNodeModel("block/transfer_node_inv", ro);
                 simpleBlockItem(block, inv);
             } else
-                simpleBlockWithItem(block, new ModelFile.ExistingModelFile(ro.getId().withPath("block/" + ro.getId().getPath()), ex));
+                other(ro);
+        }
+
+        private void other(RegistryObject<Block> ro) {
+            var block = ro.get();
+            if (block.defaultBlockState().hasProperty(BlockStateProperties.FACING)) {
+                var mb = getMultipartBuilder(block);
+
+                var model = new ModelFile.ExistingModelFile(ro.getId().withPath("block/" + ro.getId().getPath()), ex);
+                Direction.stream().forEach(dir ->
+                        forRotatedModel(mb, dir, model, p -> p.condition(BlockStateProperties.FACING, dir)));
+
+                var inv = new ModelFile.ExistingModelFile(ro.getId().withPath("block/" + ro.getId().getPath() + "_inv"), ex);
+                simpleBlockItem(block, inv);
+            } else
+                simpleBlockWithItem(ro.get(), new ModelFile.ExistingModelFile(ro.getId().withPath("block/" + ro.getId().getPath()), ex));
         }
 
         public ModelFile genPipeModel(String parent, RegistryObject<Block> child) {

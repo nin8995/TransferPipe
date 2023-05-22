@@ -14,6 +14,7 @@ import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import nin.transferpipe.item.TPItems;
+import nin.transferpipe.item.upgrade.UpgradeItem;
 import nin.transferpipe.util.forge.ForgeUtils;
 import nin.transferpipe.util.forge.ObscuredInventory;
 import nin.transferpipe.util.minecraft.BaseItemMenu;
@@ -24,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
 
-public class ItemFilter extends BaseItemFilter implements GUIItem {
+public class ItemFilter extends UpgradeItem implements IItemFilter, GUIItem {
 
     public static String INVERTED = "Inverted";
     public static String IGNORE_NBT = "IgnoreNBT";
@@ -58,7 +59,7 @@ public class ItemFilter extends BaseItemFilter implements GUIItem {
     public Predicate<ItemStack> getFilter(ItemStack filter) {
         return item -> {
             var filtered = ForgeUtils.stream(patterns(filter)).filter(i -> !i.isEmpty()).anyMatch(pattern ->
-                    pattern.getItem() instanceof BaseItemFilter f && !ForgeUtils.isEmpty(patterns(pattern))
+                    pattern.getItem() instanceof IItemFilter f && !ForgeUtils.isEmpty(patterns(pattern))
                     ? f.getFilter(pattern).test(item)
                     : ignoreNBT(filter)
                       ? item.is(pattern.getItem())
